@@ -3,6 +3,7 @@
 
 #include<map>
 #include<vector>
+#include <sys/socket.h>
 
 #include "component.h"
 #include "port.h"
@@ -13,14 +14,25 @@ namespace composition_management {
 
 class Query{
 protected:
-  std::vector<Component> components;
+    /**
+     * These must be ordered in ascending type order.
+     */
+    std::vector<Component> components;
   
-  std::map<IncomingPort, OutgoingPort> connections;
+    std::map<IncomingPort, OutgoingPort> connections;
 public:
+    Query() {}
+    
     Query(std::vector<Component> components, std::map<IncomingPort, OutgoingPort> connections)
         : components(components)
         , connections(connections)
     {
+    }
+    
+    Query(Query& orig)
+    {
+        components = orig.components;
+        connections = orig.connections;
     }
     
     std::vector<Component> getComponents() { return components; }

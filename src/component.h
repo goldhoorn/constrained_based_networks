@@ -13,9 +13,9 @@ namespace composition_management {
 class Component {
 protected:
     /**
-     * 
+     * TODO use enum instead
      */
-    std::string name;
+    int type;
     
     /**
      * The configuration consists of a variable sized vector of IntVars.
@@ -33,13 +33,15 @@ protected:
      */
     std::vector<OutgoingPort> outPorts;
 public:
-    Component(std::string name, std::vector<IntVar> configuration, std::vector<IncomingPort> inPorts, std::vector<OutgoingPort> outPorts) 
-        : name(name)
+    Component(int type, std::vector<IntVar> configuration, std::vector<IncomingPort> inPorts, std::vector<OutgoingPort> outPorts) 
+        : type(type)
         , configuration(configuration)
         , inPorts(inPorts)
         , outPorts(outPorts)
     {
     }
+    
+    int getType() { return type; }
 };
 
 } // end namespace composition_management
