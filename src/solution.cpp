@@ -81,10 +81,41 @@ public:
                     // If the configurations are not compatible, post != constraint on this assignment
                     if(requiredConfiguration != 0 && actualConfiguration != 0 && requiredConfiguration != actualConfiguration)
                     {
+                        // TODO best solution: already assigned conf is better, for reusing components
                         rel(*this, assignments_int[i], IRT_NQ, j);
                         break;
                     }
                 }
+                
+                // For all incoming ports of the query component
+                std::map<IncomingPort, Component> map = query.getComponents()[i].getIncomingConnections();
+                for(std::map<IncomingPort, Component>::const_iterator it = map.begin(); it != map.end(); ++it)
+                {
+                    // If the ith query component gets assigned to the jth pool component
+                    // and they both are connected on the same input port,
+                    // the connection origin must also be assigned equally.
+                    std::map<IncomingPort, Component> poolComponentMap = componentPool.getComponents()[j].getIncomingConnections();
+                    if(poolComponentMap.count(it->first) != 0)
+                    {
+                        // Get number of the origins
+                        int originQueryNum = std::find(query.getComponents().begin(), query.getComponents().end(), it->second) - query.getComponents().begin();
+                        int originPoolNum = std::find(componentPool.getComponents().begin(), componentPool.getComponents().end(), poolComponentMap.at(it->first)) 
+                                            - componentPool.getComponents().begin();
+                        
+                        // Both connected on same port
+                        BoolVar ithAssignedToJth(*this, 0, 1);
+                        rel(*this, assignments_int[i], IRT_EQ, j, ithAssignedToJth);
+                        
+                        BoolVar originsConnectedEqually(*this, 0, 1);
+                        rel(*this, assignments_int[originQueryNum], IRT_EQ, originPoolNum, originsConnectedEqually);
+                        
+                        BoolVar implication(*this, 0, 1);
+                        rel(*this, ithAssignedToJth, BOT_IMP, originsConnectedEqually, 1);
+                    }
+                }
+                
+                //post(home, tt(imp(~(v1 == 2),~(v2 != 1) && ~(v3 != 3)));
+                // http://www.gecode.org/pipermail/users/2008-March/001420.html
             }
         }
         
@@ -118,9 +149,9 @@ public:
 int main(int argc, char* argv[]) {
     using namespace composition_management;
     // General components
-    Component compA (0, 2, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
-    Component compB (1, 1, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
-    Component compC (2, 1, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
+    Component compA (0, "a", 2, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
+    Component compB (1, "b", 1, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
+    Component compC (2, "c", 1, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
     
     // Query components
     Component queryCompA = compA;
@@ -139,11 +170,17 @@ int main(int argc, char* argv[]) {
     
     // Pool components
     Component poolCompA0 = compA;
+    poolCompA0.setName("a0");
     Component poolCompA1 = compA;
+    poolCompA1.setName("a1");
     Component poolCompB0 = compB;
+    poolCompB0.setName("b0");
     Component poolCompB1 = compB;
+    poolCompB1.setName("b1");
     Component poolCompC0 = compC;
+    poolCompC0.setName("c0");
     Component poolCompC1 = compC;
+    poolCompC1.setName("c1");
     // Configure pool components
     poolCompA0.getConfiguration()[0] = 3;
     poolCompA0.getConfiguration()[1] = 3;

@@ -18,6 +18,11 @@ protected:
     int type;
     
     /**
+     * (TODO) Must be unique
+     */
+    std::string name;
+    
+    /**
      * The configuration consists of a variable sized vector of IntVars.
      * TODO there should be support for any data types, not just int.
      * 
@@ -32,15 +37,21 @@ protected:
     std::vector<IncomingPort> inPorts;
     
     /**
-     * All incoming ports.
+     * All outgoing ports.
      */
     std::vector<OutgoingPort> outPorts;
+    
+    std::map<IncomingPort, Component> incomingConnections;
+    
+    
+    std::map<OutgoingPort, Component> outgoingConnections;
 public:
     /**
      * \param configurationSize the number of things to configure
      */
-    Component(int type, int configurationSize, std::vector<IncomingPort> inPorts, std::vector<OutgoingPort> outPorts) 
+    Component(int type, std::string name, int configurationSize, std::vector<IncomingPort> inPorts, std::vector<OutgoingPort> outPorts) 
         : type(type)
+        , name(name)
         , inPorts(inPorts)
         , outPorts(outPorts)
     {
@@ -50,9 +61,22 @@ public:
         }
     }
     
+    bool operator ==( const Component &comp ) const
+    {
+        return type == comp.type && name == comp.name;
+    }
+    
     int getType() { return type; }
     
+    const std::string& getName() { return name; }
+    
+    void setName(const std::string& name) { this->name = name; }
+    
     std::vector<int>& getConfiguration() { return configuration; }
+    
+    std::map<IncomingPort, Component>& getIncomingConnections() { return incomingConnections; }
+    
+    std::map<OutgoingPort, Component>& getOutgoingConnections() { return outgoingConnections; }
 };
 
 } // end namespace composition_management

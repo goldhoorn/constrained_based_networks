@@ -18,18 +18,13 @@ protected:
      * These must be ordered in ascending type order.
      */
     std::vector<Component> components;
-  
-    std::map<IncomingPort, OutgoingPort> connections;
 public:    
     Query(std::vector<Component> components, std::map<IncomingPort, OutgoingPort> connections)
         : components(components)
-        , connections(connections)
     {
     }
     
     std::vector<Component>& getComponents() { return components; }
-    
-    std::map<IncomingPort, OutgoingPort>& getConnections() { return connections; }
 };
 
 } // end namespace composition_management

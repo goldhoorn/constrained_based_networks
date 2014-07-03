@@ -12,6 +12,16 @@ namespace composition_management {
             : datatype(datatype)
             , name(name)
         { }
+        
+        // to use it as map key
+        bool operator <( const IncomingPort &port ) const
+        {
+            if(name != port.name)
+            {
+                return name < port.name;
+            }
+            return datatype < port.datatype;
+        }
     };
     
     struct OutgoingPort
@@ -23,6 +33,16 @@ namespace composition_management {
             : datatype(datatype)
             , name(name)
         { }
+        
+        // to use it as map key
+        bool operator <( const OutgoingPort &port ) const
+        {
+            if(name != port.name)
+            {
+                return name < port.name;
+            }
+            return datatype < port.datatype;
+        }
     };
     
 } // end namespace composition_management
