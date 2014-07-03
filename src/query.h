@@ -20,24 +20,16 @@ protected:
     std::vector<Component> components;
   
     std::map<IncomingPort, OutgoingPort> connections;
-public:
-    Query() {}
-    
+public:    
     Query(std::vector<Component> components, std::map<IncomingPort, OutgoingPort> connections)
         : components(components)
         , connections(connections)
     {
     }
     
-    Query(Query& orig)
-    {
-        components = orig.components;
-        connections = orig.connections;
-    }
+    std::vector<Component>& getComponents() { return components; }
     
-    std::vector<Component> getComponents() { return components; }
-    
-    std::map<IncomingPort, OutgoingPort> getConnections() { return connections; }
+    std::map<IncomingPort, OutgoingPort>& getConnections() { return connections; }
 };
 
 } // end namespace composition_management
