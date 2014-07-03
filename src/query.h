@@ -22,6 +22,10 @@ public:
         , connections(connections)
     {
     }
+    
+    std::vector<Component> getComponents() { return components; }
+    
+    std::map<IncomingPort, OutgoingPort> getConnections() { return connections; }
 };
 
 } // end namespace composition_management
