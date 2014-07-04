@@ -12,34 +12,32 @@ using namespace Gecode;
 
 namespace composition_management {
 
-// TODO consider VarArray instead of vector
+/**
+ * A solution inherits GECODE's space. the initial situation as well as any real solutions are type Solution.
+ */
 class Solution : public Space {
 protected:
+    /**
+     * The query to compute solutions for.
+     */
     Query query;
+    /**
+     * The actual situation, components from the pool.
+     */
     Query componentPool;
-    
-    
-    // array of assignments (as rows x cols)
-    //BoolVarArray assignments; 
+    /**
+     * Assignments of query components to pool components. This is what has to be solved.
+     */
     IntVarArray assignments_int;
 public:
+    /**
+     * Construct a solution with an initial situation to search.
+     */
     Solution(Query query, Query componentPool) 
         : query(query)
         , componentPool(componentPool)
-        //, assignments(*this, componentPool.getComponents().size() * query.getComponents().size())
         , assignments_int(*this, query.getComponents().size(), 0, componentPool.getComponents().size())
-    {
-        // matrix version of assigenments
-        //Matrix<BoolVarArray> assignments_matrix(assignments, componentPool.getComponents().size(), query.getComponents().size());
-        
-        // Each row must have exactly one one. 
-        //for(int r = 0; r < assignments_matrix.height(); r++) {
-        //    linear(*this, assignments_matrix.row(r), IRT_EQ, 1);
-        //}
-        // This one must be at a spot where the col and row type are equal
-        //rel(*this, north, IRT_EQ, east);
-        //element(*this, assignments_matrix, );
-        
+    {        
         // The first indices of a type, in the componentPool
         std::vector<int> typeIndicesPool;
         for(int i = 0; i < componentPool.getComponents().size(); i++) {
@@ -64,6 +62,9 @@ public:
             }
             int upperLimit = type + 1 < typeIndicesPool.size() ? typeIndicesPool[type + 1] - 1 : componentPool.getComponents().size() - 1;
             // Constraint domain such that the types equal
+            // The initial domain of each IntVar is the number of pool components. This constraints it so be just
+            // the pool components of the same type. This is simplified with lower ans upper bound as components
+            // are ordered in ascending type.
             dom(*this, assignments_int[i], typeIndicesPool[type], upperLimit);
         }
         
@@ -86,6 +87,8 @@ public:
                 if(!requiredConfiguration.empty()&& !actualConfiguration.empty() && requiredConfiguration != actualConfiguration)
                 {
                     // TODO best solution: already assigned conf is better, for reusing components
+                    // This means that the ith query component cannot be assigned the jth pool component,
+                    // since the configurations are incompatible.
                     rel(*this, assignments_int[i], IRT_NQ, j);
                 }
                 
@@ -114,25 +117,26 @@ public:
                         // Both connected on same port
                         BoolVar ithAssignedToJth(*this, 0, 1);
                         rel(*this, assignments_int[i], IRT_EQ, j, ithAssignedToJth);
-                        
+                        // Origins connected on same port
                         BoolVar originsConnectedEqually(*this, 0, 1);
                         rel(*this, assignments_int[originQueryNum], IRT_EQ, originPoolNum, originsConnectedEqually);
-                        
+                        // Implication as a constraint e.g. A=a0 => B=b0
                         BoolVar implication(*this, 0, 1);
                         rel(*this, ithAssignedToJth, BOT_IMP, originsConnectedEqually, 1);
                     }
                 }
-                
-                //post(home, tt(imp(~(v1 == 2),~(v2 != 1) && ~(v3 != 3)));
-                // http://www.gecode.org/pipermail/users/2008-March/001420.html
             }
         }
         
-        // branching
+        // branching TODO test and improve
+        // this tells the search engine to branch first on the variable with the smallest domain,
+        // that is the variables where there are less components of that type in the pool
+        // The engine will then try the possible values (sssignments) in ascending order.
         branch(*this, assignments_int, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
     }
     
-    // search support
+    // search support. There must be a copy constructor like this for the search engine.
+    // Everything must be copied into the new Space
     Solution(bool share, Solution& s) 
         : Space(share, s)
         , query(s.query)
@@ -140,6 +144,7 @@ public:
     {
         assignments_int.update(*this, share, s.assignments_int);
     }
+    // This method is called be the search engine
     virtual Space* copy(bool share) {
         return new Solution(share,*this);
     }
@@ -147,6 +152,7 @@ public:
     void print(void) const {
         std::cout << "Solution: " << assignments_int << std::endl;
     }
+    // print support for given outputstream
     void print(std::ostream& os) const {
         os << assignments_int << std::endl;
     }
@@ -154,7 +160,7 @@ public:
 
 } // end namespace composition_management
 
-// main function
+// main test function
 int main(int argc, char* argv[]) {
     using namespace composition_management;
     // General components
@@ -234,7 +240,8 @@ int main(int argc, char* argv[]) {
     delete s;
     // search and print all solutions
     while (Solution* s = e.next()) {
-        s->print(); delete s;
+        s->print();
+        delete s;
     } 
     return 0;
 }

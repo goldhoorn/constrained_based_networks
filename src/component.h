@@ -13,6 +13,11 @@ using namespace Gecode;
 namespace composition_management {
 
 // TODO refs and stuff. creation is very tedious ATM
+    
+/**
+ * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,
+ * on which it can be connected to other components.
+ */
 class Component {
 protected:
     /**
@@ -43,16 +48,20 @@ protected:
     std::vector<OutgoingPort> outPorts;
     
     // TODO use Pointers here?
+    /**
+     * The incoming connections.
+     */
     std::map<IncomingPort, Component> incomingConnections;
     
-    
+    /**
+     * The outgoing connections.
+     */
     std::map<OutgoingPort, Component> outgoingConnections;
 public:
     // To use as map value type
     Component() {}
     
     /**
-     * \param configurationSize the number of things to configure
      */
     Component(int type, std::string name,std::vector<IncomingPort> inPorts, std::vector<OutgoingPort> outPorts) 
         : type(type)
@@ -62,6 +71,9 @@ public:
     {
     }
     
+    /**
+     * Components are equal if their name and type equals.
+     */
     bool operator ==( const Component &comp ) const
     {
         return type == comp.type && name == comp.name;

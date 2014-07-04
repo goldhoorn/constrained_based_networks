@@ -5,6 +5,9 @@
 
 namespace composition_management {
     
+    /**
+     * An incoming port defined by datatype and name.
+     */
     struct IncomingPort
     {
         std::string datatype;
@@ -33,6 +36,9 @@ namespace composition_management {
         }
     };
     
+    /**
+     * An outgoing port defined by datatype and name.
+     */
     struct OutgoingPort
     {
         std::string datatype;
