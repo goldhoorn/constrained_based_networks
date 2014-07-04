@@ -70,9 +70,13 @@ public:
         // For all queried components
         for(int i = 0; i < assignments_int.size(); i++)
         {
+            std::cout << "Constraints for query " << query.getComponents()[i].toString() << std::endl;
+            
             // For all possible pool components they can be assigned
             for(int j = assignments_int[i].min(); j <= assignments_int[i].max(); j++)
             {
+                std::cout << " Against pool " << componentPool.getComponents()[j].toString() << std::endl;
+                
                 // For all configurations
                 for(int k = 0; k < query.getComponents()[i].getConfiguration().size(); k++)
                 {
@@ -91,6 +95,9 @@ public:
                 std::map<IncomingPort, Component> map = query.getComponents()[i].getIncomingConnections();
                 for(std::map<IncomingPort, Component>::const_iterator it = map.begin(); it != map.end(); ++it)
                 {
+                    std::cout << "Checking connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
+                                  << " on in port " << it->first.name;
+                    
                     // If the ith query component gets assigned to the jth pool component
                     // and they both are connected on the same input port,
                     // the connection origin must also be assigned equally.
@@ -101,6 +108,9 @@ public:
                         int originQueryNum = std::find(query.getComponents().begin(), query.getComponents().end(), it->second) - query.getComponents().begin();
                         int originPoolNum = std::find(componentPool.getComponents().begin(), componentPool.getComponents().end(), poolComponentMap.at(it->first)) 
                                             - componentPool.getComponents().begin();
+                                            
+                        std::cout << "Adding connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
+                                  << " => " << it->second.getName() << "=" << poolComponentMap.at(it->first).getName() ;
                         
                         // Both connected on same port
                         BoolVar ithAssignedToJth(*this, 0, 1);

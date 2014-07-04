@@ -4,6 +4,8 @@
 #include <gecode/int.hh>
 #include<vector>
 
+#include <sstream>
+
 #include "port.h"
 
 using namespace Gecode;
@@ -70,9 +72,47 @@ public:
         return type == comp.type && name == comp.name;
     }
     
-    int getType() { return type; }
+    std::string toString() const
+    {
+        std::ostringstream ss;
+        ss << "Component " << name << " of type " << type << ".\n";
+        ss << "  Configuration: [";
+        for(int i = 0; i < configuration.size(); i++)
+        {
+            ss << configuration[i] << " ";
+        }
+        ss << "]\n";
+        ss << "  Inports: [";
+        for(int i = 0; i < inPorts.size(); i++)
+        {
+            ss << inPorts[i].toString() << " ";
+        }
+        ss << "]\n";
+        ss << "  Outports: [";
+        for(int i = 0; i < outPorts.size(); i++)
+        {
+            ss << outPorts[i].toString() << " ";
+        }
+        ss << "]\n";
+        ss << "  Inconnections: [";
+        for(std::map<IncomingPort, Component>::const_iterator it = incomingConnections.begin(); it != incomingConnections.end(); ++it)
+        {
+            ss << it->first.toString() << "=>" << it->second.getName() << " ";
+        }
+        ss << "]\n";
+        ss << "  Outconnections: [";
+        for(std::map<OutgoingPort, Component>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
+        {
+            ss << it->first.toString() << "=>" << it->second.getName() << " ";
+        }
+        ss << "]\n";
+         
+        return ss.str();
+    }
     
-    const std::string& getName() { return name; }
+    int getType() const { return type; }
+    
+    const std::string& getName() const { return name; }
     
     void setName(const std::string& name) { this->name = name; }
     

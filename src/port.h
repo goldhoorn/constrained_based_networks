@@ -1,6 +1,8 @@
 #ifndef GECODE_COMPOSITION_MANAGEMENT_PORT_H
 #define GECODE_COMPOSITION_MANAGEMENT_PORT_H
 
+#include <sstream>
+
 namespace composition_management {
     
     struct IncomingPort
@@ -22,6 +24,13 @@ namespace composition_management {
             }
             return datatype < port.datatype;
         }
+        
+        std::string toString() const
+        {
+            std::ostringstream ss;
+            ss << ">>[" << name << ", " << datatype << "]";
+            return ss.str();
+        }
     };
     
     struct OutgoingPort
@@ -42,6 +51,13 @@ namespace composition_management {
                 return name < port.name;
             }
             return datatype < port.datatype;
+        }
+        
+        std::string toString() const
+        {
+            std::ostringstream ss;
+            ss << "<<[" << name << ", " << datatype << "]";
+            return ss.str();
         }
     };
     
