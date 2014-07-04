@@ -56,7 +56,7 @@ namespace composition_management {
         std::string toString() const
         {
             std::ostringstream ss;
-            ss << "<<[" << name << ", " << datatype << "]";
+            ss << "[" << name << ", " << datatype << "]>>";
             return ss.str();
         }
     };

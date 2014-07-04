@@ -11,7 +11,8 @@
 using namespace Gecode;
 
 namespace composition_management {
-   
+
+// TODO refs and stuff. creation is very tedious ATM
 class Component {
 protected:
     /**
@@ -25,13 +26,11 @@ protected:
     std::string name;
     
     /**
-     * The configuration consists of a variable sized vector of IntVars.
-     * TODO there should be support for any data types, not just int.
+     * The configuration consists of a variable sized vector of strings, naming one configuration profile.
      * 
-     * 0 means not configured / no constraint on configuration. A number means it has to that
-     * configuration / is that configuration.
+     * empty means not configured / no constraint on configuration. 
      */
-    std::vector<int> configuration;
+    std::vector<std::string> configuration;
     
     /**
      * All incoming ports.
@@ -55,16 +54,12 @@ public:
     /**
      * \param configurationSize the number of things to configure
      */
-    Component(int type, std::string name, int configurationSize, std::vector<IncomingPort> inPorts, std::vector<OutgoingPort> outPorts) 
+    Component(int type, std::string name,std::vector<IncomingPort> inPorts, std::vector<OutgoingPort> outPorts) 
         : type(type)
         , name(name)
         , inPorts(inPorts)
         , outPorts(outPorts)
     {
-        for(int i = 0; i < configurationSize; i++)
-        {
-            configuration.push_back(0);
-        }
     }
     
     bool operator ==( const Component &comp ) const
@@ -97,13 +92,13 @@ public:
         ss << "  Inconnections: [";
         for(std::map<IncomingPort, Component>::const_iterator it = incomingConnections.begin(); it != incomingConnections.end(); ++it)
         {
-            ss << it->first.toString() << "=>" << it->second.getName() << " ";
+            ss << it->second.getName() << it->first.toString() << " ";
         }
         ss << "]\n";
         ss << "  Outconnections: [";
         for(std::map<OutgoingPort, Component>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
         {
-            ss << it->first.toString() << "=>" << it->second.getName() << " ";
+            ss  << it->first.toString() << it->second.getName() << " ";
         }
         ss << "]\n";
          
@@ -116,7 +111,7 @@ public:
     
     void setName(const std::string& name) { this->name = name; }
     
-    std::vector<int>& getConfiguration() { return configuration; }
+    std::vector<std::string>& getConfiguration() { return configuration; }
     
     std::vector<IncomingPort>& getInPorts() { return inPorts; }
     
