@@ -152,6 +152,15 @@ int main(int argc, char* argv[]) {
     Component compA (0, "a", 2, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
     Component compB (1, "b", 1, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
     Component compC (2, "c", 1, std::vector<IncomingPort>(), std::vector<OutgoingPort>());
+    // And their ports
+    compA.getOutPorts().push_back(OutgoingPort("std::string","a_out_1"));
+    compA.getOutPorts().push_back(OutgoingPort("int","a_out_2"));
+    compA.getInPorts().push_back(IncomingPort("std::string","a_in_1"));
+    compB.getInPorts().push_back(IncomingPort("std::string","b_in_1"));
+    compB.getInPorts().push_back(IncomingPort("float","b_in_2"));
+    compC.getOutPorts().push_back(OutgoingPort("std::string","c_out_1"));
+    compC.getOutPorts().push_back(OutgoingPort("float","c_out_2"));
+    compC.getInPorts().push_back(IncomingPort("int","c_in_1"));
     
     // Query components
     Component queryCompA = compA;
@@ -167,6 +176,13 @@ int main(int argc, char* argv[]) {
     queryComps.push_back(queryCompA);
     queryComps.push_back(queryCompB);
     queryComps.push_back(queryCompC);
+    // Construct query
+    Query query (queryComps);
+    // Configure connections
+    query.addConnection(queryCompA, queryCompA.getOutPorts()[0], queryCompB, queryCompB.getInPorts()[0]);
+    query.addConnection(queryCompA, queryCompA.getOutPorts()[1], queryCompC, queryCompC.getInPorts()[0]);
+    query.addConnection(queryCompC, queryCompC.getOutPorts()[0], queryCompA, queryCompA.getInPorts()[0]);
+    query.addConnection(queryCompC, queryCompC.getOutPorts()[1], queryCompB, queryCompB.getInPorts()[1]);
     
     // Pool components
     Component poolCompA0 = compA;
@@ -182,10 +198,10 @@ int main(int argc, char* argv[]) {
     Component poolCompC1 = compC;
     poolCompC1.setName("c1");
     // Configure pool components
-    poolCompA0.getConfiguration()[0] = 3;
-    poolCompA0.getConfiguration()[1] = 3;
-    poolCompB0.getConfiguration()[0] = 2;
-    poolCompC1.getConfiguration()[0] = 2;
+    //poolCompA0.getConfiguration()[0] = 3;
+    //poolCompA0.getConfiguration()[1] = 3;
+    //poolCompB0.getConfiguration()[0] = 2;
+    //poolCompC1.getConfiguration()[0] = 2;
     // Push into vector
     std::vector<Component> poolComps;
     poolComps.push_back(poolCompA0);
@@ -194,9 +210,15 @@ int main(int argc, char* argv[]) {
     poolComps.push_back(poolCompB1);
     poolComps.push_back(poolCompC0);
     poolComps.push_back(poolCompC1);
-    
-    Query query (queryComps, std::map<IncomingPort, OutgoingPort>());
-    Query pool (poolComps, std::map<IncomingPort, OutgoingPort>());
+    // Construct pool
+    Query pool (poolComps);
+    // Configure connections
+    pool.addConnection(poolCompA0, poolCompA0.getOutPorts()[0], poolCompB0, poolCompB0.getInPorts()[0]);
+    pool.addConnection(poolCompA0, poolCompA0.getOutPorts()[1], poolCompC1, poolCompC1.getInPorts()[0]);
+    pool.addConnection(poolCompC0, poolCompC0.getOutPorts()[0], poolCompA0, poolCompA0.getInPorts()[0]);
+    pool.addConnection(poolCompC1, poolCompC1.getOutPorts()[1], poolCompB0, poolCompB0.getInPorts()[1]);
+    // Optional:
+    pool.addConnection(poolCompA0, poolCompA0.getOutPorts()[0], poolCompB1, poolCompB1.getInPorts()[0]);
     
     Solution* s = new Solution(query, pool);
     DFS<Solution> e(s);

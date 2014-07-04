@@ -8,7 +8,7 @@ namespace composition_management {
         std::string datatype;
         std::string name;
         
-        IncomingPort(std::string datatype, std::string name, bool incoming)
+        IncomingPort(std::string datatype, std::string name)
             : datatype(datatype)
             , name(name)
         { }
@@ -29,7 +29,7 @@ namespace composition_management {
         std::string datatype;
         std::string name;
         
-        OutgoingPort(std::string datatype, std::string name, bool incoming)
+        OutgoingPort(std::string datatype, std::string name)
             : datatype(datatype)
             , name(name)
         { }

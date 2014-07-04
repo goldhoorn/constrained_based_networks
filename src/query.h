@@ -19,12 +19,20 @@ protected:
      */
     std::vector<Component> components;
 public:    
-    Query(std::vector<Component> components, std::map<IncomingPort, OutgoingPort> connections)
+    Query(std::vector<Component> components)
         : components(components)
     {
     }
     
     std::vector<Component>& getComponents() { return components; }
+    
+    void addConnection(Component& outComp,OutgoingPort& out, Component& inComp, IncomingPort& in)
+    {
+        // TODO exceptions
+        assert(out.datatype == in.datatype);
+        outComp.getOutgoingConnections()[out] = inComp;
+        inComp.getIncomingConnections()[in] = outComp;
+    }
 };
 
 } // end namespace composition_management

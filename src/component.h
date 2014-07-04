@@ -41,11 +41,15 @@ protected:
      */
     std::vector<OutgoingPort> outPorts;
     
+    // TODO use Pointers here?
     std::map<IncomingPort, Component> incomingConnections;
     
     
     std::map<OutgoingPort, Component> outgoingConnections;
 public:
+    // To use as map value type
+    Component() {}
+    
     /**
      * \param configurationSize the number of things to configure
      */
@@ -73,6 +77,10 @@ public:
     void setName(const std::string& name) { this->name = name; }
     
     std::vector<int>& getConfiguration() { return configuration; }
+    
+    std::vector<IncomingPort>& getInPorts() { return inPorts; }
+    
+    std::vector<OutgoingPort>& getOutPorts() { return outPorts; }
     
     std::map<IncomingPort, Component>& getIncomingConnections() { return incomingConnections; }
     
