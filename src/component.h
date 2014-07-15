@@ -12,7 +12,7 @@ using namespace Gecode;
 
 namespace composition_management {
 
-// TODO refs and stuff. creation is very tedious ATM
+// TODO split component and query into cpp and h
     
 /**
  * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,
@@ -21,12 +21,12 @@ namespace composition_management {
 class Component {
 protected:
     /**
-     * TODO use enum instead
+     * The type as an int.
      */
     int type;
     
     /**
-     * (TODO) Must be unique
+     * Must be unique. This must be ensured by the user of the library!
      */
     std::string name;
     
@@ -58,27 +58,31 @@ protected:
      */
     std::map<OutgoingPort, Component> outgoingConnections;
 public:
-    // To use as map value type
+    /**
+     *Default constructor to be able to use components as map value type.
+     */
     Component() {}
     
     /**
+     * Construct component with type and name.
      */
-    Component(int type, std::string name,std::vector<IncomingPort> inPorts, std::vector<OutgoingPort> outPorts) 
+    Component(int type, std::string name) 
         : type(type)
         , name(name)
-        , inPorts(inPorts)
-        , outPorts(outPorts)
     {
     }
     
     /**
-     * Components are equal if their name and type equals.
+     * Components are equal if their name and type equal.
      */
     bool operator ==( const Component &comp ) const
     {
         return type == comp.type && name == comp.name;
     }
     
+    /**
+     * String representation of a component
+     */
     std::string toString() const
     {
         std::ostringstream ss;
@@ -117,21 +121,85 @@ public:
         return ss.str();
     }
     
+    /**
+     * Get the type
+     */
     int getType() const { return type; }
     
+    /**
+     * Get the name
+     */
     const std::string& getName() const { return name; }
     
+    /**
+     * Set the name
+     */
     void setName(const std::string& name) { this->name = name; }
     
-    std::vector<std::string>& getConfiguration() { return configuration; }
+    /**
+     * Get the configuration
+     */
+    const std::vector<std::string>& getConfiguration() const { return configuration; }
     
-    std::vector<IncomingPort>& getInPorts() { return inPorts; }
+    /**
+     * Push back a configuration value
+     */
+    void pushBackConfiguration(const std::string& configurationStr)
+    {
+        configuration.push_back(configurationStr);
+    }
     
-    std::vector<OutgoingPort>& getOutPorts() { return outPorts; }
+    /**
+     * Get the incoming ports
+     */
+    const std::vector<IncomingPort>& getInPorts() const { return inPorts; }
     
-    std::map<IncomingPort, Component>& getIncomingConnections() { return incomingConnections; }
+    /**
+     * Push back an incoming port
+     */
+    void pushBackInPort(const IncomingPort& inPort)
+    {
+        inPorts.push_back(inPort);
+    }
     
-    std::map<OutgoingPort, Component>& getOutgoingConnections() { return outgoingConnections; }
+    /**
+     * Get the outgoing ports
+     */
+    const std::vector<OutgoingPort>& getOutPorts() const { return outPorts; }
+    
+    /**
+     * Push back an outgoing port
+     */
+    void pushBackOutPort(const OutgoingPort& outPort)
+    {
+        outPorts.push_back(outPort);
+    }
+    
+    /**
+     * Get the incoming connections
+     */
+    const std::map<IncomingPort, Component>& getIncomingConnections() const { return incomingConnections; }
+    
+    /**
+     * Put an incoming connection into the map
+     */
+    void putIncomingConnection(const IncomingPort& inPort, const Component& component)
+    {
+        incomingConnections[inPort] = component;
+    }
+    
+    /**
+     * Get the outgoing connections
+     */
+    const std::map<OutgoingPort, Component>& getOutgoingConnections() const { return outgoingConnections; }
+    
+    /**
+     * Put an outgoing connection into the map
+     */
+    void putOutgoingConnection(const OutgoingPort& outPort, const Component& component)
+    {
+        outgoingConnections[outPort] = component;
+    }
 };
 
 } // end namespace composition_management

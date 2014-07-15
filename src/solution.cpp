@@ -81,12 +81,13 @@ public:
                 // TODO extern method testing if two components are compitable regarding their configurations
                 // as vector<string>
                 // At the moment, the conf vector just has to be equal
-                std::vector<std::string>& requiredConfiguration = query.getComponents()[i].getConfiguration();
-                std::vector<std::string>& actualConfiguration = componentPool.getComponents()[j].getConfiguration();
+                const std::vector<std::string>& requiredConfiguration = query.getComponents().at(i).getConfiguration();
+                const std::vector<std::string>& actualConfiguration = componentPool.getComponents().at(j).getConfiguration();
                 // If the configurations are not compatible, post != constraint on this assignment
                 if(!requiredConfiguration.empty()&& !actualConfiguration.empty() && requiredConfiguration != actualConfiguration)
                 {
                     // TODO best solution: already assigned conf is better, for reusing components
+                    
                     // This means that the ith query component cannot be assigned the jth pool component,
                     // since the configurations are incompatible.
                     rel(*this, assignments_int[i], IRT_NQ, j);
@@ -94,7 +95,7 @@ public:
                 
                 
                 // For all incoming ports of the query component
-                std::map<IncomingPort, Component> map = query.getComponents()[i].getIncomingConnections();
+                const std::map<IncomingPort, Component> map = query.getComponents().at(i).getIncomingConnections();
                 for(std::map<IncomingPort, Component>::const_iterator it = map.begin(); it != map.end(); ++it)
                 {
                     std::cout << "Checking connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
@@ -103,7 +104,7 @@ public:
                     // If the ith query component gets assigned to the jth pool component
                     // and they both are connected on the same input port,
                     // the connection origin must also be assigned equally.
-                    std::map<IncomingPort, Component> poolComponentMap = componentPool.getComponents()[j].getIncomingConnections();
+                    std::map<IncomingPort, Component> poolComponentMap = componentPool.getComponents().at(j).getIncomingConnections();
                     if(poolComponentMap.count(it->first) != 0)
                     {
                         // Get number of the origins
@@ -129,9 +130,10 @@ public:
         }
         
         // branching TODO test and improve
+        
         // this tells the search engine to branch first on the variable with the smallest domain,
         // that is the variables where there are less components of that type in the pool
-        // The engine will then try the possible values (sssignments) in ascending order.
+        // The engine will then try the possible values (assignments) in ascending order.
         branch(*this, assignments_int, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
     }
     
@@ -164,40 +166,39 @@ public:
 int main(int argc, char* argv[]) {
     using namespace composition_management;
     // General components
-    Component compA (0, "a", std::vector<IncomingPort>(), std::vector<OutgoingPort>());
-    Component compB (1, "b", std::vector<IncomingPort>(), std::vector<OutgoingPort>());
-    Component compC (2, "c", std::vector<IncomingPort>(), std::vector<OutgoingPort>());
+    Component compA (0, "a");
+    Component compB (1, "b");
+    Component compC (2, "c");
     // And their ports
-    compA.getOutPorts().push_back(OutgoingPort("std::string","a_out_1"));
-    compA.getOutPorts().push_back(OutgoingPort("int","a_out_2"));
-    compA.getInPorts().push_back(IncomingPort("std::string","a_in_1"));
-    compB.getInPorts().push_back(IncomingPort("std::string","b_in_1"));
-    compB.getInPorts().push_back(IncomingPort("float","b_in_2"));
-    compC.getOutPorts().push_back(OutgoingPort("std::string","c_out_1"));
-    compC.getOutPorts().push_back(OutgoingPort("float","c_out_2"));
-    compC.getInPorts().push_back(IncomingPort("int","c_in_1"));
+    compA.pushBackOutPort(OutgoingPort("std::string","a_out_1"));
+    compA.pushBackOutPort(OutgoingPort("int","a_out_2"));
+    compA.pushBackInPort(IncomingPort("std::string","a_in_1"));
+    compB.pushBackInPort(IncomingPort("std::string","b_in_1"));
+    compB.pushBackInPort(IncomingPort("float","b_in_2"));
+    compC.pushBackOutPort(OutgoingPort("std::string","c_out_1"));
+    compC.pushBackOutPort(OutgoingPort("float","c_out_2"));
+    compC.pushBackInPort(IncomingPort("int","c_in_1"));
     
     // Query components
     Component queryCompA = compA;
     Component queryCompB = compB;
     Component queryCompC = compC;
     // Configure query components
-    queryCompA.getConfiguration().push_back("3");
-    queryCompA.getConfiguration().push_back("1");
+    queryCompA.pushBackConfiguration("3");
+    queryCompA.pushBackConfiguration("1");
     // No constraint on B's config
-    queryCompC.getConfiguration().push_back("2");
-    // Push into vector
-    std::vector<Component> queryComps;
-    queryComps.push_back(queryCompA);
-    queryComps.push_back(queryCompB);
-    queryComps.push_back(queryCompC);
+    queryCompC.pushBackConfiguration("2");
     // Construct query
-    Query query (queryComps);
+    Query query;
+    query.addComponent(queryCompA);
+    query.addComponent(queryCompB);
+    query.addComponent(queryCompC);
+    
     // Configure connections
-    query.addConnection(query.getComponents()[0], query.getComponents()[0].getOutPorts()[0], query.getComponents()[1], query.getComponents()[1].getInPorts()[0]);
-    query.addConnection(query.getComponents()[0], queryCompA.getOutPorts()[1], query.getComponents()[2], query.getComponents()[2].getInPorts()[0]);
-    query.addConnection(query.getComponents()[2], query.getComponents()[2].getOutPorts()[0], query.getComponents()[0], query.getComponents()[0].getInPorts()[0]);
-    query.addConnection(query.getComponents()[2], query.getComponents()[2].getOutPorts()[1], query.getComponents()[1], query.getComponents()[1].getInPorts()[1]);
+    query.addConnection(0, query.getComponents().at(0).getOutPorts().at(0), 1, query.getComponents().at(1).getInPorts().at(0));
+    query.addConnection(0, query.getComponents().at(0).getOutPorts().at(1), 2, query.getComponents().at(2).getInPorts().at(0));
+    query.addConnection(2, query.getComponents().at(2).getOutPorts().at(0), 0, query.getComponents().at(0).getInPorts().at(0));
+    query.addConnection(2, query.getComponents().at(2).getOutPorts().at(1), 1, query.getComponents().at(1).getInPorts().at(1));
     
     // Pool components
     Component poolCompA0 = compA;
@@ -213,27 +214,30 @@ int main(int argc, char* argv[]) {
     Component poolCompC1 = compC;
     poolCompC1.setName("c1");
     // Configure pool components
-    poolCompA0.getConfiguration().push_back("3");
-    poolCompA0.getConfiguration().push_back("3");
-    poolCompB0.getConfiguration().push_back("2");
-    poolCompC1.getConfiguration().push_back("2");
-    // Push into vector
-    std::vector<Component> poolComps;
-    poolComps.push_back(poolCompA0);
-    poolComps.push_back(poolCompA1);
-    poolComps.push_back(poolCompB0);
-    poolComps.push_back(poolCompB1);
-    poolComps.push_back(poolCompC0);
-    poolComps.push_back(poolCompC1);
+    poolCompA0.pushBackConfiguration("3");
+    poolCompA0.pushBackConfiguration("3");
+    poolCompB0.pushBackConfiguration("2");
+    poolCompC1.pushBackConfiguration("2");
     // Construct pool
-    Query pool (poolComps);
+    Query pool;
+    pool.addComponent(poolCompA0);
+    pool.addComponent(poolCompA1);
+    pool.addComponent(poolCompB0);
+    pool.addComponent(poolCompB1);
+    pool.addComponent(poolCompC0);
+    pool.addComponent(poolCompC1);
+    
     // Configure connections
-    //pool.addConnection(pool.getComponents()[0], pool.getComponents()[0].getOutPorts()[0], pool.getComponents()[2], pool.getComponents()[2].getInPorts()[0]);
-    //pool.addConnection(pool.getComponents()[0], pool.getComponents()[0].getOutPorts()[1], pool.getComponents()[5], pool.getComponents()[5].getInPorts()[0]);
-    //pool.addConnection(pool.getComponents()[4], pool.getComponents()[4].getOutPorts()[0], pool.getComponents()[0], pool.getComponents()[0].getInPorts()[0]);
-    //pool.addConnection(pool.getComponents()[5], pool.getComponents()[5].getOutPorts()[1], pool.getComponents()[2], pool.getComponents()[2].getInPorts()[1]);
+    pool.addConnection(0, pool.getComponents().at(0).getOutPorts().at(0), 2, pool.getComponents().at(2).getInPorts().at(0));
+    pool.addConnection(0, pool.getComponents().at(0).getOutPorts().at(1), 5, pool.getComponents().at(5).getInPorts().at(0));
+    pool.addConnection(4, pool.getComponents().at(4).getOutPorts().at(0), 0, pool.getComponents().at(0).getInPorts().at(0));
+    pool.addConnection(5, pool.getComponents().at(5).getOutPorts().at(1), 2, pool.getComponents().at(2).getInPorts().at(1));
     // Optional:
-    //pool.addConnection(pool.getComponents()[0], pool.getComponents()[0].getOutPorts()[0], pool.getComponents()[3], pool.getComponents()[3].getInPorts()[0]);
+    pool.addConnection(0, pool.getComponents().at(0).getOutPorts().at(0), 3, pool.getComponents().at(3).getInPorts().at(0));
+    
+    // Print pool and query
+    std::cout << "Pool: " << pool.toString();
+    std::cout << "Query: " << query.toString();
     
     Solution* s = new Solution(query, pool);
     DFS<Solution> e(s);
