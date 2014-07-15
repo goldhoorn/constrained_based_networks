@@ -47,16 +47,15 @@ protected:
      */
     std::vector<OutgoingPort> outPorts;
     
-    // TODO use Pointers here?
     /**
      * The incoming connections.
      */
-    std::map<IncomingPort, Component> incomingConnections;
+    std::map<IncomingPort, const Component*> incomingConnections;
     
     /**
      * The outgoing connections.
      */
-    std::map<OutgoingPort, Component> outgoingConnections;
+    std::map<OutgoingPort, const Component*> outgoingConnections;
 public:
     /**
      *Default constructor to be able to use components as map value type.
@@ -106,15 +105,15 @@ public:
         }
         ss << "]\n";
         ss << "  Inconnections: [";
-        for(std::map<IncomingPort, Component>::const_iterator it = incomingConnections.begin(); it != incomingConnections.end(); ++it)
+        for(std::map<IncomingPort, const Component*>::const_iterator it = incomingConnections.begin(); it != incomingConnections.end(); ++it)
         {
-            ss << it->second.getName() << it->first.toString() << " ";
+            ss << it->second->getName() << it->first.toString() << " ";
         }
         ss << "]\n";
         ss << "  Outconnections: [";
-        for(std::map<OutgoingPort, Component>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
+        for(std::map<OutgoingPort, const Component*>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
         {
-            ss  << it->first.toString() << it->second.getName() << " ";
+            ss  << it->first.toString() << it->second->getName() << " ";
         }
         ss << "]\n";
          
@@ -178,12 +177,12 @@ public:
     /**
      * Get the incoming connections
      */
-    const std::map<IncomingPort, Component>& getIncomingConnections() const { return incomingConnections; }
+    const std::map<IncomingPort, const Component*>& getIncomingConnections() const { return incomingConnections; }
     
     /**
      * Put an incoming connection into the map
      */
-    void putIncomingConnection(const IncomingPort& inPort, const Component& component)
+    void putIncomingConnection(const IncomingPort& inPort, const Component* component)
     {
         incomingConnections[inPort] = component;
     }
@@ -191,12 +190,12 @@ public:
     /**
      * Get the outgoing connections
      */
-    const std::map<OutgoingPort, Component>& getOutgoingConnections() const { return outgoingConnections; }
+    const std::map<OutgoingPort, const Component*>& getOutgoingConnections() const { return outgoingConnections; }
     
     /**
      * Put an outgoing connection into the map
      */
-    void putOutgoingConnection(const OutgoingPort& outPort, const Component& component)
+    void putOutgoingConnection(const OutgoingPort& outPort, const Component* component)
     {
         outgoingConnections[outPort] = component;
     }

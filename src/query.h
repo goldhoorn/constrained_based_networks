@@ -68,17 +68,17 @@ public:
      * 
      * \throws Exception if the datatypes differ.
      */
-    void addConnection(int outCompIndex, const OutgoingPort& out, int inCompIndex, const IncomingPort& in)//Component& outComp, OutgoingPort& out, Component& inComp, IncomingPort& in)
+    void addConnection(int outCompIndex, const OutgoingPort& out, int inCompIndex, const IncomingPort& in)
     {
         if(out.datatype != in.datatype)
         {
             throw std::runtime_error("Query addConnection: datatypes incompatible.");
         }
-        Component inComp = components[inCompIndex];
-        Component outComp = components[outCompIndex];
+        Component& inComp = components[inCompIndex];
+        Component& outComp = components[outCompIndex];
         
-        outComp.putOutgoingConnection(out, inComp);
-        inComp.putIncomingConnection(in, outComp);
+        outComp.putOutgoingConnection(out, &inComp);
+        inComp.putIncomingConnection(in, &outComp);
     }
     
     std::string toString() const

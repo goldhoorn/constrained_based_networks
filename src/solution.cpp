@@ -86,6 +86,7 @@ public:
                 // If the configurations are not compatible, post != constraint on this assignment
                 if(!requiredConfiguration.empty()&& !actualConfiguration.empty() && requiredConfiguration != actualConfiguration)
                 {
+                    std::cout << "Adding configuration constraint. Component " << query.getComponents()[i].getName() << "!=" << componentPool.getComponents()[j].getName() << std::endl;
                     // TODO best solution: already assigned conf is better, for reusing components
                     
                     // This means that the ith query component cannot be assigned the jth pool component,
@@ -95,8 +96,8 @@ public:
                 
                 
                 // For all incoming ports of the query component
-                const std::map<IncomingPort, Component> map = query.getComponents().at(i).getIncomingConnections();
-                for(std::map<IncomingPort, Component>::const_iterator it = map.begin(); it != map.end(); ++it)
+                const std::map<IncomingPort, const Component*> map = query.getComponents().at(i).getIncomingConnections();
+                for(std::map<IncomingPort, const Component*>::const_iterator it = map.begin(); it != map.end(); ++it)
                 {
                     std::cout << "Checking connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
                                   << " on in port " << it->first.name << std::endl;
@@ -104,16 +105,16 @@ public:
                     // If the ith query component gets assigned to the jth pool component
                     // and they both are connected on the same input port,
                     // the connection origin must also be assigned equally.
-                    std::map<IncomingPort, Component> poolComponentMap = componentPool.getComponents().at(j).getIncomingConnections();
+                    std::map<IncomingPort, const Component*> poolComponentMap = componentPool.getComponents().at(j).getIncomingConnections();
                     if(poolComponentMap.count(it->first) != 0)
                     {
                         // Get number of the origins
-                        int originQueryNum = std::find(query.getComponents().begin(), query.getComponents().end(), it->second) - query.getComponents().begin();
-                        int originPoolNum = std::find(componentPool.getComponents().begin(), componentPool.getComponents().end(), poolComponentMap.at(it->first)) 
+                        int originQueryNum = std::find(query.getComponents().begin(), query.getComponents().end(), *(it->second)) - query.getComponents().begin();
+                        int originPoolNum = std::find(componentPool.getComponents().begin(), componentPool.getComponents().end(), *(poolComponentMap.at(it->first))) 
                                             - componentPool.getComponents().begin();
                                             
                         std::cout << "Adding connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
-                                  << " => " << it->second.getName() << "=" << poolComponentMap.at(it->first).getName() << std::endl;
+                                  << " => " << it->second->getName() << "=" << poolComponentMap.at(it->first)->getName() << std::endl;
                         
                         // Both connected on same port
                         BoolVar ithAssignedToJth(*this, 0, 1);
@@ -214,10 +215,10 @@ int main(int argc, char* argv[]) {
     Component poolCompC1 = compC;
     poolCompC1.setName("c1");
     // Configure pool components
-    poolCompA0.pushBackConfiguration("3");
-    poolCompA0.pushBackConfiguration("3");
-    poolCompB0.pushBackConfiguration("2");
-    poolCompC1.pushBackConfiguration("2");
+    //poolCompA0.pushBackConfiguration("3");
+    //poolCompA0.pushBackConfiguration("3");
+    //poolCompB0.pushBackConfiguration("2");
+    //poolCompC1.pushBackConfiguration("2");
     // Construct pool
     Query pool;
     pool.addComponent(poolCompA0);
