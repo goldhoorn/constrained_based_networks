@@ -153,11 +153,16 @@ public:
     }
     // print support
     void print(void) const {
-        std::cout << "Solution: " << assignments_int << std::endl;
+        print(std::cout);
     }
     // print support for given outputstream
     void print(std::ostream& os) const {
-        os << assignments_int << std::endl;
+        os << "Solution: { ";
+        for(int i = 0; i < assignments_int.size(); i++)
+        {
+            os << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[assignments_int[i].val()].getName() << ", ";
+        }
+        os << "}" << std::endl;
     }
 };
 
@@ -199,11 +204,12 @@ int main(int argc, char* argv[]) {
     query.addComponent(queryCompB);
     query.addComponent(queryCompC);
     
+    
     // Configure connections
-    query.addConnection(0, query.getComponents().at(0).getOutPorts().at(0), 1, query.getComponents().at(1).getInPorts().at(0));
-    query.addConnection(0, query.getComponents().at(0).getOutPorts().at(1), 2, query.getComponents().at(2).getInPorts().at(0));
-    query.addConnection(2, query.getComponents().at(2).getOutPorts().at(0), 0, query.getComponents().at(0).getInPorts().at(0));
-    query.addConnection(2, query.getComponents().at(2).getOutPorts().at(1), 1, query.getComponents().at(1).getInPorts().at(1));
+    query.addConnection("a", query.getComponent("a").getOutPorts().at(0), "b", query.getComponent("b").getInPorts().at(0));
+    query.addConnection("a", query.getComponent("a").getOutPorts().at(1), "c", query.getComponent("c").getInPorts().at(0));
+    query.addConnection("c", query.getComponent("c").getOutPorts().at(0), "a", query.getComponent("a").getInPorts().at(0));
+    query.addConnection("c", query.getComponent("c").getOutPorts().at(1), "b", query.getComponent("b").getInPorts().at(1));
     
     // Pool components
     Component poolCompA0 = compA;
@@ -239,12 +245,12 @@ int main(int argc, char* argv[]) {
     pool.addComponent(poolCompC1);
     
     // Configure connections
-    pool.addConnection(0, pool.getComponents().at(0).getOutPorts().at(0), 2, pool.getComponents().at(2).getInPorts().at(0));
-    pool.addConnection(0, pool.getComponents().at(0).getOutPorts().at(1), 5, pool.getComponents().at(5).getInPorts().at(0));
-    pool.addConnection(4, pool.getComponents().at(4).getOutPorts().at(0), 0, pool.getComponents().at(0).getInPorts().at(0));
-    pool.addConnection(5, pool.getComponents().at(5).getOutPorts().at(1), 2, pool.getComponents().at(2).getInPorts().at(1));
+    pool.addConnection("a0", pool.getComponent("a0").getOutPorts().at(0), "b0", pool.getComponent("b0").getInPorts().at(0));
+    pool.addConnection("a0", pool.getComponent("a0").getOutPorts().at(1), "c1", pool.getComponent("c1").getInPorts().at(0));
+    pool.addConnection("c0", pool.getComponent("c0").getOutPorts().at(0), "a0", pool.getComponent("a0").getInPorts().at(0));
+    pool.addConnection("c1", pool.getComponent("c1").getOutPorts().at(1), "b0", pool.getComponent("b0").getInPorts().at(1));
     // Optional:
-    //pool.addConnection(0, pool.getComponents().at(0).getOutPorts().at(0), 3, pool.getComponents().at(3).getInPorts().at(0));
+    //pool.addConnection("a0", pool.getComponent("a0").getOutPorts().at(0), "ba", pool.getComponent("b1").getInPorts().at(0));
     
     // Print pool and query
     std::cout << "Pool: " << pool.toString();

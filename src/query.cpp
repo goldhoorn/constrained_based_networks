@@ -15,13 +15,43 @@ const std::deque<Component>& Query::getComponents() const
     return components;
 }
 
-Component& Query::getComponent(int index)
+Component& Query::getComponent(std::string name)
 {
-    return components[index];
+    for(std::deque<Component>::iterator it = components.begin(); it != components.end(); ++it)
+    {
+        if(it->getName() == name)
+        {
+            return *it;
+        }
+    }
+    throw std::runtime_error("Query getComponent: no component with that name: " + name);
+}
+
+bool Query::existsComponentWithName(const std::string& name)
+{
+    try
+    {
+        getComponent(name);
+        return true;
+    }
+    catch(std::exception& e)
+    {
+        return false;
+    }
+}
+
+std::vector< Query >& Query::getSubQueries()
+{
+    return subQueries;
 }
 
 void Query::addComponent(const Component& component)
 {
+    if(existsComponentWithName(component.getName()))
+    {
+        throw std::runtime_error("Query addComponent: there is already a component with that name: " + component.getName());
+    }
+    
     int type = component.getType();
     // insert at front if smallest type or list empty
     if(components.empty() || type < components[0].getType())
@@ -42,14 +72,20 @@ void Query::addComponent(const Component& component)
     
 }
 
-void Query::addConnection(int outCompIndex, const OutgoingPort& out, int inCompIndex, const IncomingPort& in)
+void Query::addSubQuery(const Query& subQuery)
+{
+    subQueries.push_back(subQuery);
+}
+
+void Query::addConnection(const std::string& outCompName, const OutgoingPort& out, const std::string& inCompName, const IncomingPort& in)
 {
     if(out.datatype != in.datatype)
     {
         throw std::runtime_error("Query addConnection: datatypes incompatible.");
     }
-    Component& inComp = components[inCompIndex];
-    Component& outComp = components[outCompIndex];
+    // find components
+    Component& inComp = getComponent(inCompName);
+    Component& outComp = getComponent(outCompName);
     
     outComp.putOutgoingConnection(out, &inComp);
     inComp.putIncomingConnection(in, &outComp);
