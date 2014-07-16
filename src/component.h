@@ -43,14 +43,14 @@ protected:
     std::vector<OutgoingPort> outPorts;
     
     /**
-     * The incoming connections.
+     * The incoming connections. Ports mapped to the names of the component, they are connected to.
      */
-    std::map<IncomingPort, const Component*> incomingConnections;
+    std::map<IncomingPort, std::string> incomingConnections;
     
     /**
-     * The outgoing connections.
+     * The outgoing connections. Ports mapped to the names of the component, they are connected to.
      */
-    std::map<OutgoingPort, const Component*> outgoingConnections;
+    std::map<OutgoingPort, std::string> outgoingConnections;
 public:
     /**
      *Default constructor to be able to use components as map value type.
@@ -120,22 +120,22 @@ public:
     /**
      * Get the incoming connections
      */
-    const std::map<IncomingPort, const Component*>& getIncomingConnections() const;
+    const std::map<IncomingPort, std::string>& getIncomingConnections() const;
     
     /**
      * Put an incoming connection into the map
      */
-    void putIncomingConnection(const IncomingPort& inPort, const Component* component);
+    void putIncomingConnection(const IncomingPort& inPort, const std::string& componentName);
     
     /**
      * Get the outgoing connections
      */
-    const std::map<OutgoingPort, const Component*>& getOutgoingConnections() const;
+    const std::map<OutgoingPort, std::string>& getOutgoingConnections() const;
     
     /**
      * Put an outgoing connection into the map
      */
-    void putOutgoingConnection(const OutgoingPort& outPort, const Component* component);
+    void putOutgoingConnection(const OutgoingPort& outPort, const std::string& componentName);
 };
 
 } // end namespace composition_management

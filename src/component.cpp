@@ -39,15 +39,15 @@ std::string Component::toString() const
     }
     ss << "]\n";
     ss << "  Inconnections: [";
-    for(std::map<IncomingPort, const Component*>::const_iterator it = incomingConnections.begin(); it != incomingConnections.end(); ++it)
+    for(std::map<IncomingPort, std::string>::const_iterator it = incomingConnections.begin(); it != incomingConnections.end(); ++it)
     {
-        ss << it->second->getName() << it->first.toString() << " ";
+        ss << it->second << it->first.toString() << " ";
     }
     ss << "]\n";
     ss << "  Outconnections: [";
-    for(std::map<OutgoingPort, const Component*>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
+    for(std::map<OutgoingPort, std::string>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
     {
-        ss  << it->first.toString() << it->second->getName() << " ";
+        ss  << it->first.toString() << it->second << " ";
     }
     ss << "]\n";
         
@@ -99,24 +99,24 @@ void Component::pushBackOutPort(const OutgoingPort& outPort)
     outPorts.push_back(outPort);
 }
 
-const std::map<IncomingPort, const Component*>& Component::getIncomingConnections() const 
+const std::map<IncomingPort, std::string>& Component::getIncomingConnections() const 
 { 
     return incomingConnections;
 }
 
-void Component::putIncomingConnection(const IncomingPort& inPort, const Component* component)
+void Component::putIncomingConnection(const IncomingPort& inPort, const std::string& componentName)
 {
-    incomingConnections[inPort] = component;
+    incomingConnections[inPort] = componentName;
 }
 
-const std::map<OutgoingPort, const Component*>& Component::getOutgoingConnections() const 
+const std::map<OutgoingPort, std::string>& Component::getOutgoingConnections() const 
 { 
     return outgoingConnections;
 }
 
-void Component::putOutgoingConnection(const OutgoingPort& outPort, const Component* component)
+void Component::putOutgoingConnection(const OutgoingPort& outPort, const std::string& componentName)
 {
-    outgoingConnections[outPort] = component;
+    outgoingConnections[outPort] = componentName;
 }
 
 } // end namespace composition_management

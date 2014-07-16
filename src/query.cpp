@@ -6,7 +6,8 @@
 namespace composition_management {
 
 
-Query::Query()
+Query::Query(std::string name)
+    : name(name)
 {
 }
 
@@ -27,6 +28,18 @@ Component& Query::getComponent(std::string name)
     throw std::runtime_error("Query getComponent: no component with that name: " + name);
 }
 
+int Query::getComponentIndex(std::string name) const
+{
+    for(std::deque<Component>::const_iterator it = components.begin(); it != components.end(); ++it)
+    {
+        if(it->getName() == name)
+        {
+            return std::distance(components.begin(), it);
+        }
+    }
+    throw std::runtime_error("Query getComponentIndex: no component with that name: " + name);
+}
+
 bool Query::existsComponentWithName(const std::string& name)
 {
     try
@@ -38,11 +51,6 @@ bool Query::existsComponentWithName(const std::string& name)
     {
         return false;
     }
-}
-
-std::vector< Query >& Query::getSubQueries()
-{
-    return subQueries;
 }
 
 void Query::addComponent(const Component& component)
@@ -72,9 +80,20 @@ void Query::addComponent(const Component& component)
     
 }
 
-void Query::addSubQuery(const Query& subQuery)
+void Query::integrateSubQuery(const Query& subQuery, const std::string& mainComponentName)
 {
-    subQueries.push_back(subQuery);
+    // TODO
+    
+    // Loop through all components of the subquery
+    for(std::deque<Component>::const_iterator it = subQuery.components.begin(); it != subQuery.components.end(); ++it)
+    {
+        // Copy
+    }
+}
+
+std::string Query::getName() const
+{
+    return name;
 }
 
 void Query::addConnection(const std::string& outCompName, const OutgoingPort& out, const std::string& inCompName, const IncomingPort& in)
@@ -87,8 +106,9 @@ void Query::addConnection(const std::string& outCompName, const OutgoingPort& ou
     Component& inComp = getComponent(inCompName);
     Component& outComp = getComponent(outCompName);
     
-    outComp.putOutgoingConnection(out, &inComp);
-    inComp.putIncomingConnection(in, &outComp);
+    // add connections
+    outComp.putOutgoingConnection(out, inCompName);
+    inComp.putIncomingConnection(in, outCompName);
 }
 
 std::string Query::toString() const

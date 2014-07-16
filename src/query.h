@@ -17,14 +17,14 @@ class Query
 {
 protected:
     /**
+     * The name of this query. Must be unique.
+     */
+    std::string name;
+    
+    /**
      * These are ordered in ascending type order.
      */
     std::deque<Component> components;
-    
-    /**
-     * Sub-queries. This should only be used for actual queries, not for component pools.
-     */
-    std::vector<Query> subQueries;
     
     /**
      * Check if there is a component with that name already
@@ -34,7 +34,7 @@ public:
     /**
      * Create a new query.
      */
-    Query();
+    Query(std::string name);
     
     /**
      * Gets the components. This is readonly. To modify, e.g. configure Components, use getComponent
@@ -43,13 +43,19 @@ public:
     
     /**
      * Gets the component with the given name, so it can be modified, e.g. configured.
+     * 
+     * \throws Exception if there is no such component.
      */
     Component& getComponent(std::string name);
     
     /**
-     * Gets the components.
+     * Gets the index of the component with the given name.
+     * 
+     * \throws Exception if there is no such component.
      */
-    std::vector<Query>& getSubQueries();
+    int getComponentIndex(std::string name) const;
+    
+    std::string getName() const;
     
     /**
      * Inserts one component, making sure the type order is maintained.
@@ -60,14 +66,16 @@ public:
     void addComponent(const Component& component);
     
     /**
-     * Inserts a sub-query.
+     * Integrates a sub-query into this query. All components, except the main component are renamed.
+     * Their names are prepended the subQuery's name. The main component must not exist in this query.
+     * All components are copied into this query.
+     * 
+     * After that, the main component may be connected with other components.
      */
-    void addSubQuery(const Query& subQuery);
+    void integrateSubQuery(const Query& subQuery, const std::string& mainComponentName);
     
     /**
      * This adds a new connection, if the data types are compatible.
-     * 
-     * TODO index access is bad, as indices can and will change after insertions
      * 
      * \throws Exception if the datatypes differ.
      */
