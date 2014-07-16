@@ -10,7 +10,15 @@ Query::Query()
 {
 }
 
-const std::deque<Component>& Query::getComponents() const { return components; }
+const std::deque<Component>& Query::getComponents() const 
+{ 
+    return components;
+}
+
+Component& Query::getComponent(int index)
+{
+    return components[index];
+}
 
 void Query::addComponent(const Component& component)
 {

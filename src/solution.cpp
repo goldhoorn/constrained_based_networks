@@ -185,10 +185,14 @@ int main(int argc, char* argv[]) {
     Component queryCompB = compB;
     Component queryCompC = compC;
     // Configure query components
-    queryCompA.pushBackConfiguration("3");
-    queryCompA.pushBackConfiguration("1");
+    std::vector<std::string> compAConf;
+    compAConf.push_back("3");
+    compAConf.push_back("1");
+    queryCompA.setConfiguration(compAConf);
     // No constraint on B's config
-    queryCompC.pushBackConfiguration("2");
+    std::vector<std::string> compCConf;
+    compCConf.push_back("2");
+    queryCompC.setConfiguration(compCConf);
     // Construct query
     Query query;
     query.addComponent(queryCompA);
@@ -215,10 +219,16 @@ int main(int argc, char* argv[]) {
     Component poolCompC1 = compC;
     poolCompC1.setName("c1");
     // Configure pool components
-    //poolCompA0.pushBackConfiguration("3");
-    //poolCompA0.pushBackConfiguration("3");
-    //poolCompB0.pushBackConfiguration("2");
-    //poolCompC1.pushBackConfiguration("2");
+    std::vector<std::string> compA0Conf;
+    compA0Conf.push_back("3");
+    compA0Conf.push_back("3");
+    poolCompA0.setConfiguration(compA0Conf);
+    std::vector<std::string> compB0Conf;
+    compB0Conf.push_back("2");
+    poolCompB0.setConfiguration(compB0Conf);
+    std::vector<std::string> compC1Conf;
+    compC1Conf.push_back("2");
+    poolCompC1.setConfiguration(compC1Conf);
     // Construct pool
     Query pool;
     pool.addComponent(poolCompA0);

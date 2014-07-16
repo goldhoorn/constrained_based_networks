@@ -54,41 +54,65 @@ std::string Component::toString() const
     return ss.str();
 }
 
-int Component::getType() const { return type; }
-
-const std::string& Component::getName() const { return name; }
-
-void Component::setName(const std::string& name) { this->name = name; }
-
-const std::vector<std::string>& Component::getConfiguration() const { return configuration; }
-
-void Component::pushBackConfiguration(const std::string& configurationStr)
-{
-    configuration.push_back(configurationStr);
+int Component::getType() const 
+{ 
+    return type;
 }
 
-const std::vector<IncomingPort>& Component::getInPorts() const { return inPorts; }
+const std::string& Component::getName() const 
+{ 
+    return name;
+}
+
+void Component::setName(const std::string& name) 
+{ 
+    this->name = name;
+}
+
+const std::vector<std::string>& Component::getConfiguration() const 
+{
+    return configuration;
+}
+
+void Component::setConfiguration(const std::vector<std::string>& configuration)
+{
+    this->configuration = configuration;
+}
+
+const std::vector<IncomingPort>& Component::getInPorts() const 
+{
+    return inPorts;
+}
 
 void Component::pushBackInPort(const IncomingPort& inPort)
 {
     inPorts.push_back(inPort);
 }
 
-const std::vector<OutgoingPort>& Component::getOutPorts() const { return outPorts; }
+const std::vector<OutgoingPort>& Component::getOutPorts() const
+{ 
+    return outPorts;
+}
 
 void Component::pushBackOutPort(const OutgoingPort& outPort)
 {
     outPorts.push_back(outPort);
 }
 
-const std::map<IncomingPort, const Component*>& Component::getIncomingConnections() const { return incomingConnections; }
+const std::map<IncomingPort, const Component*>& Component::getIncomingConnections() const 
+{ 
+    return incomingConnections;
+}
 
 void Component::putIncomingConnection(const IncomingPort& inPort, const Component* component)
 {
     incomingConnections[inPort] = component;
 }
 
-const std::map<OutgoingPort, const Component*>& Component::getOutgoingConnections() const { return outgoingConnections; }
+const std::map<OutgoingPort, const Component*>& Component::getOutgoingConnections() const 
+{ 
+    return outgoingConnections;
+}
 
 void Component::putOutgoingConnection(const OutgoingPort& outPort, const Component* component)
 {

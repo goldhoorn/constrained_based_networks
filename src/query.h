@@ -26,9 +26,14 @@ public:
     Query();
     
     /**
-     * Gets the components.
+     * Gets the components. This is readonly. To modify, e.g. configure Components, use getComponent
      */
     const std::deque<Component>& getComponents() const;
+    
+    /**
+     * Gets the component with the given index, so it can be modified, e.g. configured.
+     */
+    Component& getComponent(int index);
     
     /**
      * Inserts one component, making sure the type order is maintained.

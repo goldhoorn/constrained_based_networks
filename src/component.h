@@ -95,7 +95,7 @@ public:
     /**
      * Push back a configuration value
      */
-    void pushBackConfiguration(const std::string& configurationStr);
+    void setConfiguration(const std::vector<std::string>& configuration);
     
     /**
      * Get the incoming ports
