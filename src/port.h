@@ -2,6 +2,7 @@
 #define GECODE_COMPOSITION_MANAGEMENT_PORT_H
 
 #include <sstream>
+#include <string>
 
 namespace composition_management {
     

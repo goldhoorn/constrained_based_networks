@@ -1,4 +1,6 @@
 set(SOURCES
+   component.cpp
+   query.cpp
    solution.cpp
 )
 set(HEADERS

@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
     pool.addConnection(4, pool.getComponents().at(4).getOutPorts().at(0), 0, pool.getComponents().at(0).getInPorts().at(0));
     pool.addConnection(5, pool.getComponents().at(5).getOutPorts().at(1), 2, pool.getComponents().at(2).getInPorts().at(1));
     // Optional:
-    pool.addConnection(0, pool.getComponents().at(0).getOutPorts().at(0), 3, pool.getComponents().at(3).getInPorts().at(0));
+    //pool.addConnection(0, pool.getComponents().at(0).getOutPorts().at(0), 3, pool.getComponents().at(3).getInPorts().at(0));
     
     // Print pool and query
     std::cout << "Pool: " << pool.toString();
