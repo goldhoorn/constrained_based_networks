@@ -55,6 +55,9 @@ public:
      */
     int getComponentIndex(std::string name) const;
     
+    /**
+     * Gets the name.
+     */
     std::string getName() const;
     
     /**
@@ -66,13 +69,15 @@ public:
     void addComponent(const Component& component);
     
     /**
-     * Integrates a sub-query into this query. All components, except the main component are renamed.
-     * Their names are prepended the subQuery's name. The main component must not exist in this query.
+     * Integrates a sub-query into this query. All components are renamed.
+     * Their names are prepended the subQuery's name and an underscore.
      * All components are copied into this query.
      * 
      * After that, the main component may be connected with other components.
+     * If there is a dependency on the main component, it should not be added before
+     * the integration, in order not to have duplicates.
      */
-    void integrateSubQuery(const Query& subQuery, const std::string& mainComponentName);
+    void integrateSubQuery(const Query& subQuery);
     
     /**
      * This adds a new connection, if the data types are compatible.

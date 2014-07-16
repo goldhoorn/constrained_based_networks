@@ -200,19 +200,19 @@ int main(int argc, char* argv[]) {
     // Construct query and subquery
     Query query ("query"), subquery ("subquery");
     query.addComponent(queryCompA);
-    query.addComponent(queryCompB);
+    //query.addComponent(queryCompB);
     query.addComponent(queryCompC);
     subquery.addComponent(queryCompB);
     subquery.addComponent(queryCompC);
     
     
-    // Configure connections
-    query.addConnection("a", query.getComponent("a").getOutPorts().at(0), "b", query.getComponent("b").getInPorts().at(0));
+    // Configure connections TODO
+    subquery.addConnection("c", subquery.getComponent("c").getOutPorts().at(1), "b", subquery.getComponent("b").getInPorts().at(1));
+    query.integrateSubQuery(subquery);
+    
+    query.addConnection("a", query.getComponent("a").getOutPorts().at(0), "subquery_b", query.getComponent("subquery_b").getInPorts().at(0));
     query.addConnection("a", query.getComponent("a").getOutPorts().at(1), "c", query.getComponent("c").getInPorts().at(0));
     query.addConnection("c", query.getComponent("c").getOutPorts().at(0), "a", query.getComponent("a").getInPorts().at(0));
-    subquery.addConnection("c", query.getComponent("c").getOutPorts().at(1), "b", query.getComponent("b").getInPorts().at(1));
-    
-    query.integrateSubQuery(subquery, "b");
     
     // Pool components
     Component poolCompA0 = compA;
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
     pool.addConnection("c0", pool.getComponent("c0").getOutPorts().at(0), "a0", pool.getComponent("a0").getInPorts().at(0));
     pool.addConnection("c1", pool.getComponent("c1").getOutPorts().at(1), "b0", pool.getComponent("b0").getInPorts().at(1));
     // Optional:
-    //pool.addConnection("a0", pool.getComponent("a0").getOutPorts().at(0), "ba", pool.getComponent("b1").getInPorts().at(0));
+    pool.addConnection("a0", pool.getComponent("a0").getOutPorts().at(0), "b1", pool.getComponent("b1").getInPorts().at(0));
     
     // Print pool and query
     std::cout << "Pool: " << pool.toString();
