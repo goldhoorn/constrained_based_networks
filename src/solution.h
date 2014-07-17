@@ -40,16 +40,31 @@ public:
      */
     virtual void constrain(const Space& _b);
     
-    // search support. There must be a copy constructor like this for the search engine.
-    // Everything must be copied into the new Space
+    /**
+     * search support. There must be a copy constructor like this for the search engine.
+     * Everything must be copied into the new Space
+     */
     Solution(bool share, Solution& s);
-    // This method is called be the search engine
+    /**
+     * This method is called be the search engine
+     */
     virtual Space* copy(bool share);
     
-    // print support
+    /**
+     * print support
+     */
     void print() const;
-    // print support for given outputstream
+    /**
+     * print support for given outputstream
+     */
     void print(std::ostream& os) const;
+    
+    /**
+     * Static method to find a best solution with BAB search.
+     * 
+     * \throw Exception if there is no solution.
+     */
+    static Solution* babSearch(Query query, Query pool);
 };
 
 } // end namespace composition_management

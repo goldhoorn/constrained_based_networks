@@ -5,6 +5,7 @@
 
 #include<vector>
 #include<map>
+#include<stdexcept>
 
 #include "solution.h"
 
@@ -183,6 +184,32 @@ void Solution::print(std::ostream& os) const
     os << "}" << std::endl;
 }
 
+Solution* Solution::babSearch(Query query, Query pool)
+{
+    // Initial situation
+    Solution* s = new Solution(query, pool);
+    // BAB search engine
+    BAB<Solution> e(s);
+    delete s;
+    // search
+    Solution* best = NULL;
+    while (Solution* s = e.next()) {
+        if(best != NULL)
+        {
+            delete best;
+        }
+        // Save current solution as best
+        best = s;
+    } 
+    
+    // throw exception if there is no solution
+    if(best == NULL)
+    {
+        throw std::runtime_error("Solution babSearch: No solutions");
+    }
+    
+    return best;
+}
 
 } // end namespace composition_management
 
@@ -288,13 +315,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Pool: " << pool.toString();
     std::cout << "Query: " << query.toString();
     
-    Solution* s = new Solution(query, pool);
-    BAB<Solution> e(s);
-    delete s;
-    // search and print all solutions
-    while (Solution* s = e.next()) {
-        s->print();
-        delete s;
-    } 
+    Solution* s = Solution::babSearch(query, pool);
+    s->print();
     return 0;
 }
