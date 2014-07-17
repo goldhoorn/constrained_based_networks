@@ -137,6 +137,42 @@ public:
         branch(*this, assignments_int, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
     }
     
+    /*
+     * constrain function for best solution search. the
+     * currently best solution _b is passed and we have to constraint that this solution can only
+     * be better than b, for it to be excluded if it isn't
+     */
+    virtual void constrain(const Space& _b) {
+        const Solution& b = static_cast<const Solution&>(_b);
+        
+        // Number of used components
+        // Determine number of used values in b
+        int valuesCount = 0;
+        std::vector<int> values;
+        for(IntVarArray::const_iterator it = b.assignments_int.begin(); it != b.assignments_int.end(); ++it)
+        {
+            // if not contains...
+            if(std::find(values.begin(), values.end(), it->val()) == values.end())
+            {
+                values.push_back(it->val());
+                valuesCount++;
+            }
+        }
+        
+        // We must have at most that many components used as the so far best solution
+        // FIXME LQ
+        nvalues(*this, assignments_int, IRT_LE, valuesCount);
+        
+        // If we have an equal amount of values used, the number of reconfigured components must be less
+        BoolVar equalAmountOfValues;
+        //nvalues(*this, assignments_int, IRT_LQ, valuesCount, equalAmountOfValues);
+        
+        std::cout << " Adding best search constraint. This ";
+        print();
+        std::cout << " must be better than so far best ";
+        b.print();
+    }
+    
     // search support. There must be a copy constructor like this for the search engine.
     // Everything must be copied into the new Space
     Solution(bool share, Solution& s) 
@@ -151,7 +187,7 @@ public:
         return new Solution(share,*this);
     }
     // print support
-    void print(void) const {
+    void print() const {
         print(std::cout);
     }
     // print support for given outputstream
@@ -159,7 +195,16 @@ public:
         os << "Solution: { ";
         for(int i = 0; i < assignments_int.size(); i++)
         {
-            os << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[assignments_int[i].val()].getName() << ", ";
+            os << query.getComponents()[i].getName() << "=";
+            if(assignments_int[i].assigned())
+            {
+                 os << componentPool.getComponents()[assignments_int[i].val()].getName();
+            }
+            else
+            {
+                os << assignments_int[i];
+            }
+            os << ", ";
         }
         os << "}" << std::endl;
     }
@@ -188,6 +233,8 @@ int main(int argc, char* argv[]) {
     Component queryCompA = compA;
     Component queryCompB = compB;
     Component queryCompC = compC;
+    Component queryCompAnotherC = compC;
+    queryCompAnotherC.setName("anotherC");
     // Configure query components
     std::vector<std::string> compAConf;
     compAConf.push_back("3");
@@ -200,19 +247,22 @@ int main(int argc, char* argv[]) {
     // Construct query and subquery
     Query query ("query"), subquery ("subquery");
     query.addComponent(queryCompA);
-    //query.addComponent(queryCompB);
-    query.addComponent(queryCompC);
+    query.addComponent(queryCompAnotherC);
     subquery.addComponent(queryCompB);
     subquery.addComponent(queryCompC);
     
     
     // Configure connections
-    subquery.addConnection("c", subquery.getComponent("c").getOutPorts().at(1), "b", subquery.getComponent("b").getInPorts().at(1));
+    subquery.addConnection(queryCompC.getName(), subquery.getComponent(queryCompC.getName()).getOutPorts().at(1), queryCompB.getName(), 
+                           subquery.getComponent(queryCompB.getName()).getInPorts().at(1));
     query.integrateSubQuery(subquery);
     
-    query.addConnection("a", query.getComponent("a").getOutPorts().at(0), "subquery_b", query.getComponent("subquery_b").getInPorts().at(0));
-    query.addConnection("a", query.getComponent("a").getOutPorts().at(1), "c", query.getComponent("c").getInPorts().at(0));
-    query.addConnection("c", query.getComponent("c").getOutPorts().at(0), "a", query.getComponent("a").getInPorts().at(0));
+    query.addConnection(queryCompA.getName(), query.getComponent(queryCompA.getName()).getOutPorts().at(0), queryCompB.getName(),
+                        query.getComponent(queryCompB.getName()).getInPorts().at(0));
+    query.addConnection(queryCompA.getName(), query.getComponent(queryCompA.getName()).getOutPorts().at(1), queryCompAnotherC.getName(),
+                        query.getComponent(queryCompAnotherC.getName()).getInPorts().at(0));
+    query.addConnection(queryCompAnotherC.getName(), query.getComponent(queryCompAnotherC.getName()).getOutPorts().at(0), queryCompA.getName(),
+                        query.getComponent(queryCompA.getName()).getInPorts().at(0));
     
     // Pool components
     Component poolCompA0 = compA;
@@ -248,19 +298,24 @@ int main(int argc, char* argv[]) {
     pool.addComponent(poolCompC1);
     
     // Configure connections
-    pool.addConnection("a0", pool.getComponent("a0").getOutPorts().at(0), "b0", pool.getComponent("b0").getInPorts().at(0));
-    pool.addConnection("a0", pool.getComponent("a0").getOutPorts().at(1), "c1", pool.getComponent("c1").getInPorts().at(0));
-    pool.addConnection("c0", pool.getComponent("c0").getOutPorts().at(0), "a0", pool.getComponent("a0").getInPorts().at(0));
-    pool.addConnection("c1", pool.getComponent("c1").getOutPorts().at(1), "b0", pool.getComponent("b0").getInPorts().at(1));
+    pool.addConnection(poolCompA0.getName(), pool.getComponent(poolCompA0.getName()).getOutPorts().at(0), poolCompB0.getName(),
+                       pool.getComponent(poolCompB0.getName()).getInPorts().at(0));
+    pool.addConnection(poolCompA0.getName(), pool.getComponent(poolCompA0.getName()).getOutPorts().at(1), poolCompC1.getName(),
+                       pool.getComponent(poolCompC1.getName()).getInPorts().at(0));
+    pool.addConnection(poolCompC0.getName(), pool.getComponent(poolCompC0.getName()).getOutPorts().at(0), poolCompA0.getName(),
+                       pool.getComponent(poolCompA0.getName()).getInPorts().at(0));
+    pool.addConnection(poolCompC1.getName(), pool.getComponent(poolCompC1.getName()).getOutPorts().at(1), poolCompB0.getName(),
+                       pool.getComponent(poolCompB0.getName()).getInPorts().at(1));
     // Optional:
-    pool.addConnection("a0", pool.getComponent("a0").getOutPorts().at(0), "b1", pool.getComponent("b1").getInPorts().at(0));
+    pool.addConnection(poolCompA0.getName(), pool.getComponent(poolCompA0.getName()).getOutPorts().at(0), poolCompB1.getName(),
+                       pool.getComponent(poolCompB1.getName()).getInPorts().at(0));
     
     // Print pool and query
     std::cout << "Pool: " << pool.toString();
     std::cout << "Query: " << query.toString();
     
     Solution* s = new Solution(query, pool);
-    DFS<Solution> e(s);
+    BAB<Solution> e(s);
     delete s;
     // search and print all solutions
     while (Solution* s = e.next()) {

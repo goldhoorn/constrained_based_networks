@@ -69,13 +69,11 @@ public:
     void addComponent(const Component& component);
     
     /**
-     * Integrates a sub-query into this query. All components are renamed.
-     * Their names are prepended the subQuery's name and an underscore.
-     * All components are copied into this query.
+     * Integrates a sub-query into this query. All components are copied into this query.
      * 
-     * After that, the main component may be connected with other components.
-     * If there is a dependency on the main component, it should not be added before
-     * the integration, in order not to have duplicates.
+     * After that, the components may be connected with other components.
+     * If there is a dependency on the components, it should not be done before
+     * the integration.
      */
     void integrateSubQuery(const Query& subQuery);
     

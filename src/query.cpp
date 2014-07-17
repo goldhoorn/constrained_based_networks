@@ -88,20 +88,20 @@ void Query::integrateSubQuery(const composition_management::Query& subQuery)
         // Copy
         Component comp = *it;
         // Rename
-        comp.setName(subQuery.name + "_" + comp.getName());
+        //comp.setName(subQuery.name + "_" + comp.getName());
         // Also rename the components names for the connections.
         // As each component of the subquery can only be connected to those, all
         // can be renamed
-        std::map<IncomingPort, std::string> inConnections = comp.getIncomingConnections();
-        for(std::map<IncomingPort, std::string>::const_iterator it = inConnections.begin(); it != inConnections.end(); ++it)
-        {
-            comp.putIncomingConnection(it->first, subQuery.name + "_" + it->second);
-        }
-        std::map<OutgoingPort, std::string> outConnections = comp.getOutgoingConnections();
-        for(std::map<OutgoingPort, std::string>::const_iterator it = outConnections.begin(); it != outConnections.end(); ++it)
-        {
-            comp.putOutgoingConnection(it->first, subQuery.name + "_" + it->second);
-        }
+//         std::map<IncomingPort, std::string> inConnections = comp.getIncomingConnections();
+//         for(std::map<IncomingPort, std::string>::const_iterator it = inConnections.begin(); it != inConnections.end(); ++it)
+//         {
+//             comp.putIncomingConnection(it->first, subQuery.name + "_" + it->second);
+//         }
+//         std::map<OutgoingPort, std::string> outConnections = comp.getOutgoingConnections();
+//         for(std::map<OutgoingPort, std::string>::const_iterator it = outConnections.begin(); it != outConnections.end(); ++it)
+//         {
+//             comp.putOutgoingConnection(it->first, subQuery.name + "_" + it->second);
+//         }
         // Add to the component list (using the method to keep order!)
         addComponent(comp);
     }
