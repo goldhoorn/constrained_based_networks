@@ -1,0 +1,11 @@
+<package>
+  <description brief="Gecode approach to solve component/composition assingments for queries and a component pool/network.">
+  
+  </description>
+  <author>Satia Herfert/satia.herfert@dfki.de</author>
+  <license></license>
+  <url>http://</url>
+  <logo>http://</logo>
+  <depend package="base/cmake" />
+  <depend package="base/types" />
+</package>

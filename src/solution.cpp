@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
     subquery.addComponent(queryCompC);
     
     
-    // Configure connections TODO
+    // Configure connections
     subquery.addConnection("c", subquery.getComponent("c").getOutPorts().at(1), "b", subquery.getComponent("b").getInPorts().at(1));
     query.integrateSubQuery(subquery);
     
