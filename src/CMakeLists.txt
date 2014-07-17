@@ -9,6 +9,7 @@ set(HEADERS
    component.h
    port.h
    query.h
+   solution.h
 )
 
 set(Gecode_LIBRARIES

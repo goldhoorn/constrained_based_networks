@@ -6,209 +6,183 @@
 #include<vector>
 #include<map>
 
-#include "query.h"
+#include "solution.h"
 
 using namespace Gecode;
 
 namespace composition_management {
 
-/**
- * A solution inherits GECODE's space. the initial situation as well as any real solutions are type Solution.
- */
-class Solution : public Space {
-protected:
-    /**
-     * The query to compute solutions for.
-     */
-    Query query;
-    /**
-     * The actual situation, components from the pool.
-     */
-    Query componentPool;
-    /**
-     * Assignments of query components to pool components. This is what has to be solved.
-     */
-    IntVarArray assignments_int;
-public:
-    /**
-     * Construct a solution with an initial situation to search.
-     */
-    Solution(Query query, Query componentPool) 
-        : query(query)
-        , componentPool(componentPool)
-        , assignments_int(*this, query.getComponents().size(), 0, componentPool.getComponents().size())
-    {        
-        // The first indices of a type, in the componentPool
-        std::vector<int> typeIndicesPool;
-        for(int i = 0; i < componentPool.getComponents().size(); i++) {
-            if(i == 0 || componentPool.getComponents().at(i - 1).getType() != componentPool.getComponents().at(i).getType()) {
-                typeIndicesPool.push_back(i);
-            }
+Solution::Solution(Query query, Query componentPool) 
+    : query(query)
+    , componentPool(componentPool)
+    , assignments_int(*this, query.getComponents().size(), 0, componentPool.getComponents().size())
+{        
+    // The first indices of a type, in the componentPool
+    std::vector<int> typeIndicesPool;
+    for(int i = 0; i < componentPool.getComponents().size(); i++) {
+        if(i == 0 || componentPool.getComponents().at(i - 1).getType() != componentPool.getComponents().at(i).getType()) {
+            typeIndicesPool.push_back(i);
         }
-        // The first indices of a type, in the query
-        std::vector<int> typeIndicesQuery;
-        for(int i = 0; i < query.getComponents().size(); i++) {
-            if(i == 0 || query.getComponents().at(i - 1).getType() != query.getComponents().at(i).getType()) {
-                typeIndicesQuery.push_back(i);
-            }
+    }
+    // The first indices of a type, in the query
+    std::vector<int> typeIndicesQuery;
+    for(int i = 0; i < query.getComponents().size(); i++) {
+        if(i == 0 || query.getComponents().at(i - 1).getType() != query.getComponents().at(i).getType()) {
+            typeIndicesQuery.push_back(i);
         }
-        
-        for(int i = 0, type = -1; i < assignments_int.size(); i++)
-        {
-            // Increment type if necessary
-            if(std::find(typeIndicesQuery.begin(), typeIndicesQuery.end(), i) != typeIndicesQuery.end())
-            {
-                type++;
-            }
-            int upperLimit = type + 1 < typeIndicesPool.size() ? typeIndicesPool[type + 1] - 1 : componentPool.getComponents().size() - 1;
-            // Constraint domain such that the types equal
-            // The initial domain of each IntVar is the number of pool components. This constraints it so be just
-            // the pool components of the same type. This is simplified with lower ans upper bound as components
-            // are ordered in ascending type.
-            dom(*this, assignments_int[i], typeIndicesPool[type], upperLimit);
-        }
-        
-        // For all queried components
-        for(int i = 0; i < assignments_int.size(); i++)
-        {
-            std::cout << "Constraints for query " << query.getComponents()[i].toString() << std::endl;
-            
-            // For all possible pool components they can be assigned
-            for(int j = assignments_int[i].min(); j <= assignments_int[i].max(); j++)
-            {
-                std::cout << " Against pool " << componentPool.getComponents()[j].toString() << std::endl;
-                
-                // TODO extern method testing if two components are compitable regarding their configurations
-                // as vector<string>
-                // At the moment, the conf vector just has to be equal
-                const std::vector<std::string>& requiredConfiguration = query.getComponents().at(i).getConfiguration();
-                const std::vector<std::string>& actualConfiguration = componentPool.getComponents().at(j).getConfiguration();
-                // If the configurations are not compatible, post != constraint on this assignment
-                if(!requiredConfiguration.empty()&& !actualConfiguration.empty() && requiredConfiguration != actualConfiguration)
-                {
-                    std::cout << "Adding configuration constraint. Component " << query.getComponents()[i].getName() << "!=" << componentPool.getComponents()[j].getName() << std::endl;
-                    // TODO best solution: already assigned conf is better, for reusing components
-                    
-                    // This means that the ith query component cannot be assigned the jth pool component,
-                    // since the configurations are incompatible.
-                    rel(*this, assignments_int[i], IRT_NQ, j);
-                }
-                
-                
-                // For all incoming ports of the query component
-                const std::map<IncomingPort, std::string> map = query.getComponents().at(i).getIncomingConnections();
-                for(std::map<IncomingPort, std::string>::const_iterator it = map.begin(); it != map.end(); ++it)
-                {
-                    std::cout << "Checking connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
-                                  << " on in port " << it->first.name << std::endl;
-                    
-                    // If the ith query component gets assigned to the jth pool component
-                    // and they both are connected on the same input port,
-                    // the connection origin must also be assigned equally.
-                    std::map<IncomingPort, std::string> poolComponentMap = componentPool.getComponents().at(j).getIncomingConnections();
-                    if(poolComponentMap.count(it->first) != 0)
-                    {
-                        // Get number of the origins
-                        int originQueryNum = query.getComponentIndex(it->second);
-                        int originPoolNum = componentPool.getComponentIndex(poolComponentMap.at(it->first));
-                                            
-                        std::cout << "Adding connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
-                                  << " => " << it->second << "=" << poolComponentMap.at(it->first) << std::endl;
-                        
-                        // Both connected on same port
-                        BoolVar ithAssignedToJth(*this, 0, 1);
-                        rel(*this, assignments_int[i], IRT_EQ, j, ithAssignedToJth);
-                        // Origins connected on same port
-                        BoolVar originsConnectedEqually(*this, 0, 1);
-                        rel(*this, assignments_int[originQueryNum], IRT_EQ, originPoolNum, originsConnectedEqually);
-                        // Implication as a constraint e.g. A=a0 => B=b0
-                        BoolVar implication(*this, 0, 1);
-                        rel(*this, ithAssignedToJth, BOT_IMP, originsConnectedEqually, 1);
-                    }
-                }
-            }
-        }
-        
-        // branching TODO test and improve
-        
-        // this tells the search engine to branch first on the variable with the smallest domain,
-        // that is the variables where there are less components of that type in the pool
-        // The engine will then try the possible values (assignments) in ascending order.
-        branch(*this, assignments_int, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
     }
     
-    /*
-     * constrain function for best solution search. the
-     * currently best solution _b is passed and we have to constraint that this solution can only
-     * be better than b, for it to be excluded if it isn't
-     */
-    virtual void constrain(const Space& _b) {
-        const Solution& b = static_cast<const Solution&>(_b);
-        
-        // Number of used components
-        // Determine number of used values in b
-        int valuesCount = 0;
-        std::vector<int> values;
-        for(IntVarArray::const_iterator it = b.assignments_int.begin(); it != b.assignments_int.end(); ++it)
-        {
-            // if not contains...
-            if(std::find(values.begin(), values.end(), it->val()) == values.end())
-            {
-                values.push_back(it->val());
-                valuesCount++;
-            }
-        }
-        
-        // We must have at most that many components used as the so far best solution
-        // FIXME LQ
-        nvalues(*this, assignments_int, IRT_LE, valuesCount);
-        
-        // If we have an equal amount of values used, the number of reconfigured components must be less
-        BoolVar equalAmountOfValues;
-        //nvalues(*this, assignments_int, IRT_LQ, valuesCount, equalAmountOfValues);
-        
-        std::cout << " Adding best search constraint. This ";
-        print();
-        std::cout << " must be better than so far best ";
-        b.print();
-    }
-    
-    // search support. There must be a copy constructor like this for the search engine.
-    // Everything must be copied into the new Space
-    Solution(bool share, Solution& s) 
-        : Space(share, s)
-        , query(s.query)
-        , componentPool(s.componentPool)
+    for(int i = 0, type = -1; i < assignments_int.size(); i++)
     {
-        assignments_int.update(*this, share, s.assignments_int);
-    }
-    // This method is called be the search engine
-    virtual Space* copy(bool share) {
-        return new Solution(share,*this);
-    }
-    // print support
-    void print() const {
-        print(std::cout);
-    }
-    // print support for given outputstream
-    void print(std::ostream& os) const {
-        os << "Solution: { ";
-        for(int i = 0; i < assignments_int.size(); i++)
+        // Increment type if necessary
+        if(std::find(typeIndicesQuery.begin(), typeIndicesQuery.end(), i) != typeIndicesQuery.end())
         {
-            os << query.getComponents()[i].getName() << "=";
-            if(assignments_int[i].assigned())
-            {
-                 os << componentPool.getComponents()[assignments_int[i].val()].getName();
-            }
-            else
-            {
-                os << assignments_int[i];
-            }
-            os << ", ";
+            type++;
         }
-        os << "}" << std::endl;
+        int upperLimit = type + 1 < typeIndicesPool.size() ? typeIndicesPool[type + 1] - 1 : componentPool.getComponents().size() - 1;
+        // Constraint domain such that the types equal
+        // The initial domain of each IntVar is the number of pool components. This constraints it so be just
+        // the pool components of the same type. This is simplified with lower ans upper bound as components
+        // are ordered in ascending type.
+        dom(*this, assignments_int[i], typeIndicesPool[type], upperLimit);
     }
-};
+    
+    // For all queried components
+    for(int i = 0; i < assignments_int.size(); i++)
+    {
+        std::cout << "Constraints for query " << query.getComponents()[i].toString() << std::endl;
+        
+        // For all possible pool components they can be assigned
+        for(int j = assignments_int[i].min(); j <= assignments_int[i].max(); j++)
+        {
+            std::cout << " Against pool " << componentPool.getComponents()[j].toString() << std::endl;
+            
+            // TODO extern method testing if two components are compitable regarding their configurations
+            // as vector<string>
+            // At the moment, the conf vector just has to be equal
+            const std::vector<std::string>& requiredConfiguration = query.getComponents().at(i).getConfiguration();
+            const std::vector<std::string>& actualConfiguration = componentPool.getComponents().at(j).getConfiguration();
+            // If the configurations are not compatible, post != constraint on this assignment
+            if(!requiredConfiguration.empty()&& !actualConfiguration.empty() && requiredConfiguration != actualConfiguration)
+            {
+                std::cout << "Adding configuration constraint. Component " << query.getComponents()[i].getName() << "!=" << componentPool.getComponents()[j].getName() << std::endl;
+                // This means that the ith query component cannot be assigned the jth pool component,
+                // since the configurations are incompatible.
+                rel(*this, assignments_int[i], IRT_NQ, j);
+            }
+            
+            
+            // For all incoming ports of the query component
+            const std::map<IncomingPort, std::string> map = query.getComponents().at(i).getIncomingConnections();
+            for(std::map<IncomingPort, std::string>::const_iterator it = map.begin(); it != map.end(); ++it)
+            {
+                std::cout << "Checking connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
+                                << " on in port " << it->first.name << std::endl;
+                
+                // If the ith query component gets assigned to the jth pool component
+                // and they both are connected on the same input port,
+                // the connection origin must also be assigned equally.
+                std::map<IncomingPort, std::string> poolComponentMap = componentPool.getComponents().at(j).getIncomingConnections();
+                if(poolComponentMap.count(it->first) != 0)
+                {
+                    // Get number of the origins
+                    int originQueryNum = query.getComponentIndex(it->second);
+                    int originPoolNum = componentPool.getComponentIndex(poolComponentMap.at(it->first));
+                                        
+                    std::cout << "Adding connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
+                                << " => " << it->second << "=" << poolComponentMap.at(it->first) << std::endl;
+                    
+                    // Both connected on same port
+                    BoolVar ithAssignedToJth(*this, 0, 1);
+                    rel(*this, assignments_int[i], IRT_EQ, j, ithAssignedToJth);
+                    // Origins connected on same port
+                    BoolVar originsConnectedEqually(*this, 0, 1);
+                    rel(*this, assignments_int[originQueryNum], IRT_EQ, originPoolNum, originsConnectedEqually);
+                    // Implication as a constraint e.g. A=a0 => B=b0
+                    BoolVar implication(*this, 0, 1);
+                    rel(*this, ithAssignedToJth, BOT_IMP, originsConnectedEqually, 1);
+                }
+            }
+        }
+    }
+    
+    // branching TODO test and improve
+    
+    // this tells the search engine to branch first on the variable with the smallest domain,
+    // that is the variables where there are less components of that type in the pool
+    // The engine will then try the possible values (assignments) in ascending order.
+    branch(*this, assignments_int, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
+}
+
+void Solution::constrain(const Space& _b) 
+{
+    const Solution& b = static_cast<const Solution&>(_b);
+    
+    // Number of used components
+    // Determine number of used values in b
+    int valuesCount = 0;
+    std::vector<int> values;
+    for(IntVarArray::const_iterator it = b.assignments_int.begin(); it != b.assignments_int.end(); ++it)
+    {
+        // if not contains...
+        if(std::find(values.begin(), values.end(), it->val()) == values.end())
+        {
+            values.push_back(it->val());
+            valuesCount++;
+        }
+    }
+    
+    // We must have at most that many components used as the so far best solution
+    // FIXME LQ, and stuff below
+    nvalues(*this, assignments_int, IRT_LE, valuesCount);
+    
+    // If we have an equal amount of values used, the number of reconfigured components must be less
+    BoolVar equalAmountOfValues;
+    //nvalues(*this, assignments_int, IRT_LQ, valuesCount, equalAmountOfValues);
+    
+    std::cout << " Adding best search constraint. This ";
+    print();
+    std::cout << " must be better than so far best ";
+    b.print();
+}
+
+Solution::Solution(bool share, Solution& s) 
+    : Space(share, s)
+    , query(s.query)
+    , componentPool(s.componentPool)
+{
+    assignments_int.update(*this, share, s.assignments_int);
+}
+
+Space* Solution::copy(bool share) 
+{
+    return new Solution(share,*this);
+}
+
+void Solution::print() const 
+{
+    print(std::cout);
+}
+
+void Solution::print(std::ostream& os) const 
+{
+    os << "Solution: { ";
+    for(int i = 0; i < assignments_int.size(); i++)
+    {
+        os << query.getComponents()[i].getName() << "=";
+        if(assignments_int[i].assigned())
+        {
+                os << componentPool.getComponents()[assignments_int[i].val()].getName();
+        }
+        else
+        {
+            os << assignments_int[i];
+        }
+        os << ", ";
+    }
+    os << "}" << std::endl;
+}
+
 
 } // end namespace composition_management
 
