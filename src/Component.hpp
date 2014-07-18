@@ -5,9 +5,7 @@
 #include<map>
 #include <string>
 
-// TODO CamelCase & .hpp
-
-#include <gecode_composition_management/port.h>
+#include <gecode_composition_management/Port.hpp>
 
 namespace composition_management {
     

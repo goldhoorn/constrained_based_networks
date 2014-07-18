@@ -1,4 +1,4 @@
-#include "component.h"
+#include "Component.hpp"
 #include <sstream>
 
 namespace composition_management {

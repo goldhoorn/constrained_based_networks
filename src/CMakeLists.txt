@@ -1,15 +1,15 @@
 #find_package(Boost 1.48 COMPONENTS serialization system REQUIRED)
 
 set(SOURCES
-   component.cpp
-   query.cpp
-   solution.cpp
+   Component.cpp
+   Query.cpp
+   Solution.cpp
 )
 set(HEADERS
-   component.h
-   port.h
-   query.h
-   solution.h
+   Component.hpp
+   Port.hpp
+   Query.hpp
+   Solution.hpp
 )
 
 set(Gecode_LIBRARIES
@@ -32,6 +32,6 @@ rock_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} ${Gecode_LIBRARIES})
 
 rock_executable(gecode_composition_management-test
-        SOURCES solution.cpp
+        SOURCES Solution.cpp
         DEPS ${PROJECT_NAME}
 )

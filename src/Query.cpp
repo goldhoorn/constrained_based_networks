@@ -1,4 +1,4 @@
-#include "query.h"
+#include "Query.hpp"
 
 #include<stdexcept>
 #include<deque>

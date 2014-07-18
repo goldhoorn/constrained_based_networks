@@ -4,8 +4,8 @@
 #include<deque>
 #include<vector>
 
-#include <gecode_composition_management/component.h>
-#include <gecode_composition_management/port.h>
+#include <gecode_composition_management/Component.hpp>
+#include <gecode_composition_management/Port.hpp>
 
 namespace composition_management {
 

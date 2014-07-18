@@ -3,7 +3,7 @@
 
 #include <gecode/int.hh>
 #include <gecode/search.hh>
-#include <gecode_composition_management/query.h>
+#include <gecode_composition_management/Query.hpp>
 
 namespace composition_management {
 

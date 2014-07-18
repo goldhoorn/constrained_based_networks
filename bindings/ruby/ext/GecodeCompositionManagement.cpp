@@ -9,10 +9,10 @@
 #include <deque>
 #include <iostream>
 
-#include <gecode_composition_management/port.h>
-#include <gecode_composition_management/component.h>
-#include <gecode_composition_management/query.h>
-#include <gecode_composition_management/solution.h>
+#include <gecode_composition_management/Port.hpp>
+#include <gecode_composition_management/Component.hpp>
+#include <gecode_composition_management/Query.hpp>
+#include <gecode_composition_management/Solution.hpp>
 
 
 using namespace Rice;

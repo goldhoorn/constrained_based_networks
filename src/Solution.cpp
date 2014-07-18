@@ -1,11 +1,11 @@
+#include "Solution.hpp"
+
 #include <gecode/gist.hh>
 #include <gecode/minimodel.hh>
 
 #include<vector>
 #include<map>
 #include<stdexcept>
-
-#include "solution.h"
 
 using namespace Gecode;
 
