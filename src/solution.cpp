@@ -1,5 +1,3 @@
-#include <gecode/int.hh>
-#include <gecode/search.hh>
 #include <gecode/gist.hh>
 #include <gecode/minimodel.hh>
 
@@ -162,10 +160,10 @@ Space* Solution::copy(bool share)
 
 void Solution::print() const 
 {
-    print(std::cout);
+    printToStream(std::cout);
 }
 
-void Solution::print(std::ostream& os) const 
+void Solution::printToStream(std::ostream& os) const 
 {
     os << "Solution: { ";
     for(int i = 0; i < assignments_int.size(); i++)

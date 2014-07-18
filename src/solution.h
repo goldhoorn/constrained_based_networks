@@ -1,18 +1,16 @@
 #ifndef GECODE_COMPOSITION_MANAGEMENT_SOLUTION_H
 #define GECODE_COMPOSITION_MANAGEMENT_SOLUTION_H
 
+#include <gecode/int.hh>
 #include <gecode/search.hh>
-
-#include "query.h"
-
-using namespace Gecode;
+#include <gecode_composition_management/query.h>
 
 namespace composition_management {
 
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type Solution.
  */
-class Solution : public Space
+class Solution : public Gecode::Space
 {
 protected:
     /**
@@ -26,7 +24,7 @@ protected:
     /**
      * Assignments of query components to pool components. This is what has to be solved.
      */
-    IntVarArray assignments_int;
+    Gecode::IntVarArray assignments_int;
 public:
     /**
      * Construct a solution with an initial situation to search.
@@ -38,7 +36,7 @@ public:
      * currently best solution _b is passed and we have to constraint that this solution can only
      * be better than b, for it to be excluded if it isn't
      */
-    virtual void constrain(const Space& _b);
+    virtual void constrain(const Gecode::Space& _b);
     
     /**
      * search support. There must be a copy constructor like this for the search engine.
@@ -48,7 +46,7 @@ public:
     /**
      * This method is called be the search engine
      */
-    virtual Space* copy(bool share);
+    virtual Gecode::Space* copy(bool share);
     
     /**
      * print support
@@ -57,7 +55,7 @@ public:
     /**
      * print support for given outputstream
      */
-    void print(std::ostream& os) const;
+    void printToStream(std::ostream& os) const;
     
     /**
      * Static method to find a best solution with BAB search.
