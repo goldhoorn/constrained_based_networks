@@ -89,7 +89,7 @@ Array wrap_component_getConfiguration(Object self)
     return to_ruby<StringVector>(conf);
 }
 
-void wrap_component_setConfiguration(Object self, Array configuration)
+void wrap_component_setConfiguration(Object self, Object configuration)
 {
     Data_Object<Component> component(self, rb_cComponent);
     StringVector conf = from_ruby< StringVector >(configuration);
@@ -110,15 +110,23 @@ Array wrap_component_getOutPorts(Object self)
     return to_ruby<OutgoingPortVector>(ports);
 }
 
+Object wrap_component_copy(Object self)
+{
+    // Use C++ Copy Constructor
+    Data_Object<Component> component(self, rb_cComponent);
+    Component* copy = new Component(*component);
+    return Data_Object<Component>(copy);
+}
+
 /**
  *
  */
 extern "C"
-void Init_gecodecompositionmanagement_ruby()
+void Init_gecode_composition_management_ruby()
 {
 
     // Define module FIPA
-    rb_mGecodeCompMgmt = define_module("gecode_composition_management");
+    rb_mGecodeCompMgmt = define_module("GECODE_COMPOSITION_MANAGEMENT");
     
     rb_cIncomingPort = define_class_under<IncomingPort>(rb_mGecodeCompMgmt, "IncomingPort")
         .define_constructor(Constructor<IncomingPort, const std::string&, const std::string&>(), (Arg("datatype"), Arg("name")))
@@ -132,18 +140,18 @@ void Init_gecodecompositionmanagement_ruby()
     
     rb_cComponent = define_class_under<Component>(rb_mGecodeCompMgmt, "Component")
         .define_constructor(Constructor<Component, int, const std::string&>(), (Arg("type"), Arg("name")))
-        .define_constructor(Constructor<Component>() )
+        .define_method("copy", &wrap_component_copy)
         .define_method("toString", &Component::toString)
         .define_method("getType", &Component::getType)
         .define_method("getName", &Component::getName)
-        .define_method("setName", &Component::getName, Arg("name"))
+        .define_method("setName", &Component::setName, Arg("name"))
         .define_method("pushBackInPort", &Component::pushBackInPort, Arg("inPort"))
         .define_method("pushBackOutPort", &Component::pushBackOutPort, Arg("outPort"))
         .define_method("putIncomingConnection", &Component::putIncomingConnection, (Arg("inPort"), Arg("componentName")))
         .define_method("putOutgoingConnection", &Component::putOutgoingConnection, (Arg("outPort"), Arg("componentName")))
         .define_method("getConfiguration", &wrap_component_getConfiguration)
         .define_method("setConfiguration", &wrap_component_setConfiguration, Arg("confguration"))
-        .define_method("getInPort", &wrap_component_getInPorts)
+        .define_method("getInPorts", &wrap_component_getInPorts)
         .define_method("getOutPorts", &wrap_component_getOutPorts)
     ;
     
@@ -159,7 +167,7 @@ void Init_gecodecompositionmanagement_ruby()
     ;
     
     rb_cSolution = define_class_under<Solution>(rb_mGecodeCompMgmt, "Solution")
-        .define_method("babSearch", &Solution::babSearch, (Arg("query"), Arg("pool"))) // static method
+        .define_singleton_method("babSearch", &Solution::babSearch, (Arg("query"), Arg("pool"))) // static method
         .define_method("print", &Solution::print)
     ;
 }

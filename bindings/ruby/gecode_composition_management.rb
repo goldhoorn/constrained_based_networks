@@ -1,1 +1,1 @@
-require 'gecode_composition_management_ruby/core.rb'
+require 'gecode_composition_management/core.rb'
