@@ -38,8 +38,11 @@ static Module rb_mGecodeCompMgmt;
 template<>
 StringVector from_ruby< StringVector >(Object obj)
 {
-    Data_Object<StringVector> strings(obj, stringVector);
-    return *strings;
+    Array a(obj);
+    StringVector v;
+    for(Array::iterator aI = a.begin(); aI != a.end(); ++aI)
+        v.push_back(((String)*aI).str());
+    return v;
 }
 
 template<>
@@ -89,11 +92,13 @@ Array wrap_component_getConfiguration(Object self)
     return to_ruby<StringVector>(conf);
 }
 
-void wrap_component_setConfiguration(Object self, Object configuration)
+Object wrap_component_setConfiguration(Object self, Array configuration)
 {
     Data_Object<Component> component(self, rb_cComponent);
     StringVector conf = from_ruby< StringVector >(configuration);
     component->setConfiguration(conf);
+    
+    return self;
 }
 
 Array wrap_component_getInPorts(Object self)
@@ -147,8 +152,8 @@ void Init_gecode_composition_management_ruby()
         .define_method("setName", &Component::setName, Arg("name"))
         .define_method("pushBackInPort", &Component::pushBackInPort, Arg("inPort"))
         .define_method("pushBackOutPort", &Component::pushBackOutPort, Arg("outPort"))
-        .define_method("putIncomingConnection", &Component::putIncomingConnection, (Arg("inPort"), Arg("componentName")))
-        .define_method("putOutgoingConnection", &Component::putOutgoingConnection, (Arg("outPort"), Arg("componentName")))
+        //.define_method("putIncomingConnection", &Component::putIncomingConnection, (Arg("inPort"), Arg("componentName")))
+        //.define_method("putOutgoingConnection", &Component::putOutgoingConnection, (Arg("outPort"), Arg("componentName")))
         .define_method("getConfiguration", &wrap_component_getConfiguration)
         .define_method("setConfiguration", &wrap_component_setConfiguration, Arg("confguration"))
         .define_method("getInPorts", &wrap_component_getInPorts)
@@ -159,7 +164,7 @@ void Init_gecode_composition_management_ruby()
         .define_constructor(Constructor<Query, const std::string&>(), Arg("name"))
         .define_method("toString", &Query::toString)
         .define_method("getComponent", &Query::getComponent, Arg("name"))
-        .define_method("getComponentIndex", &Query::getComponentIndex, Arg("name"))
+        //.define_method("getComponentIndex", &Query::getComponentIndex, Arg("name"))
         .define_method("getName", &Query::getName)
         .define_method("addComponent", &Query::addComponent, Arg("component"))
         .define_method("integrateSubQuery", &Query::integrateSubQuery, Arg("subQuery"))

@@ -23,10 +23,10 @@ queryCompAnotherC = compC.copy
 queryCompAnotherC.setName("anotherC")
 # Configure query components
 compAConf = ["3", "1"]
-#queryCompA.setConfiguration(compAConf) TODO
+queryCompA.setConfiguration(compAConf)
 # No constraint on B's config
 compCConf = ["2"]
-# queryCompC.setConfiguration(compCConf) TODO
+queryCompC.setConfiguration(compCConf)
 # Construct query and subquery
 query = Query.new("query")
 subquery = Query.new("subquery")
@@ -65,7 +65,6 @@ poolCompC1.setName("c1")
 #compA0Conf = ["3", "3"]
 #poolCompA0.setConfiguration(compA0Conf)
 #compB0Conf = ["2"]
-#compB0Conf.push_back("2")
 #poolCompB0.setConfiguration(compB0Conf)
 #compC1Conf = ["2"]
 #poolCompC1.setConfiguration(compC1Conf)
