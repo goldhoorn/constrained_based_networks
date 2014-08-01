@@ -1,5 +1,6 @@
 #include "Component.hpp"
 #include <sstream>
+#include <stdexcept>
 
 namespace composition_management {
     
@@ -97,6 +98,30 @@ const std::vector<OutgoingPort>& Component::getOutPorts() const
 void Component::pushBackOutPort(const OutgoingPort& outPort)
 {
     outPorts.push_back(outPort);
+}
+
+const IncomingPort& Component::getIncomingPortByName(const std::string& name) const
+{
+    for(int i = 0; i < inPorts.size(); i++)
+    {
+        if(inPorts[i].name == name)
+        {
+            return inPorts[i];
+        }
+    }
+    throw std::runtime_error("Component getIncomingPortByName: no port named " + name);
+}
+
+const OutgoingPort& Component::getOutgoingPortByName(const std::string& name) const
+{
+    for(int i = 0; i < outPorts.size(); i++)
+    {
+        if(outPorts[i].name == name)
+        {
+            return outPorts[i];
+        }
+    }
+    throw std::runtime_error("Component getOutgoingPortByName: no port named " + name);
 }
 
 const std::map<IncomingPort, std::string>& Component::getIncomingConnections() const 

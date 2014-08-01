@@ -1,7 +1,7 @@
 #include "Query.hpp"
 
-#include<stdexcept>
-#include<deque>
+#include <stdexcept>
+#include <deque>
 
 namespace composition_management {
 
@@ -112,15 +112,20 @@ std::string Query::getName() const
     return name;
 }
 
-void Query::addConnection(const std::string& outCompName, const OutgoingPort& out, const std::string& inCompName, const IncomingPort& in)
+void Query::addConnection(const std::string& outCompName, const std::string& outPortName, const std::string& inCompName, const std::string& inPortName)
 {
+    // find components
+    Component& inComp = getComponent(inCompName);
+    Component& outComp = getComponent(outCompName);
+    
+    // find ports
+    const IncomingPort& in = inComp.getIncomingPortByName(inPortName);
+    const OutgoingPort& out = outComp.getOutgoingPortByName(outPortName);
+    
     if(out.datatype != in.datatype)
     {
         throw std::runtime_error("Query addConnection: datatypes incompatible.");
     }
-    // find components
-    Component& inComp = getComponent(inCompName);
-    Component& outComp = getComponent(outCompName);
     
     // add connections
     outComp.putOutgoingConnection(out, inCompName);

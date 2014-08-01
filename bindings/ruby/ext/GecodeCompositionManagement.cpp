@@ -168,7 +168,7 @@ void Init_gecode_composition_management_ruby()
         .define_method("getName", &Query::getName)
         .define_method("addComponent", &Query::addComponent, Arg("component"))
         .define_method("integrateSubQuery", &Query::integrateSubQuery, Arg("subQuery"))
-        .define_method("addConnection", &Query::addConnection, (Arg("outCompName"), Arg("out"), Arg("inCompName"), Arg("in")))
+        .define_method("addConnection", &Query::addConnection, (Arg("outCompName"), Arg("outPortName"), Arg("inCompName"), Arg("inPortName")))
     ;
     
     rb_cSolution = define_class_under<Solution>(rb_mGecodeCompMgmt, "Solution")

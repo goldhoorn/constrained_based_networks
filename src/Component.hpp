@@ -103,6 +103,13 @@ public:
     const std::vector<IncomingPort>& getInPorts() const;
     
     /**
+     * Gets an incoming port by name.
+     * 
+     * \throws Exception if there is no such port
+     */
+    const IncomingPort& getIncomingPortByName(const std::string& name) const;
+    
+    /**
      * Push back an incoming port
      */
     void pushBackInPort(const IncomingPort& inPort);
@@ -111,6 +118,13 @@ public:
      * Get the outgoing ports
      */
     const std::vector<OutgoingPort>& getOutPorts() const;
+    
+    /**
+     * Gets an outgoing port by name.
+     * 
+     * \throws Exception if there is no such port
+     */
+    const OutgoingPort& getOutgoingPortByName(const std::string& name) const;
     
     /**
      * Push back an outgoing port

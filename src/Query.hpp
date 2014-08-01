@@ -80,9 +80,9 @@ public:
     /**
      * This adds a new connection, if the data types are compatible.
      * 
-     * \throws Exception if the datatypes differ.
+     * \throws Exception if the datatypes differ, there are no such components or ports
      */
-    void addConnection(const std::string& outCompName, const OutgoingPort& out, const std::string& inCompName, const IncomingPort& in);
+    void addConnection(const std::string& outCompName, const std::string& outPortName, const std::string& inCompName, const std::string& inPortName);
     
     /**
      * Transforms the query/pool into a std::string.

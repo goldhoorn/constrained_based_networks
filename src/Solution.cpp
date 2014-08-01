@@ -219,14 +219,14 @@ int main(int argc, char* argv[]) {
     Component compB (1, "b");
     Component compC (2, "c");
     // And their ports
-    compA.pushBackOutPort(OutgoingPort("std::string","a_out_1"));
-    compA.pushBackOutPort(OutgoingPort("int","a_out_2"));
-    compA.pushBackInPort(IncomingPort("std::string","a_in_1"));
-    compB.pushBackInPort(IncomingPort("std::string","b_in_1"));
-    compB.pushBackInPort(IncomingPort("float","b_in_2"));
-    compC.pushBackOutPort(OutgoingPort("std::string","c_out_1"));
-    compC.pushBackOutPort(OutgoingPort("float","c_out_2"));
-    compC.pushBackInPort(IncomingPort("int","c_in_1"));
+    compA.pushBackOutPort(OutgoingPort("std::string","out0"));
+    compA.pushBackOutPort(OutgoingPort("int","out1"));
+    compA.pushBackInPort(IncomingPort("std::string","in0"));
+    compB.pushBackInPort(IncomingPort("std::string","in0"));
+    compB.pushBackInPort(IncomingPort("float","in1"));
+    compC.pushBackOutPort(OutgoingPort("std::string","out0"));
+    compC.pushBackOutPort(OutgoingPort("float","out1"));
+    compC.pushBackInPort(IncomingPort("int","in0"));
     
     // Query components
     Component queryCompA = compA;
@@ -252,16 +252,16 @@ int main(int argc, char* argv[]) {
     
     
     // Configure connections
-    subquery.addConnection(queryCompC.getName(), subquery.getComponent(queryCompC.getName()).getOutPorts().at(1), 
-                           queryCompB.getName(), subquery.getComponent(queryCompB.getName()).getInPorts().at(1));
+    subquery.addConnection(queryCompC.getName(), "out1", 
+                           queryCompB.getName(), "in1");
     query.integrateSubQuery(subquery);
     
-    query.addConnection(queryCompA.getName(), query.getComponent(queryCompA.getName()).getOutPorts().at(0), 
-                        queryCompB.getName(), query.getComponent(queryCompB.getName()).getInPorts().at(0));
-    query.addConnection(queryCompA.getName(), query.getComponent(queryCompA.getName()).getOutPorts().at(1), 
-                        queryCompAnotherC.getName(), query.getComponent(queryCompAnotherC.getName()).getInPorts().at(0));
-    query.addConnection(queryCompAnotherC.getName(), query.getComponent(queryCompAnotherC.getName()).getOutPorts().at(0), 
-                        queryCompA.getName(), query.getComponent(queryCompA.getName()).getInPorts().at(0));
+    query.addConnection(queryCompA.getName(), "out0", 
+                        queryCompB.getName(), "in0");
+    query.addConnection(queryCompA.getName(), "out1", 
+                        queryCompAnotherC.getName(), "in0");
+    query.addConnection(queryCompAnotherC.getName(), "out0", 
+                        queryCompA.getName(), "in0");
     
     // Pool components
     Component poolCompA0 = compA;
@@ -297,17 +297,17 @@ int main(int argc, char* argv[]) {
     pool.addComponent(poolCompC1);
     
     // Configure connections
-    pool.addConnection(poolCompA0.getName(), pool.getComponent(poolCompA0.getName()).getOutPorts().at(0), 
-                       poolCompB0.getName(), pool.getComponent(poolCompB0.getName()).getInPorts().at(0));
-    pool.addConnection(poolCompA0.getName(), pool.getComponent(poolCompA0.getName()).getOutPorts().at(1), 
-                       poolCompC1.getName(), pool.getComponent(poolCompC1.getName()).getInPorts().at(0));
-    pool.addConnection(poolCompC0.getName(), pool.getComponent(poolCompC0.getName()).getOutPorts().at(0), 
-                       poolCompA0.getName(), pool.getComponent(poolCompA0.getName()).getInPorts().at(0));
-    pool.addConnection(poolCompC1.getName(), pool.getComponent(poolCompC1.getName()).getOutPorts().at(1), 
-                       poolCompB0.getName(), pool.getComponent(poolCompB0.getName()).getInPorts().at(1));
+    pool.addConnection(poolCompA0.getName(), "out0", 
+                       poolCompB0.getName(), "in0");
+    pool.addConnection(poolCompA0.getName(), "out1", 
+                       poolCompC1.getName(), "in0");
+    pool.addConnection(poolCompC0.getName(), "out0", 
+                       poolCompA0.getName(), "in0");
+    pool.addConnection(poolCompC1.getName(), "out1", 
+                       poolCompB0.getName(), "in1");
     // Optional:
-    pool.addConnection(poolCompA0.getName(), pool.getComponent(poolCompA0.getName()).getOutPorts().at(0), 
-                       poolCompB1.getName(), pool.getComponent(poolCompB1.getName()).getInPorts().at(0));
+    pool.addConnection(poolCompA0.getName(), "out0", 
+                       poolCompB1.getName(), "in0");
     
     // Print pool and query
     std::cout << "Pool: " << pool.toString();
