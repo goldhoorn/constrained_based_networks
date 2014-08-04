@@ -165,10 +165,10 @@ void Solution::print() const
 
 void Solution::printToStream(std::ostream& os) const 
 {
-    os << "Solution: { ";
+    os << "Solution: { " << std::endl;
     for(int i = 0; i < assignments_int.size(); i++)
     {
-        os << query.getComponents()[i].getName() << "=";
+        os << "\t" << query.getComponents()[i].getName() << "=";
         if(assignments_int[i].assigned())
         {
                 os << componentPool.getComponents()[assignments_int[i].val()].getName();
@@ -177,7 +177,7 @@ void Solution::printToStream(std::ostream& os) const
         {
             os << assignments_int[i];
         }
-        os << ", ";
+        os << ", "<< std::endl;
     }
     os << "}" << std::endl;
 }
