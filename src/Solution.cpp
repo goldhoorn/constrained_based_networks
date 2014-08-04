@@ -14,42 +14,47 @@ namespace composition_management {
 Solution::Solution(Query query, Query componentPool) 
     : query(query)
     , componentPool(componentPool)
-    , assignments_int(*this, query.getComponents().size(), 0, componentPool.getComponents().size())
-{        
-    // The first indices of a type, in the componentPool
-    std::vector<int> typeIndicesPool;
-    for(int i = 0; i < componentPool.getComponents().size(); i++) {
-        if(i == 0 || componentPool.getComponents().at(i - 1).getType() != componentPool.getComponents().at(i).getType()) {
-            typeIndicesPool.push_back(i);
-        }
-    }
-    // The first indices of a type, in the query
-    std::vector<int> typeIndicesQuery;
-    for(int i = 0; i < query.getComponents().size(); i++) {
-        if(i == 0 || query.getComponents().at(i - 1).getType() != query.getComponents().at(i).getType()) {
-            typeIndicesQuery.push_back(i);
-        }
-    }
-    
-    for(int i = 0, type = -1; i < assignments_int.size(); i++)
+    , assignments_int(*this, query.getComponents().size(), 0, componentPool.getComponents().size() - 1)
+{
+    // Check types of all query components against all pool components and only allow identical types to be assigned
+    for(int i = 0; i < assignments_int.size(); i++)
     {
-        // Increment type if necessary
-        if(std::find(typeIndicesQuery.begin(), typeIndicesQuery.end(), i) != typeIndicesQuery.end())
+        for(int j = 0; j < componentPool.getComponents().size(); j++)
         {
-            type++;
+            if(query.getComponents().at(i).getType() != componentPool.getComponents().at(j).getType())
+            {
+                // This constrains to that the ith query component cannot be assigned the jth pool component,
+                // as their types differ.
+                rel(*this, assignments_int[i], IRT_NQ, j);
+            }
         }
-        int upperLimit = type + 1 < typeIndicesPool.size() ? typeIndicesPool[type + 1] - 1 : componentPool.getComponents().size() - 1;
-        // Constraint domain such that the types equal
-        // The initial domain of each IntVar is the number of pool components. This constraints it so be just
-        // the pool components of the same type. This is simplified with lower ans upper bound as components
-        // are ordered in ascending type.
-        dom(*this, assignments_int[i], typeIndicesPool[type], upperLimit);
     }
     
     // For all queried components
     for(int i = 0; i < assignments_int.size(); i++)
     {
         std::cout << "Constraints for query " << query.getComponents()[i].toString() << std::endl;
+        
+        // Differently configured query components may not be assigned the same unconfigured pool component
+        for(int j = assignments_int[i].min(); j <= assignments_int[i].max(); j++)
+        {
+            if(i == j)
+            {
+                continue;
+            }
+            std::cout << " Against query " << query.getComponents()[j].toString() << std::endl;
+            
+            const std::vector<std::string>& requiredConfiguration0 = query.getComponents().at(i).getConfiguration();
+            const std::vector<std::string>& requiredConfiguration1 = query.getComponents().at(j).getConfiguration();
+            // If the configurations are not compatible, post != constraint on this assignment
+            if(!requiredConfiguration0.empty()&& !requiredConfiguration1.empty() && requiredConfiguration0 != requiredConfiguration1)
+            {
+                std::cout << "Adding configuration constraint. Component " << query.getComponents()[i].getName() << "!=" <<  query.getComponents()[j].getName() << std::endl;
+                // This means that the ith query component and the jth query component cannot be assigned the same pool component,
+                // since the configurations are incompatible.
+                rel(*this, assignments_int[i], IRT_NQ, assignments_int[j]);
+            }
+        }
         
         // For all possible pool components they can be assigned
         for(int j = assignments_int[i].min(); j <= assignments_int[i].max(); j++)
