@@ -35,10 +35,10 @@ Data_Type<Solution> rb_cSolution;
 static Module rb_mGecodeCompMgmt;
 
 // Conversion templates
-template<>
-StringVector from_ruby< StringVector >(Object obj)
+//template<>
+StringVector from_ruby_string_vector(Array a)
 {
-    Array a(obj);
+    //Array a(obj);
     StringVector v;
     for(Array::iterator aI = a.begin(); aI != a.end(); ++aI)
         v.push_back(((String)*aI).str());
@@ -95,7 +95,7 @@ Array wrap_component_getConfiguration(Object self)
 Object wrap_component_setConfiguration(Object self, Array configuration)
 {
     Data_Object<Component> component(self, rb_cComponent);
-    StringVector conf = from_ruby< StringVector >(configuration);
+    StringVector conf = from_ruby_string_vector(configuration);
     component->setConfiguration(conf);
     
     return self;

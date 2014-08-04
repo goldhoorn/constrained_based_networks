@@ -50,7 +50,7 @@ protected:
     /**
      * The outgoing connections. Ports mapped to the names of the component, they are connected to.
      */
-    std::map<OutgoingPort, std::string> outgoingConnections;
+    std::multimap<OutgoingPort, std::string> outgoingConnections;
 public:
     /**
      *Default constructor to be able to use components as map value type.
@@ -144,7 +144,7 @@ public:
     /**
      * Get the outgoing connections
      */
-    const std::map<OutgoingPort, std::string>& getOutgoingConnections() const;
+    const std::multimap<OutgoingPort, std::string>& getOutgoingConnections() const;
     
     /**
      * Put an outgoing connection into the map

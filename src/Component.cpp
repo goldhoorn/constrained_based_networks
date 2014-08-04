@@ -46,7 +46,7 @@ std::string Component::toString() const
     }
     ss << "]\n";
     ss << "  Outconnections: [";
-    for(std::map<OutgoingPort, std::string>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
+    for(std::multimap<OutgoingPort, std::string>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
     {
         ss  << it->first.toString() << it->second << " ";
     }
@@ -134,14 +134,14 @@ void Component::putIncomingConnection(const IncomingPort& inPort, const std::str
     incomingConnections[inPort] = componentName;
 }
 
-const std::map<OutgoingPort, std::string>& Component::getOutgoingConnections() const 
+const std::multimap<OutgoingPort,std::string>& Component::getOutgoingConnections() const 
 { 
     return outgoingConnections;
 }
 
 void Component::putOutgoingConnection(const OutgoingPort& outPort, const std::string& componentName)
 {
-    outgoingConnections[outPort] = componentName;
+    outgoingConnections.insert(std::pair<OutgoingPort,std::string>(outPort, componentName));
 }
 
 } // end namespace composition_management
