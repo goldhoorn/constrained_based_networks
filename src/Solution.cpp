@@ -34,11 +34,12 @@ Solution::Solution(Query query, Query componentPool)
     for(int i = 0; i < assignments_int.size(); i++)
     {
         std::cout << "Constraints for query " << query.getComponents()[i].toString() << std::endl;
+        std::cout << "With domian " << assignments_int[i] << std::endl;
         
         // Differently configured query components may not be assigned the same unconfigured pool component
-        for(int j = assignments_int[i].min(); j <= assignments_int[i].max(); j++)
+        for(int j = 0; j < assignments_int.size(); j++)
         {
-            if(i == j)
+            if(i == j || query.getComponents().at(i).getType() != query.getComponents().at(j).getType())
             {
                 continue;
             }
