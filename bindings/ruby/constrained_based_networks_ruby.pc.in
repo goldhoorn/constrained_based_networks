@@ -1,0 +1,7 @@
+extdir=@CMAKE_INSTALL_PREFIX@/@RUBY_EXTENSIONS_INSTALL_DIR@
+
+Name: fgecode_composition_management
+Description: gecode_composition_management object for manipulation in ruby
+Libs: -L${extdir}
+Version: @PROJECT_VERSION@
+Cflags: -I${extdir}

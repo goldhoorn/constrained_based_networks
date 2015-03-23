@@ -1,0 +1,10 @@
+<package>
+  <description brief="Constrained based Component NEtwork Handling">
+  </description>
+  <author>Matthias.Goldhoorn@uni-bremen.de</author>
+  <license></license>
+  <url>http://</url>
+  <logo>http://</logo>
+  <depend package="base/cmake" />
+  <depend package="base/types" />
+</package>
