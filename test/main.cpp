@@ -14,11 +14,14 @@ int main(int argc, char* argv[]) {
     Task B("b");
     Task C("c");
     Task C2("c2");
+    Task C3("c3");
     DataService D("data-service_1");
     C.addFullfillment("data-service_1");
+    C3.addFullfillment("data-service_1");
     compA.addChild(&B,"b_child");
     //compA.addChild(&C,"c_child");
     compA.addChild(&D,"c_abstract_child");
+
 
     compA.setActive();
 

@@ -29,6 +29,8 @@ Solution::Solution(Pool *pool)
         if(composition->isActive()){
             std::cout << "Composition " << composition->getName() << " is active" << std::endl;
             rel(*this,active[cmp_id],IRT_EQ, 1);
+        }else{
+            rel(*this,active[cmp_id],IRT_EQ, 0);
         }
 
         unsigned int child_id=0;
@@ -44,9 +46,13 @@ Solution::Solution(Pool *pool)
                     //rel(*this,active[cmp_id], 
                     //Do nothing later add weights
             //        rel(*this,composition_child_constraints[child_id],IRT_EQ, 0, active[cmp_id]);
+
+                    //define that if the child is used, then it needs to be active
+                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), imp(active[pool->getId(provider)]));
                 }else{
                     std::cout << "####### forbidding for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
                     rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), active[cmp_id]);
+
                 }
             }
         child_id++;
@@ -185,16 +191,17 @@ void Solution::constrain(const Space& _b)
     // We must have at most that many components used as the so far best solution
     // FIXME LQ, and stuff below
     //nvalues(*this, active, IRT_LE, valuesCount);
+    //nvalues(*this, active, IRT_GT, valuesCount);
     
     // If we have an equal amount of values used, the number of reconfigured components must be less
     BoolVar equalAmountOfValues;
     //nvalues(*this, assignments_int, IRT_LQ, valuesCount, equalAmountOfValues);
-   /* 
+    
     std::cout << " Adding best search constraint. This ";
     print();
-    std::cout << " must be better than so far best ";
-    b.print();
-    */
+    //std::cout << " must be better than so far best ";
+    //b.print();
+    
 }
 
 Solution::Solution(bool share, Solution& s) 

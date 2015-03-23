@@ -11,6 +11,7 @@
 
 #include <constrained_based_networks/Port.hpp>
 #include <constrained_based_networks/Task.hpp>
+#include <constrained_based_networks/DataService.hpp>
 #include <constrained_based_networks/Composition.hpp>
 #include <constrained_based_networks/Query.hpp>
 #include <constrained_based_networks/Solution.hpp>
