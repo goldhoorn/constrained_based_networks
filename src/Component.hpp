@@ -1,157 +1,38 @@
-#ifndef GECODE_COMPOSITION_MANAGEMENT_COMPONENT_H
-#define GECODE_COMPOSITION_MANAGEMENT_COMPONENT_H
+#pragma once
 
-#include<vector>
-#include<map>
 #include <string>
+#include <vector>
 
-#include <gecode_composition_management/Port.hpp>
+namespace constrained_based_networks {
 
-namespace composition_management {
-    
-/**
- * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,
- * on which it can be connected to other components.
- */
-class Component {
-protected:
-    /**
-     * The type as an int.
-     */
-    int type;
-    
-    /**
-     * Must be unique. This must be ensured by the user of the library!
-     */
-    std::string name;
-    
-    /**
-     * The configuration consists of a variable sized vector of strings, naming one configuration profile.
-     * 
-     * empty means not configured / no constraint on configuration. 
-     */
-    std::vector<std::string> configuration;
-    
-    /**
-     * All incoming ports.
-     */
-    std::vector<IncomingPort> inPorts;
-    
-    /**
-     * All outgoing ports.
-     */
-    std::vector<OutgoingPort> outPorts;
-    
-    /**
-     * The incoming connections. Ports mapped to the names of the component, they are connected to.
-     */
-    std::map<IncomingPort, std::string> incomingConnections;
-    
-    /**
-     * The outgoing connections. Ports mapped to the names of the component, they are connected to.
-     */
-    std::multimap<OutgoingPort, std::string> outgoingConnections;
-public:
-    /**
-     *Default constructor to be able to use components as map value type.
-     */
-    Component();
-    
-    /**
-     * Construct component with type and name.
-     */
-    Component(int type, std::string name) ;
-    
-    /**
-     * Components are equal if their name and type equal.
-     */
-    bool operator ==( const Component &comp ) const;
-    
-    /**
-     * String representation of a component
-     */
-    std::string toString() const;
-    
-    /**
-     * Get the type
-     */
-    int getType() const;
-    
-    /**
-     * Get the name
-     */
-    const std::string& getName() const;
-    
-    /**
-     * Set the name
-     */
-    void setName(const std::string& name);
-    
-    /**
-     * Get the configuration
-     */
-    const std::vector<std::string>& getConfiguration() const;
-    
-    /**
-     * Push back a configuration value
-     */
-    void setConfiguration(const std::vector<std::string>& configuration);
-    
-    /**
-     * Get the incoming ports
-     */
-    const std::vector<IncomingPort>& getInPorts() const;
-    
-    /**
-     * Gets an incoming port by name.
-     * 
-     * \throws Exception if there is no such port
-     */
-    const IncomingPort& getIncomingPortByName(const std::string& name) const;
-    
-    /**
-     * Push back an incoming port
-     */
-    void pushBackInPort(const IncomingPort& inPort);
-    
-    /**
-     * Get the outgoing ports
-     */
-    const std::vector<OutgoingPort>& getOutPorts() const;
-    
-    /**
-     * Gets an outgoing port by name.
-     * 
-     * \throws Exception if there is no such port
-     */
-    const OutgoingPort& getOutgoingPortByName(const std::string& name) const;
-    
-    /**
-     * Push back an outgoing port
-     */
-    void pushBackOutPort(const OutgoingPort& outPort);
-    
-    /**
-     * Get the incoming connections
-     */
-    const std::map<IncomingPort, std::string>& getIncomingConnections() const;
-    
-    /**
-     * Put an incoming connection into the map
-     */
-    void putIncomingConnection(const IncomingPort& inPort, const std::string& componentName);
-    
-    /**
-     * Get the outgoing connections
-     */
-    const std::multimap<OutgoingPort, std::string>& getOutgoingConnections() const;
-    
-    /**
-     * Put an outgoing connection into the map
-     */
-    void putOutgoingConnection(const OutgoingPort& outPort, const std::string& componentName);
+class Pool;
+
+class Component{
+    public:
+        Component(Pool *pool);
+        virtual ~Component();
+        unsigned int getID() const;
+        virtual bool abstract() const=0;
+
+        void addFullfillment(std::string name);
+        bool isFullfilling(std::string name);
+        virtual bool isActive();
+        virtual void setActive();
+        std::string getName();
+
+    protected:
+        /*
+         * DataServices that this component fullfills
+         */
+        std::vector<std::string> fullfillments;
+        Pool *pool;
+        bool active;
+        std::string name;
+
+    private: 
+        unsigned int id;
+
+    friend class Pool;
 };
 
-} // end namespace composition_management
-
-#endif // GECODE_COMPOSITION_MANAGEMENT_COMPONENT_H
+}

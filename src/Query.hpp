@@ -4,13 +4,13 @@
 #include<deque>
 #include<vector>
 
-#include <gecode_composition_management/Component.hpp>
-#include <gecode_composition_management/Port.hpp>
+#include "Composition.hpp"
+#include "Port.hpp"
 
-namespace composition_management {
+namespace constrained_based_networks {
 
 /**
- * A query can is any list of Components, which can be configured and connected somehow.
+ * A query can is any list of Compositions, which can be configured and connected somehow.
  * Any actual current situation, like the component pool, can and is also modelled using this class.
  */
 class Query
@@ -24,12 +24,12 @@ protected:
     /**
      * These are ordered in ascending type order.
      */
-    std::deque<Component> components;
+    std::deque<Composition> components;
     
     /**
      * Check if there is a component with that name already
      */
-    bool existsComponentWithName(const std::string& name);
+    bool existsCompositionWithName(const std::string& name);
 public:
     /**
      * Create a new query.
@@ -37,23 +37,23 @@ public:
     Query(std::string name);
     
     /**
-     * Gets the components. This is readonly. To modify, e.g. configure Components, use getComponent
+     * Gets the components. This is readonly. To modify, e.g. configure Compositions, use getComposition
      */
-    const std::deque<Component>& getComponents() const;
+    const std::deque<Composition>& getCompositions() const;
     
     /**
      * Gets the component with the given name, so it can be modified, e.g. configured.
      * 
      * \throws Exception if there is no such component.
      */
-    Component& getComponent(std::string name);
+    Composition& getComposition(std::string name);
     
     /**
      * Gets the index of the component with the given name.
      * 
      * \throws Exception if there is no such component.
      */
-    int getComponentIndex(std::string name) const;
+    int getCompositionIndex(std::string name) const;
     
     /**
      * Gets the name.
@@ -66,7 +66,7 @@ public:
      * 
      * \throws Exception if there is already a component with that name.
      */
-    void addComponent(const Component& component);
+    void addComposition(const Composition& component);
     
     /**
      * Integrates a sub-query into this query. All components are copied into this query.
@@ -90,6 +90,6 @@ public:
     std::string toString() const;
 };
 
-} // end namespace composition_management
+} // end namespace constrained_based_networks
 
 #endif // GECODE_COMPOSITION_MANAGEMENT_QUERY_H

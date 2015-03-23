@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 
-namespace composition_management {
+namespace constrained_based_networks {
     
     /**
      * An incoming port defined by datatype and name.
@@ -68,7 +68,7 @@ namespace composition_management {
         }
     };
     
-} // end namespace composition_management
+} // end namespace constrained_based_networks
 
 
 #endif // GECODE_COMPOSITION_MANAGEMENT_PORTS_H

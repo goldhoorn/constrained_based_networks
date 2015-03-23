@@ -1,10 +1,10 @@
-require 'gecode_composition_management'
+require 'constrained_based_networks'
 
-include GECODE_COMPOSITION_MANAGEMENT
+include CONSTRAINED_BASED_NETWORKS
 
-compA = Component.new(0, "a")
-compB = Component.new(1, "b")
-compC = Component.new(2, "c")
+compA = Composition.new(0, "a")
+compB = Composition.new(1, "b")
+compC = Composition.new(2, "c")
 # And their ports
 compA.pushBackOutPort(OutgoingPort.new("std::string","out0"))
 compA.pushBackOutPort(OutgoingPort.new("int","out1"))
@@ -30,10 +30,10 @@ queryCompAnotherC.setName("anotherC")
 # Construct query and subquery
 query = Query.new("query")
 subquery = Query.new("subquery")
-query.addComponent(queryCompA)
-query.addComponent(queryCompAnotherC)
-subquery.addComponent(queryCompB)
-subquery.addComponent(queryCompC)
+query.addComposition(queryCompA)
+query.addComposition(queryCompAnotherC)
+subquery.addComposition(queryCompB)
+subquery.addComposition(queryCompC)
 
 
 # Configure connections
@@ -76,12 +76,12 @@ compC1Conf = ["2"]
 poolCompC1.setConfiguration(compC1Conf)
 # Construct pool
 pool = Query.new("pool")
-pool.addComponent(poolCompA0)
-pool.addComponent(poolCompA1)
-pool.addComponent(poolCompB0)
-pool.addComponent(poolCompB1)
-pool.addComponent(poolCompC0)
-pool.addComponent(poolCompC1)
+pool.addComposition(poolCompA0)
+pool.addComposition(poolCompA1)
+pool.addComposition(poolCompB0)
+pool.addComposition(poolCompB1)
+pool.addComposition(poolCompC0)
+pool.addComposition(poolCompC1)
 
 # Configure connections
 pool.addConnection(poolCompA0.getName(), "out0", 

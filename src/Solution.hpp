@@ -3,9 +3,9 @@
 
 #include <gecode/int.hh>
 #include <gecode/search.hh>
-#include <gecode_composition_management/Query.hpp>
+#include "Query.hpp"
 
-namespace composition_management {
+namespace constrained_based_networks {
 
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type Solution.
@@ -16,20 +16,21 @@ protected:
     /**
      * The query to compute solutions for.
      */
-    Query query;
+    //Query query;
     /**
      * The actual situation, components from the pool.
      */
-    Query componentPool;
+    //Query componentPool;
     /**
      * Assignments of query components to pool components. This is what has to be solved.
      */
-    Gecode::IntVarArray assignments_int;
+    std::vector<Gecode::IntVarArray> ir_assignments;
+    Gecode::BoolVarArray active;
 public:
     /**
      * Construct a solution with an initial situation to search.
      */
-    Solution(Query query, Query componentPool);
+    Solution(Pool *pool = Pool::getInstance());
     
     /*
      * constrain function for best solution search. the
@@ -62,9 +63,9 @@ public:
      * 
      * \throw Exception if there is no solution.
      */
-    static Solution* babSearch(Query query, Query pool);
+    static Solution* babSearch(Pool *pool);
 };
 
-} // end namespace composition_management
+} // end namespace constrained_based_networks
 
 #endif // GECODE_COMPOSITION_MANAGEMENT_SOLUTION_H

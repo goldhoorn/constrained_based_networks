@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <deque>
 
-namespace composition_management {
+namespace constrained_based_networks {
 
 
 Query::Query(std::string name)
@@ -11,40 +11,40 @@ Query::Query(std::string name)
 {
 }
 
-const std::deque<Component>& Query::getComponents() const 
+const std::deque<Composition>& Query::getCompositions() const 
 { 
     return components;
 }
 
-Component& Query::getComponent(std::string name)
+Composition& Query::getComposition(std::string name)
 {
-    for(std::deque<Component>::iterator it = components.begin(); it != components.end(); ++it)
+    for(std::deque<Composition>::iterator it = components.begin(); it != components.end(); ++it)
     {
         if(it->getName() == name)
         {
             return *it;
         }
     }
-    throw std::runtime_error("Query getComponent: no component with that name: " + name);
+    throw std::runtime_error("Query getComposition: no component with that name: " + name);
 }
 
-int Query::getComponentIndex(std::string name) const
+int Query::getCompositionIndex(std::string name) const
 {
-    for(std::deque<Component>::const_iterator it = components.begin(); it != components.end(); ++it)
+    for(std::deque<Composition>::const_iterator it = components.begin(); it != components.end(); ++it)
     {
         if(it->getName() == name)
         {
             return std::distance(components.begin(), it);
         }
     }
-    throw std::runtime_error("Query getComponentIndex: no component with that name: " + name);
+    throw std::runtime_error("Query getCompositionIndex: no component with that name: " + name);
 }
 
-bool Query::existsComponentWithName(const std::string& name)
+bool Query::existsCompositionWithName(const std::string& name)
 {
     try
     {
-        getComponent(name);
+        getComposition(name);
         return true;
     }
     catch(std::exception& e)
@@ -53,11 +53,11 @@ bool Query::existsComponentWithName(const std::string& name)
     }
 }
 
-void Query::addComponent(const Component& component)
+void Query::addComposition(const Composition& component)
 {
-    if(existsComponentWithName(component.getName()))
+    if(existsCompositionWithName(component.getName()))
     {
-        throw std::runtime_error("Query addComponent: there is already a component with that name: " + component.getName());
+        throw std::runtime_error("Query addComposition: there is already a component with that name: " + component.getName());
     }
     
     int type = component.getType();
@@ -69,7 +69,7 @@ void Query::addComponent(const Component& component)
     }
     
     // Iterate through components backwards
-    for(std::deque<Component>::reverse_iterator it = components.rbegin(); it != components.rend(); ++it)
+    for(std::deque<Composition>::reverse_iterator it = components.rbegin(); it != components.rend(); ++it)
     {
         if(it->getType() <= type)
         {
@@ -80,13 +80,13 @@ void Query::addComponent(const Component& component)
     
 }
 
-void Query::integrateSubQuery(const composition_management::Query& subQuery)
+void Query::integrateSubQuery(const constrained_based_networks::Query& subQuery)
 {
     // Loop through all components of the subquery
-    for(std::deque<Component>::const_iterator it = subQuery.components.begin(); it != subQuery.components.end(); ++it)
+    for(std::deque<Composition>::const_iterator it = subQuery.components.begin(); it != subQuery.components.end(); ++it)
     {
         // Copy
-        Component comp = *it;
+        Composition comp = *it;
         // Rename
         //comp.setName(subQuery.name + "_" + comp.getName());
         // Also rename the components names for the connections.
@@ -103,7 +103,7 @@ void Query::integrateSubQuery(const composition_management::Query& subQuery)
 //             comp.putOutgoingConnection(it->first, subQuery.name + "_" + it->second);
 //         }
         // Add to the component list (using the method to keep order!)
-        addComponent(comp);
+        addComposition(comp);
     }
 }
 
@@ -115,8 +115,8 @@ std::string Query::getName() const
 void Query::addConnection(const std::string& outCompName, const std::string& outPortName, const std::string& inCompName, const std::string& inPortName)
 {
     // find components
-    Component& inComp = getComponent(inCompName);
-    Component& outComp = getComponent(outCompName);
+    Composition& inComp = getComposition(inCompName);
+    Composition& outComp = getComposition(outCompName);
     
     // find ports
     const IncomingPort& in = inComp.getIncomingPortByName(inPortName);
@@ -146,4 +146,4 @@ std::string Query::toString() const
 }
 
 
-} // end namespace composition_management
+} // end namespace constrained_based_networks

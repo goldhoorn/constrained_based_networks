@@ -3,25 +3,67 @@
 #include <gecode/gist.hh>
 #include <gecode/minimodel.hh>
 
-#include<vector>
-#include<map>
-#include<stdexcept>
+#include <vector>
+#include <map>
+#include <stdexcept>
+#include "Pool.hpp"
+#include "Task.hpp"
 
 using namespace Gecode;
 
-namespace composition_management {
+namespace constrained_based_networks {
 
-Solution::Solution(Query query, Query componentPool) 
-    : query(query)
-    , componentPool(componentPool)
-    , assignments_int(*this, query.getComponents().size(), 0, componentPool.getComponents().size() - 1)
+Solution::Solution(Pool *pool)
+    : active(*this, pool->getNonAbstractCount(), 0, 1)
+//    : query(query)
+//    , componentPool(componentPool)
+//    , assignments_int(*this, query.getCompositions().size(), 0, componentPool.getCompositions().size() - 1)
 {
+//    Pool *pool = Pool::getInstance();
+    unsigned int cmp_id=0;
+    for(auto composition : pool->getItems<Composition*>()){
+        auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
+
+        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
+
+        if(composition->isActive()){
+            std::cout << "Composition " << composition->getName() << " is active" << std::endl;
+            rel(*this,active[cmp_id],IRT_EQ, 1);
+        }
+
+        unsigned int child_id=0;
+        for(auto child : composition->getChildren()){
+            for(auto provider : pool->getItems<Component*>()){
+                if(provider->abstract()){
+                    continue;
+                }
+
+                if(provider->isFullfilling(child.second->getName())){
+                    printf("######## %s (%u) is fullfilling %s\n",provider->getName().c_str(),pool->getId(provider), child.second->getName().c_str());
+                    //This provider is able fo fullfill the requested DS from the child
+                    //rel(*this,active[cmp_id], 
+                    //Do nothing later add weights
+            //        rel(*this,composition_child_constraints[child_id],IRT_EQ, 0, active[cmp_id]);
+                }else{
+                    std::cout << "####### forbidding for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
+                    rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), active[cmp_id]);
+                }
+            }
+        child_id++;
+        }
+        ir_assignments.push_back(composition_child_constraints);
+        cmp_id++;
+    }
+
+    //assignment_cmps 
+    
+    /*
     // Check types of all query components against all pool components and only allow identical types to be assigned
     for(int i = 0; i < assignments_int.size(); i++)
     {
-        for(int j = 0; j < componentPool.getComponents().size(); j++)
+        for(int j = 0; j < componentPool.getCompositions().size(); j++)
         {
-            if(query.getComponents().at(i).getType() != componentPool.getComponents().at(j).getType())
+            if(query.getCompositions().at(i).getType() != componentPool.getCompositions().at(j).getType())
             {
                 // This constrains to that the ith query component cannot be assigned the jth pool component,
                 // as their types differ.
@@ -33,24 +75,24 @@ Solution::Solution(Query query, Query componentPool)
     // For all queried components
     for(int i = 0; i < assignments_int.size(); i++)
     {
-        std::cout << "Constraints for query " << query.getComponents()[i].toString() << std::endl;
+        std::cout << "Constraints for query " << query.getCompositions()[i].toString() << std::endl;
         std::cout << "With domian " << assignments_int[i] << std::endl;
         
         // Differently configured query components may not be assigned the same unconfigured pool component
         for(int j = 0; j < assignments_int.size(); j++)
         {
-            if(i == j || query.getComponents().at(i).getType() != query.getComponents().at(j).getType())
+            if(i == j || query.getCompositions().at(i).getType() != query.getCompositions().at(j).getType())
             {
                 continue;
             }
-            std::cout << " Against query " << query.getComponents()[j].toString() << std::endl;
+            std::cout << " Against query " << query.getCompositions()[j].toString() << std::endl;
             
-            const std::vector<std::string>& requiredConfiguration0 = query.getComponents().at(i).getConfiguration();
-            const std::vector<std::string>& requiredConfiguration1 = query.getComponents().at(j).getConfiguration();
+            const std::vector<std::string>& requiredConfiguration0 = query.getCompositions().at(i).getConfiguration();
+            const std::vector<std::string>& requiredConfiguration1 = query.getCompositions().at(j).getConfiguration();
             // If the configurations are not compatible, post != constraint on this assignment
             if(!requiredConfiguration0.empty()&& !requiredConfiguration1.empty() && requiredConfiguration0 != requiredConfiguration1)
             {
-                std::cout << "Adding configuration constraint. Component " << query.getComponents()[i].getName() << "!=" <<  query.getComponents()[j].getName() << std::endl;
+                std::cout << "Adding configuration constraint. Composition " << query.getCompositions()[i].getName() << "!=" <<  query.getCompositions()[j].getName() << std::endl;
                 // This means that the ith query component and the jth query component cannot be assigned the same pool component,
                 // since the configurations are incompatible.
                 rel(*this, assignments_int[i], IRT_NQ, assignments_int[j]);
@@ -60,17 +102,17 @@ Solution::Solution(Query query, Query componentPool)
         // For all possible pool components they can be assigned
         for(int j = assignments_int[i].min(); j <= assignments_int[i].max(); j++)
         {
-            std::cout << " Against pool " << componentPool.getComponents()[j].toString() << std::endl;
+            std::cout << " Against pool " << componentPool.getCompositions()[j].toString() << std::endl;
             
             // TODO extern method testing if two components are compitable regarding their configurations
             // as vector<string>
             // At the moment, the conf vector just has to be equal
-            const std::vector<std::string>& requiredConfiguration = query.getComponents().at(i).getConfiguration();
-            const std::vector<std::string>& actualConfiguration = componentPool.getComponents().at(j).getConfiguration();
+            const std::vector<std::string>& requiredConfiguration = query.getCompositions().at(i).getConfiguration();
+            const std::vector<std::string>& actualConfiguration = componentPool.getCompositions().at(j).getConfiguration();
             // If the configurations are not compatible, post != constraint on this assignment
             if(!requiredConfiguration.empty()&& !actualConfiguration.empty() && requiredConfiguration != actualConfiguration)
             {
-                std::cout << "Adding configuration constraint. Component " << query.getComponents()[i].getName() << "!=" << componentPool.getComponents()[j].getName() << std::endl;
+                std::cout << "Adding configuration constraint. Composition " << query.getCompositions()[i].getName() << "!=" << componentPool.getCompositions()[j].getName() << std::endl;
                 // This means that the ith query component cannot be assigned the jth pool component,
                 // since the configurations are incompatible.
                 rel(*this, assignments_int[i], IRT_NQ, j);
@@ -78,24 +120,24 @@ Solution::Solution(Query query, Query componentPool)
             
             
             // For all incoming ports of the query component
-            const std::map<IncomingPort, std::string> map = query.getComponents().at(i).getIncomingConnections();
+            const std::map<IncomingPort, std::string> map = query.getCompositions().at(i).getIncomingConnections();
             for(std::map<IncomingPort, std::string>::const_iterator it = map.begin(); it != map.end(); ++it)
             {
-                std::cout << "Checking connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
+                std::cout << "Checking connection constraint. Composition " << query.getCompositions()[i].getName() << "=" << componentPool.getCompositions()[j].getName() 
                                 << " on in port " << it->first.name << std::endl;
                 
                 // If the ith query component gets assigned to the jth pool component
                 // and they both are connected on the same input port,
                 // the connection origin must also be assigned equally.
-                std::map<IncomingPort, std::string> poolComponentMap = componentPool.getComponents().at(j).getIncomingConnections();
-                if(poolComponentMap.count(it->first) != 0)
+                std::map<IncomingPort, std::string> poolCompositionMap = componentPool.getCompositions().at(j).getIncomingConnections();
+                if(poolCompositionMap.count(it->first) != 0)
                 {
                     // Get number of the origins
-                    int originQueryNum = query.getComponentIndex(it->second);
-                    int originPoolNum = componentPool.getComponentIndex(poolComponentMap.at(it->first));
+                    int originQueryNum = query.getCompositionIndex(it->second);
+                    int originPoolNum = componentPool.getCompositionIndex(poolCompositionMap.at(it->first));
                                         
-                    std::cout << "Adding connection constraint. Component " << query.getComponents()[i].getName() << "=" << componentPool.getComponents()[j].getName() 
-                                << " => " << it->second << "=" << poolComponentMap.at(it->first) << std::endl;
+                    std::cout << "Adding connection constraint. Composition " << query.getCompositions()[i].getName() << "=" << componentPool.getCompositions()[j].getName() 
+                                << " => " << it->second << "=" << poolCompositionMap.at(it->first) << std::endl;
                     
                     // Both connected on same port
                     BoolVar ithAssignedToJth(*this, 0, 1);
@@ -110,13 +152,16 @@ Solution::Solution(Query query, Query componentPool)
             }
         }
     }
+    */
     
     // branching TODO test and improve
     
     // this tells the search engine to branch first on the variable with the smallest domain,
     // that is the variables where there are less components of that type in the pool
     // The engine will then try the possible values (assignments) in ascending order.
-    branch(*this, assignments_int, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
+    
+    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
+
 }
 
 void Solution::constrain(const Space& _b) 
@@ -127,7 +172,7 @@ void Solution::constrain(const Space& _b)
     // Determine number of used values in b
     int valuesCount = 0;
     std::vector<int> values;
-    for(IntVarArray::const_iterator it = b.assignments_int.begin(); it != b.assignments_int.end(); ++it)
+    for(BoolVarArray::const_iterator it = b.active.begin(); it != b.active.end(); ++it)
     {
         // if not contains...
         if(std::find(values.begin(), values.end(), it->val()) == values.end())
@@ -139,24 +184,30 @@ void Solution::constrain(const Space& _b)
     
     // We must have at most that many components used as the so far best solution
     // FIXME LQ, and stuff below
-    nvalues(*this, assignments_int, IRT_LE, valuesCount);
+    //nvalues(*this, active, IRT_LE, valuesCount);
     
     // If we have an equal amount of values used, the number of reconfigured components must be less
     BoolVar equalAmountOfValues;
     //nvalues(*this, assignments_int, IRT_LQ, valuesCount, equalAmountOfValues);
-    
+   /* 
     std::cout << " Adding best search constraint. This ";
     print();
     std::cout << " must be better than so far best ";
     b.print();
+    */
 }
 
 Solution::Solution(bool share, Solution& s) 
     : Space(share, s)
-    , query(s.query)
-    , componentPool(s.componentPool)
+    //, query(s.query)
+    //, componentPool(s.componentPool)
 {
-    assignments_int.update(*this, share, s.assignments_int);
+    active.update(*this, share, s.active);
+    ir_assignments.resize(s.ir_assignments.size());
+
+    for(size_t i = 0; i < s.ir_assignments.size();i++){
+        ir_assignments[i].update(*this,share,s.ir_assignments[i]);
+    }
 }
 
 Space* Solution::copy(bool share) 
@@ -171,27 +222,49 @@ void Solution::print() const
 
 void Solution::printToStream(std::ostream& os) const 
 {
+    os << "Count: " << active.size() << std::endl;
+
     os << "Solution: { " << std::endl;
-    for(int i = 0; i < assignments_int.size(); i++)
+    for(int i = 0; i < active.size(); i++)
     {
-        os << "\t" << query.getComponents()[i].getName() << "=";
-        if(assignments_int[i].assigned())
+        os << "\t" << (*Pool::getInstance())[i]->getName() << "=";
+        if(active[i].assigned())
         {
-                os << componentPool.getComponents()[assignments_int[i].val()].getName();
+            os << active[i];
         }
         else
         {
-            os << assignments_int[i];
+            os << "?";// <<active[i];
         }
         os << ", "<< std::endl;
     }
     os << "}" << std::endl;
+   
+    Pool *pool = Pool::getInstance();
+
+    size_t cmp_id=0;
+    for(auto composition : pool->getItems<Composition*>()){
+        size_t child_id=0;
+        for(auto child : composition->getChildren()){
+            os << composition->getName() << "." << child.first << "=";
+            if(ir_assignments[cmp_id][child_id].assigned()){
+                 os << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName();
+                 os <<  " (" << ir_assignments[cmp_id][child_id] << ")";
+            }else{
+                os << "?";
+            }
+            os << std::endl;
+            child_id++;
+        }
+        cmp_id++;
+    }
+
 }
 
-Solution* Solution::babSearch(Query query, Query pool)
+Solution* Solution::babSearch(Pool *pool)
 {
     // Initial situation
-    Solution* s = new Solution(query, pool);
+    Solution* s = new Solution(pool);
     // BAB search engine
     BAB<Solution> e(s);
     delete s;
@@ -215,111 +288,5 @@ Solution* Solution::babSearch(Query query, Query pool)
     return best;
 }
 
-} // end namespace composition_management
+} // end namespace constrained_based_networks
 
-// main test function
-int main(int argc, char* argv[]) {
-    using namespace composition_management;
-    // General components
-    Component compA (0, "a");
-    Component compB (1, "b");
-    Component compC (2, "c");
-    // And their ports
-    compA.pushBackOutPort(OutgoingPort("std::string","out0"));
-    compA.pushBackOutPort(OutgoingPort("int","out1"));
-    compA.pushBackInPort(IncomingPort("std::string","in0"));
-    compB.pushBackInPort(IncomingPort("std::string","in0"));
-    compB.pushBackInPort(IncomingPort("float","in1"));
-    compC.pushBackOutPort(OutgoingPort("std::string","out0"));
-    compC.pushBackOutPort(OutgoingPort("float","out1"));
-    compC.pushBackInPort(IncomingPort("int","in0"));
-    
-    // Query components
-    Component queryCompA = compA;
-    Component queryCompB = compB;
-    Component queryCompC = compC;
-    Component queryCompAnotherC = compC;
-    queryCompAnotherC.setName("anotherC");
-    // Configure query components
-    std::vector<std::string> compAConf;
-    compAConf.push_back("3");
-    compAConf.push_back("1");
-    queryCompA.setConfiguration(compAConf);
-    // No constraint on B's config
-    std::vector<std::string> compCConf;
-    compCConf.push_back("2");
-    queryCompC.setConfiguration(compCConf);
-    // Construct query and subquery
-    Query query ("query"), subquery ("subquery");
-    query.addComponent(queryCompA);
-    query.addComponent(queryCompAnotherC);
-    subquery.addComponent(queryCompB);
-    subquery.addComponent(queryCompC);
-    
-    
-    // Configure connections
-    subquery.addConnection(queryCompC.getName(), "out1", 
-                           queryCompB.getName(), "in1");
-    query.integrateSubQuery(subquery);
-    
-    query.addConnection(queryCompA.getName(), "out0", 
-                        queryCompB.getName(), "in0");
-    query.addConnection(queryCompA.getName(), "out1", 
-                        queryCompAnotherC.getName(), "in0");
-    query.addConnection(queryCompAnotherC.getName(), "out0", 
-                        queryCompA.getName(), "in0");
-    
-    // Pool components
-    Component poolCompA0 = compA;
-    poolCompA0.setName("a0");
-    Component poolCompA1 = compA;
-    poolCompA1.setName("a1");
-    Component poolCompB0 = compB;
-    poolCompB0.setName("b0");
-    Component poolCompB1 = compB;
-    poolCompB1.setName("b1");
-    Component poolCompC0 = compC;
-    poolCompC0.setName("c0");
-    Component poolCompC1 = compC;
-    poolCompC1.setName("c1");
-    // Configure pool components
-    //std::vector<std::string> compA0Conf;
-    //compA0Conf.push_back("3");
-    //compA0Conf.push_back("3");
-    //poolCompA0.setConfiguration(compA0Conf);
-    //std::vector<std::string> compB0Conf;
-    //compB0Conf.push_back("2");
-    //poolCompB0.setConfiguration(compB0Conf);
-    //std::vector<std::string> compC1Conf;
-    //compC1Conf.push_back("2");
-    //poolCompC1.setConfiguration(compC1Conf);
-    // Construct pool
-    Query pool ("pool");
-    pool.addComponent(poolCompA0);
-    pool.addComponent(poolCompA1);
-    pool.addComponent(poolCompB0);
-    pool.addComponent(poolCompB1);
-    pool.addComponent(poolCompC0);
-    pool.addComponent(poolCompC1);
-    
-    // Configure connections
-    pool.addConnection(poolCompA0.getName(), "out0", 
-                       poolCompB0.getName(), "in0");
-    pool.addConnection(poolCompA0.getName(), "out1", 
-                       poolCompC1.getName(), "in0");
-    pool.addConnection(poolCompC0.getName(), "out0", 
-                       poolCompA0.getName(), "in0");
-    pool.addConnection(poolCompC1.getName(), "out1", 
-                       poolCompB0.getName(), "in1");
-    // Optional:
-    pool.addConnection(poolCompA0.getName(), "out0", 
-                       poolCompB1.getName(), "in0");
-    
-    // Print pool and query
-    std::cout << "Pool: " << pool.toString();
-    std::cout << "Query: " << query.toString();
-    
-    Solution* s = Solution::babSearch(query, pool);
-    s->print();
-    return 0;
-}

@@ -1,4 +1,4 @@
-require 'gecode_composition_management_ruby'
+require 'constrained_based_networks_ruby'
 
 #module GECODE_COMPOSITION_MANAGEMENT
 #       class Component

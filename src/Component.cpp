@@ -1,147 +1,44 @@
 #include "Component.hpp"
-#include <sstream>
-#include <stdexcept>
+#include "Pool.hpp"
 
-namespace composition_management {
-    
-Component::Component() {}
 
-Component::Component(int type, std::string name) 
-    : type(type)
-    , name(name)
+using namespace constrained_based_networks;
+
+Component::Component(Pool *pool):
+    pool(pool)
 {
+    pool->addComponent(this);
+    active=false;
 }
 
-bool Component::operator ==( const Component &comp ) const
-{
-    return type == comp.type && name == comp.name;
+Component::~Component(){
 }
 
-std::string Component::toString() const
-{
-    std::ostringstream ss;
-    ss << "Component " << name << " of type " << type << ".\n";
-    ss << "  Configuration: [";
-    for(int i = 0; i < configuration.size(); i++)
-    {
-        ss << configuration[i] << " ";
-    }
-    ss << "]\n";
-    ss << "  Inports: [";
-    for(int i = 0; i < inPorts.size(); i++)
-    {
-        ss << inPorts[i].toString() << " ";
-    }
-    ss << "]\n";
-    ss << "  Outports: [";
-    for(int i = 0; i < outPorts.size(); i++)
-    {
-        ss << outPorts[i].toString() << " ";
-    }
-    ss << "]\n";
-    ss << "  Inconnections: [";
-    for(std::map<IncomingPort, std::string>::const_iterator it = incomingConnections.begin(); it != incomingConnections.end(); ++it)
-    {
-        ss << it->second << it->first.toString() << " ";
-    }
-    ss << "]\n";
-    ss << "  Outconnections: [";
-    for(std::multimap<OutgoingPort, std::string>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
-    {
-        ss  << it->first.toString() << it->second << " ";
-    }
-    ss << "]\n";
-        
-    return ss.str();
-}
+bool Component::isActive(){
+    return active;
+};
 
-int Component::getType() const 
-{ 
-    return type;
-}
-
-const std::string& Component::getName() const 
-{ 
+std::string Component::getName(){
     return name;
 }
 
-void Component::setName(const std::string& name) 
-{ 
-    this->name = name;
+void Component::setActive(){
+    active = true;
 }
 
-const std::vector<std::string>& Component::getConfiguration() const 
-{
-    return configuration;
+unsigned int Component::getID() const{
+    return id;
+};
+
+void Component::addFullfillment(std::string str){
+    fullfillments.push_back(str);
 }
 
-void Component::setConfiguration(const std::vector<std::string>& configuration)
-{
-    this->configuration = configuration;
-}
-
-const std::vector<IncomingPort>& Component::getInPorts() const 
-{
-    return inPorts;
-}
-
-void Component::pushBackInPort(const IncomingPort& inPort)
-{
-    inPorts.push_back(inPort);
-}
-
-const std::vector<OutgoingPort>& Component::getOutPorts() const
-{ 
-    return outPorts;
-}
-
-void Component::pushBackOutPort(const OutgoingPort& outPort)
-{
-    outPorts.push_back(outPort);
-}
-
-const IncomingPort& Component::getIncomingPortByName(const std::string& name) const
-{
-    for(int i = 0; i < inPorts.size(); i++)
-    {
-        if(inPorts[i].name == name)
-        {
-            return inPorts[i];
+bool Component::isFullfilling(std::string name){
+    for(auto v : fullfillments){
+        if( v == name){
+            return true;
         }
     }
-    throw std::runtime_error("Component getIncomingPortByName: no port named " + name);
+    return false;
 }
-
-const OutgoingPort& Component::getOutgoingPortByName(const std::string& name) const
-{
-    for(int i = 0; i < outPorts.size(); i++)
-    {
-        if(outPorts[i].name == name)
-        {
-            return outPorts[i];
-        }
-    }
-    throw std::runtime_error("Component getOutgoingPortByName: no port named " + name);
-}
-
-const std::map<IncomingPort, std::string>& Component::getIncomingConnections() const 
-{ 
-    return incomingConnections;
-}
-
-void Component::putIncomingConnection(const IncomingPort& inPort, const std::string& componentName)
-{
-    incomingConnections[inPort] = componentName;
-}
-
-const std::multimap<OutgoingPort,std::string>& Component::getOutgoingConnections() const 
-{ 
-    return outgoingConnections;
-}
-
-void Component::putOutgoingConnection(const OutgoingPort& outPort, const std::string& componentName)
-{
-    outgoingConnections.insert(std::pair<OutgoingPort,std::string>(outPort, componentName));
-}
-
-} // end namespace composition_management
