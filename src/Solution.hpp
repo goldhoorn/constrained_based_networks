@@ -52,12 +52,25 @@ public:
     /**
      * print support
      */
-    void print() const;
+    void rprint() const{printToStream(std::cout);};
+    void print(std::ostream& os = std::cout) const{printToStream(os,true);};
     /**
      * print support for given outputstream
      */
-    void printToStream(std::ostream& os) const;
+    void printToStream(std::ostream& os, bool full=false) const;
+
+    static void print(const Space& home,
+           const Gecode::BrancherHandle& bh,
+           unsigned int a,
+           Gecode::IntVar x, int i, const int& n,
+           std::ostream& o);
     
+    static void print(const Space& home,
+           const Gecode::BrancherHandle& bh,
+           unsigned int a,
+           Gecode::BoolVar x, int i, const int& n,
+           std::ostream& o);
+
     /**
      * Static method to find a best solution with BAB search.
      * 
@@ -65,6 +78,7 @@ public:
      */
     static Solution* babSearch2();
     static Solution* babSearch(Pool *pool);
+    static Solution* gistBaBSeach();
 };
 
 } // end namespace constrained_based_networks

@@ -11,6 +11,9 @@
 #include "Composition.hpp"
 #include "DataService.hpp"
 
+
+#include <gecode/gist.hh>
+
 using namespace Gecode;
 
 namespace constrained_based_networks {
@@ -51,7 +54,7 @@ Solution::Solution(Pool *pool)
     
     for(auto provider : pool->getItems<DataService*>()){
         if(provider->abstract()){
-    //        rel(*this,active[pool->getId(provider)],IRT_EQ, 0);
+            rel(*this,active[pool->getId(provider)],IRT_EQ, 0);
     //        std::cout << "Got some abstract" << std::endl;
         }else{
     //        std::cout << "Got non abstract data-service?\n";
@@ -63,13 +66,13 @@ Solution::Solution(Pool *pool)
 
         auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
 
-        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
+        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
 
         if(composition->isActive()){
             std::cout << "Composition " << composition->getName() << " is active" << std::endl;
             rel(*this,active[cmp_id],IRT_EQ, 1);
         }else{
-            rel(*this,active[cmp_id],IRT_EQ, 0);
+            //rel(*this,active[cmp_id],IRT_EQ, 0);
         }
 
         unsigned int child_id=0;
@@ -87,7 +90,9 @@ Solution::Solution(Pool *pool)
 
                 if(provider->isFullfilling(child.second->getName())){
 //                    std::cout << "+++++++ allowing for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
-                    //printf("+++++++ Allowing %s (%u) for %s\n",provider->getName().c_str(),pool->getId(provider), child.second->getName().c_str());
+                    if(composition->isActive()){
+                        printf("+++++++ Allowing %s (%u) for %s\n",provider->getName().c_str(),pool->getId(provider), child.second->getName().c_str());
+                    }
                     //This provider is able fo fullfill the requested DS from the child
                     //rel(*this,active[cmp_id], 
                     //Do nothing later add weights
@@ -212,7 +217,7 @@ Solution::Solution(Pool *pool)
     // that is the variables where there are less components of that type in the pool
     // The engine will then try the possible values (assignments) in ascending order.
     
-    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
+    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
 
 }
 
@@ -268,12 +273,12 @@ Space* Solution::copy(bool share)
     return new Solution(share,*this);
 }
 
-void Solution::print() const 
-{
-    printToStream(std::cout);
-}
+//void Solution::print(std::ostream& os) const 
+//{
+//    printToStream(os);
+//}
 
-void Solution::printToStream(std::ostream& os) const 
+void Solution::printToStream(std::ostream& os, bool full) const 
 {
     os << "Count: " << active.size() << std::endl;
 
@@ -283,7 +288,7 @@ void Solution::printToStream(std::ostream& os) const
         //os << "\t" << (*Pool::getInstance())[i]->getName() << "=";
         if(active[i].assigned())
         {
-            if(active[i].val()){
+            if(active[i].val() || full){
                 os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
             }
         }
@@ -303,7 +308,7 @@ void Solution::printToStream(std::ostream& os) const
         size_t child_id=0;
         for(auto child : composition->getChildren()){
             if(ir_assignments[cmp_id][child_id].assigned()){
-                 if(ir_assignments[cmp_id][child_id].val() != 0){ //Only print assigned solutions
+                 if(ir_assignments[cmp_id][child_id].val() != 0 || full){ //Only print assigned solutions
                     os << composition->getName() << "." << child.first << "=";
                     os << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName();
                     os <<  " (" << ir_assignments[cmp_id][child_id] << ")" << std::endl;
@@ -318,6 +323,22 @@ void Solution::printToStream(std::ostream& os) const
 
 }
 
+void Solution::print(const Space& home, const BrancherHandle& bh, unsigned int a, BoolVar x, int i, const int& n, std::ostream& o) {
+    const Solution& c = static_cast<const Solution&>(home);
+    o << "foo" << a << " " << x << " " << i << " " << n << std::endl;
+}
+
+void Solution::print(const Space& home, const BrancherHandle& bh, unsigned int a, IntVar x, int i, const int& n, std::ostream& o) {
+    const Solution& c = static_cast<const Solution&>(home);
+    o << "foo" << a << " " << x << " " << i << " " << n << std::endl;
+    /*
+    int x = i % c.w, y = i / c.w;
+    o << "letters[" << x << "," << y << "] "
+        << ((a == 0) ? "=" : "!=") << " "
+        << static_cast<char>(n);
+    */
+}
+
 Solution* Solution::babSearch2()
 {
     return Solution::babSearch(Pool::getInstance());
@@ -326,10 +347,9 @@ Solution* Solution::babSearch2()
 Solution* Solution::babSearch(Pool *pool)
 {
     // Initial situation
-    Solution* s = new Solution(pool);
+    Solution* so = new Solution(pool);
     // BAB search engine
-    BAB<Solution> e(s);
-    delete s;
+    BAB<Solution> e(so);
     // search
     Solution* best = NULL;
     while (Solution* s = e.next()) {
@@ -344,10 +364,25 @@ Solution* Solution::babSearch(Pool *pool)
     // throw exception if there is no solution
     if(best == NULL)
     {
-        throw std::runtime_error("Solution babSearch: No solutions");
+        //throw std::runtime_error("Solution babSearch: No solutions");
+        std::cerr << "!!!!!!!!!!   No SOLUTON FOUND         !!!!!!!" << std::endl;
+        return so;
     }
+    delete so;
     
     return best;
+}
+
+Solution *Solution::gistBaBSeach(){
+    Solution* m = new Solution(Pool::getInstance());
+    //Solution* m = Solution::babSearch(Pool::getInstance());
+    Gist::Print<Solution> printer("Print solution");
+//    Gist::VarComparator<Solution> c("Compare nodes");
+   Gist::Options o;
+    o.inspect.click(&printer);
+//    o.inspect.compare(&c);
+    Gist::bab(m,o);
+    return m;
 }
 
 } // end namespace constrained_based_networks

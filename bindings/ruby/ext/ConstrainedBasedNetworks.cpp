@@ -292,6 +292,7 @@ void Init_constrained_based_networks_ruby()
     
     rb_cSolution = define_class_under<Solution>(rb_mGecodeCompMgmt, "Solution")
         .define_singleton_method("bab_search", &Solution::babSearch2 ) // static method
-        .define_method("print", &Solution::print)
+        .define_singleton_method("gist_search", &Solution::gistBaBSeach ) // static method
+        .define_method("print", &Solution::rprint)
     ;
 }
