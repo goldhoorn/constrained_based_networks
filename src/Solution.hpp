@@ -3,7 +3,7 @@
 
 #include <gecode/int.hh>
 #include <gecode/search.hh>
-#include "Query.hpp"
+#include "Pool.hpp"
 
 namespace constrained_based_networks {
 
@@ -63,6 +63,7 @@ public:
      * 
      * \throw Exception if there is no solution.
      */
+    static Solution* babSearch2();
     static Solution* babSearch(Pool *pool);
 };
 

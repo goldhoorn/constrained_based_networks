@@ -6,8 +6,8 @@ set(SOURCES
    Task.cpp
    Component.cpp
    DataService.cpp
-   Query.cpp
    Solution.cpp
+   PortHandler.cpp
 )
 set(HEADERS
    Pool.hpp
@@ -16,8 +16,8 @@ set(HEADERS
    DataService.hpp
    Component.hpp
    Port.hpp
-   Query.hpp
    Solution.hpp
+   PortHandler.hpp
 )
 
 set(Gecode_LIBRARIES

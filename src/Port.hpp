@@ -9,18 +9,18 @@ namespace constrained_based_networks {
     /**
      * An incoming port defined by datatype and name.
      */
-    struct IncomingPort
+    struct InputPort
     {
         std::string datatype;
         std::string name;
         
-        IncomingPort(const std::string& datatype, const std::string& name)
+        InputPort(const std::string& datatype, const std::string& name)
             : datatype(datatype)
             , name(name)
         { }
         
         // to use it as map key
-        bool operator <( const IncomingPort &port ) const
+        bool operator <( const InputPort &port ) const
         {
             if(name != port.name)
             {
@@ -40,18 +40,18 @@ namespace constrained_based_networks {
     /**
      * An outgoing port defined by datatype and name.
      */
-    struct OutgoingPort
+    struct OutputPort
     {
         std::string datatype;
         std::string name;
         
-        OutgoingPort(const std::string& datatype, const std::string& name)
+        OutputPort(const std::string& datatype, const std::string& name)
             : datatype(datatype)
             , name(name)
         { }
         
         // to use it as map key
-        bool operator <( const OutgoingPort &port ) const
+        bool operator <( const OutputPort &port ) const
         {
             if(name != port.name)
             {

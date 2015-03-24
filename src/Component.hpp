@@ -17,7 +17,7 @@ class Component{
         void addFullfillment(std::string name);
         bool isFullfilling(std::string name);
         virtual bool isActive();
-        virtual void setActive();
+        virtual void setActive(bool active=true);
         std::string getName();
 
     protected:

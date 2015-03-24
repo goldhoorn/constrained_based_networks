@@ -11,6 +11,7 @@ class Pool{
         void addComponent(Component *c);
         static Pool* getInstance();
         unsigned int getNonAbstractCount();
+        unsigned int getComponentCount();
         Component* operator[](unsigned int id);
         template<typename T> std::list<T> getItems(){
             std::list<T> erg;

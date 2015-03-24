@@ -22,8 +22,8 @@ std::string Component::getName(){
     return name;
 }
 
-void Component::setActive(){
-    active = true;
+void Component::setActive(bool a){
+    active = a;
 }
 
 unsigned int Component::getID() const{

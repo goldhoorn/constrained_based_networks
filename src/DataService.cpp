@@ -27,30 +27,6 @@ std::string DataService::toString() const
         ss << configurations[i] << " ";
     }
     ss << "]\n";
-    ss << "  Inports: [";
-    for(int i = 0; i < inPorts.size(); i++)
-    {
-        ss << inPorts[i].toString() << " ";
-    }
-    ss << "]\n";
-    ss << "  Outports: [";
-    for(int i = 0; i < outPorts.size(); i++)
-    {
-        ss << outPorts[i].toString() << " ";
-    }
-    ss << "]\n";
-    ss << "  Inconnections: [";
-    for(std::map<IncomingPort, std::string>::const_iterator it = incomingConnections.begin(); it != incomingConnections.end(); ++it)
-    {
-        ss << it->second << it->first.toString() << " ";
-    }
-    ss << "]\n";
-    ss << "  Outconnections: [";
-    for(std::multimap<OutgoingPort, std::string>::const_iterator it = outgoingConnections.begin(); it != outgoingConnections.end(); ++it)
-    {
-        ss  << it->first.toString() << it->second << " ";
-    }
-    ss << "]\n";
         
     return ss.str();
 }
@@ -81,69 +57,6 @@ void DataService::setConfiguration(const std::vector<std::string>& configuration
     this->configurations = configurations;
 }
 
-const std::vector<IncomingPort>& DataService::getInPorts() const 
-{
-    return inPorts;
-}
-
-void DataService::pushBackInPort(const IncomingPort& inPort)
-{
-    inPorts.push_back(inPort);
-}
-
-const std::vector<OutgoingPort>& DataService::getOutPorts() const
-{ 
-    return outPorts;
-}
-
-void DataService::pushBackOutPort(const OutgoingPort& outPort)
-{
-    outPorts.push_back(outPort);
-}
-
-const IncomingPort& DataService::getIncomingPortByName(const std::string& name) const
-{
-    for(int i = 0; i < inPorts.size(); i++)
-    {
-        if(inPorts[i].name == name)
-        {
-            return inPorts[i];
-        }
-    }
-    throw std::runtime_error("DataService getIncomingPortByName: no port named " + name);
-}
-
-const OutgoingPort& DataService::getOutgoingPortByName(const std::string& name) const
-{
-    for(int i = 0; i < outPorts.size(); i++)
-    {
-        if(outPorts[i].name == name)
-        {
-            return outPorts[i];
-        }
-    }
-    throw std::runtime_error("DataService getOutgoingPortByName: no port named " + name);
-}
-
-const std::map<IncomingPort, std::string>& DataService::getIncomingConnections() const 
-{ 
-    return incomingConnections;
-}
-
-void DataService::putIncomingConnection(const IncomingPort& inPort, const std::string& componentName)
-{
-    incomingConnections[inPort] = componentName;
-}
-
-const std::multimap<OutgoingPort,std::string>& DataService::getOutgoingConnections() const 
-{ 
-    return outgoingConnections;
-}
-
-void DataService::putOutgoingConnection(const OutgoingPort& outPort, const std::string& componentName)
-{
-    outgoingConnections.insert(std::pair<OutgoingPort,std::string>(outPort, componentName));
-}
 
     
 

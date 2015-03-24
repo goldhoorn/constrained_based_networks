@@ -38,6 +38,11 @@ unsigned int Pool::getId(const Component* obj) const{
     throw std::invalid_argument("Cannot get index for requested object");
 }
 
+unsigned int Pool::getComponentCount()        
+{
+    return components.size();
+}
+
 unsigned int Pool::getNonAbstractCount()        
 {
     unsigned int count=0;
@@ -46,7 +51,7 @@ unsigned int Pool::getNonAbstractCount()
             count++;
         }
     }
-    printf("We have %u non-abstract components\n",count);
+//    printf("We have %u non-abstract components\n",count);
     return count;
 }
         

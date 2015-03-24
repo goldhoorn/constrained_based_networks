@@ -15,6 +15,15 @@ int main(int argc, char* argv[]) {
     Task C("c");
     Task C2("c2");
     Task C3("c3");
+    /*
+    for(int i=0;i<10;i++){
+        char buff[500];
+        sprintf(buff,"Unused-%i",i);
+        Task *unused = new Task(std::string(buff));
+        sprintf(buff,"Unused-%i_child",i);
+        compA.addChild(unused,std::string(buff));
+    }
+    */
     DataService D("data-service_1");
     C.addFullfillment("data-service_1");
     C3.addFullfillment("data-service_1");
