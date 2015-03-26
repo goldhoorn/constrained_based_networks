@@ -3,6 +3,7 @@
 #include "Composition.hpp"
 #include "DataService.hpp"
 #include "Task.hpp"
+#include <fstream>
 
 namespace constrained_based_networks{
 
@@ -20,6 +21,15 @@ Pool* Pool::getInstance()
 
 
 Pool::Pool(){
+}
+
+Component* Pool::getComponent(std::string name){
+    for(auto v : components){
+        if( v->getName() == name){
+            return v;
+        }
+    } 
+    throw std::invalid_argument(name + " is unknown as component");
 }
 
 void Pool::addComponent(Component *c){
@@ -57,6 +67,26 @@ unsigned int Pool::getNonAbstractCount()
         
 Component* Pool::operator[](unsigned int id){
     return components[id];
+}
+
+
+void Pool::save(std::string filename){
+    std::ofstream ofs(filename);
+    boost::archive::text_oarchive oa(ofs);
+    oa << *this;
+    ofs.close();
+}
+
+void Pool::load(std::string filename){
+    std::ifstream ifs(filename);
+    boost::archive::text_iarchive ia(ifs);
+    ia >> (*this);
+    ifs.close();
+
+    std::cout << "Loading finish" << std::endl; 
+    for(auto c : components){
+        std::cout << c->getName() << std::endl;
+    }
 }
 
 };

@@ -27,6 +27,7 @@ Data_Type<StringVector> stringVector;
 Data_Type<InputPortVector*> incomingPortVector;
 Data_Type<OutputPortVector*> outgoingPortVector;
 
+Data_Type<Pool> rb_cPool;
 Data_Type<Component> rb_cComponent;
 Data_Type<InputPort> rb_cInputPort;
 Data_Type<OutputPort> rb_cOutputPort;
@@ -213,6 +214,12 @@ Object wrap_composition_add_child(Object self, Object type, String name){
     return self;
 }
 
+Array wrap_task_get_unresolveable(Object self)
+{
+    Data_Object<Composition> component(self, rb_cComposition);
+    StringVector conf = component->unsolveableChildren();
+    return to_ruby<StringVector>(conf);
+}
 
 //Component Wrapper
 Object wrap_component_add_fullfillment(Object self, String name){
@@ -236,6 +243,12 @@ void Init_constrained_based_networks_ruby()
         .define_method("toString", &InputPort::toString)
     ;
     
+    rb_cPool = define_class_under<Pool>(rb_mGecodeCompMgmt, "Pool")
+        .define_constructor(Constructor<Pool, std::string>(), Arg("file-to-load"))
+        .define_singleton_method("instance", &Pool::getInstance) // static method
+        .define_method("save", &Pool::save, Arg("filename"))
+    ;
+    
     rb_cOutputPort = define_class_under<OutputPort>(rb_mGecodeCompMgmt, "OutputPort")
         .define_constructor(Constructor<OutputPort, const std::string&, const std::string&>(), (Arg("datatype"), Arg("name")))
         .define_method("toString", &OutputPort::toString)
@@ -256,6 +269,7 @@ void Init_constrained_based_networks_ruby()
         .define_method("add_child", &wrap_composition_add_child, (Arg("child"),Arg("name")))
         .define_method("createInput", &Composition::createInput, (Arg("name"),Arg("type")))
         .define_method("createOutput", &Composition::createOutput, (Arg("name"), Arg("type")))
+        .define_method("unsolveable_childs", &wrap_task_get_unresolveable)
         //.define_method("putIncomingConnection", &Composition::putIncomingConnection, (Arg("inPort"), Arg("compositionName")))
         //.define_method("putOutgoingConnection", &Composition::putOutgoingConnection, (Arg("outPort"), Arg("compositionName")))
         //.define_method("getConfiguration", &wrap_composition_getConfiguration)

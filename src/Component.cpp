@@ -25,6 +25,7 @@ std::string Component::getName(){
 void Component::setActive(bool a){
     active = a;
 }
+        
 
 unsigned int Component::getID() const{
     return id;
@@ -35,6 +36,9 @@ void Component::addFullfillment(std::string str){
 }
 
 bool Component::isFullfilling(std::string name){
+
+    if(name == getName()) return true; //Trivial check
+
     for(auto v : fullfillments){
         if( v == name){
             return true;

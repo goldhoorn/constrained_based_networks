@@ -34,7 +34,7 @@ rock_library(${PROJECT_NAME}
     SOURCES ${SOURCES}
     HEADERS ${HEADERS}
     DEPS_PKGCONFIG base-lib
-    LIBS ${Gecode_LIBRARIES}
+    LIBS ${Gecode_LIBRARIES} ${Boost_LIBRARIES}
 )
 
 target_link_libraries(${PROJECT_NAME} ${Gecode_LIBRARIES})

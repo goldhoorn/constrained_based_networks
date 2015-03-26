@@ -1,6 +1,7 @@
 #include "Composition.hpp"
 #include <sstream>
 #include <stdexcept>
+#include "Pool.hpp"
 
 namespace constrained_based_networks {
     
@@ -58,6 +59,33 @@ void Composition::setConfiguration(const std::vector<std::string>& configuration
 
 void Composition::addChild(Component *c,std::string name){
     children[name] = c;
+}
+
+std::vector<std::string> Composition::unsolveableChildren(){
+    std::vector<std::string> res;
+    Pool *pool = Pool::getInstance();
+
+    for(auto child : children){
+        bool valid=false;
+        for(auto provider : pool->getItems<Component*>()){
+            if(provider->abstract()){
+                continue;
+            }
+
+            if(provider->isFullfilling(child.second->getName())){
+         //       std::cout << std::string("FULLFILLING: " + getName() + "." + child.first + " = " + child.second->getName() + "==" +  provider->getName()) << std::endl;
+//                printf("GOT A FULLILLING! %s for %s\n",getName().c_str(), provider->getName().c_str());
+                valid = true;
+                break;
+            }
+        }
+        if(!valid){
+           // std::cout << std::string("NOT FULLFILLING:" + getName() + "." + child.first + " = " + child.second->getName()) << std::endl;
+
+            res.push_back(getName() + "." + child.first + " = " + child.second->getName());
+        }
+    }
+    return res;
 }
 
 Gecode::IntVarArray Composition::getPossibleTaskAssignments(Gecode::Space *space)

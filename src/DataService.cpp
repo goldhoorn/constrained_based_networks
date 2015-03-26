@@ -1,6 +1,8 @@
 #include "DataService.hpp"
 #include <sstream>
 #include <stdexcept>
+#include "Pool.hpp"
+#include "Composition.hpp"
 
 namespace constrained_based_networks {
     
@@ -10,6 +12,8 @@ DataService::DataService(std::string name)
     : Component(Pool::getInstance())
 {
     this->name = name;
+    auto c = new Composition(name + "_cmp");
+    c->addChild(this,"virtual_main_child");
 }
 
 bool DataService::operator ==( const DataService &comp ) const

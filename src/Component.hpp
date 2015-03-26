@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 namespace constrained_based_networks {
 
@@ -20,6 +22,7 @@ class Component{
         virtual void setActive(bool active=true);
         std::string getName();
 
+        Component* getComponent(std::string s);
     protected:
         /*
          * DataServices that this component fullfills
@@ -29,7 +32,8 @@ class Component{
         bool active;
         std::string name;
 
-    private: 
+    private:
+
         unsigned int id;
 
     friend class Pool;

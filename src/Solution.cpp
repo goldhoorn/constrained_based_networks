@@ -26,9 +26,12 @@ Solution::Solution(Pool *pool)
 {
 //    Pool *pool = Pool::getInstance();
 //    unsigned int cmp_id=0;
+
+/*
     std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
     std::cout << "Got " << pool->getItems<Composition*>().size() << "Compositions" << std::endl;
     std::cout << "Got " << pool->getItems<Task*>().size() << "Tasks" << std::endl;
+*/
     /*
     for(auto provider : pool->getItems<Component*>()){
         if(provider->getName() == "Base::ZProviderSrv"){
@@ -61,6 +64,13 @@ Solution::Solution(Pool *pool)
         }
     }
 
+    for(auto c: pool->getItems<Component*>()){
+        unsigned int cmp_id = pool->getId(c);
+        if(c->isActive()){
+            rel(*this,active[cmp_id],IRT_EQ, 1);
+        }
+    }
+
     for(auto composition : pool->getItems<Composition*>()){
         unsigned int cmp_id = pool->getId(composition);
 
@@ -68,12 +78,6 @@ Solution::Solution(Pool *pool)
 
         branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
 
-        if(composition->isActive()){
-            std::cout << "Composition " << composition->getName() << " is active" << std::endl;
-            rel(*this,active[cmp_id],IRT_EQ, 1);
-        }else{
-            //rel(*this,active[cmp_id],IRT_EQ, 0);
-        }
 
         unsigned int child_id=0;
         for(auto child : composition->getChildren()){
@@ -91,7 +95,7 @@ Solution::Solution(Pool *pool)
                 if(provider->isFullfilling(child.second->getName())){
 //                    std::cout << "+++++++ allowing for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
                     if(composition->isActive()){
-                        printf("+++++++ Allowing %s (%u) for %s\n",provider->getName().c_str(),pool->getId(provider), child.second->getName().c_str());
+//                        printf("+++++++ Allowing %s (%u) for %s\n",provider->getName().c_str(),pool->getId(provider), child.second->getName().c_str());
                     }
                     //This provider is able fo fullfill the requested DS from the child
                     //rel(*this,active[cmp_id], 
@@ -103,6 +107,8 @@ Solution::Solution(Pool *pool)
                 }else{
 //                    std::cout << "####### forbidding for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
                     rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), imp(active[cmp_id]));
+                    //rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), imp(active[cmp_id]));
+//                    rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), (active[cmp_id]));
 
                 }
             }
@@ -242,7 +248,7 @@ void Solution::constrain(const Space& _b)
     // We must have at most that many components used as the so far best solution
     // FIXME LQ, and stuff below
     nvalues(*this, active, IRT_LE, valuesCount);
-    //nvalues(*this, active, IRT_GT, valuesCount);
+    //nvalues(*this, active, IRT_GE, valuesCount);
     
     // If we have an equal amount of values used, the number of reconfigured components must be less
     BoolVar equalAmountOfValues;
@@ -324,12 +330,12 @@ void Solution::printToStream(std::ostream& os, bool full) const
 }
 
 void Solution::print(const Space& home, const BrancherHandle& bh, unsigned int a, BoolVar x, int i, const int& n, std::ostream& o) {
-    const Solution& c = static_cast<const Solution&>(home);
+    //const Solution& c = static_cast<const Solution&>(home);
     o << "foo" << a << " " << x << " " << i << " " << n << std::endl;
 }
 
 void Solution::print(const Space& home, const BrancherHandle& bh, unsigned int a, IntVar x, int i, const int& n, std::ostream& o) {
-    const Solution& c = static_cast<const Solution&>(home);
+    //const Solution& c = static_cast<const Solution&>(home);
     o << "foo" << a << " " << x << " " << i << " " << n << std::endl;
     /*
     int x = i % c.w, y = i / c.w;
@@ -352,6 +358,7 @@ Solution* Solution::babSearch(Pool *pool)
     BAB<Solution> e(so);
     // search
     Solution* best = NULL;
+    
     while (Solution* s = e.next()) {
         if(best != NULL)
         {
@@ -364,12 +371,10 @@ Solution* Solution::babSearch(Pool *pool)
     // throw exception if there is no solution
     if(best == NULL)
     {
-        //throw std::runtime_error("Solution babSearch: No solutions");
-        std::cerr << "!!!!!!!!!!   No SOLUTON FOUND         !!!!!!!" << std::endl;
-        return so;
+        delete so;
+        throw std::runtime_error("Solution babSearch: No solutions");
     }
     delete so;
-    
     return best;
 }
 

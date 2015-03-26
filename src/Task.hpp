@@ -4,15 +4,21 @@
 #include <map>
 #include <string>
 
+#include "Component.hpp"
 #include "PortHandler.hpp"
-#include "Pool.hpp"
+
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
+//BOOST_CLASS_EXPORT(constrained_based_networks::Component)
 
 
 #include <gecode/int.hh>
 #include <gecode/search.hh>
 
 namespace constrained_based_networks {
-    
+   
+    class Pool;
 /**
  * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,
  * on which it can be connected to other components.
@@ -25,6 +31,18 @@ protected:
      * empty means not configured / no constraint on configuration. 
      */
     std::vector<std::string> configurations;
+
+private: 
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version){
+            for(auto f : fullfillments)
+                ar & f;
+            ar & active;
+            ar & name;
+            for(auto c : configurations)
+                ar & c;
+    }
     
 public:
     /**

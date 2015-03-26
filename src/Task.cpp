@@ -1,6 +1,7 @@
 #include "Task.hpp"
 #include <sstream>
 #include <stdexcept>
+#include "Pool.hpp"
 
 namespace constrained_based_networks {
     

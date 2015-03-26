@@ -4,8 +4,12 @@
 #include <map>
 #include <string>
 
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
+
 #include "Port.hpp"
-#include "Pool.hpp"
+#include "Component.hpp"
 
 
 #include <gecode/int.hh>
@@ -26,6 +30,17 @@ protected:
      * empty means not configured / no constraint on configuration. 
      */
     std::vector<std::string> configurations;
+    
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version){
+        /*
+            ar & fullfillments;
+            ar & active;
+            ar & name;
+            ar & configurations;
+            */
+    }
     
 public:
     /**
