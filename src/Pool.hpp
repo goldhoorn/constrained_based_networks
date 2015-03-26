@@ -15,11 +15,22 @@ class Pool{
         Pool(std::string filename){ if(pool) throw std::runtime_error("Pool already created"); pool= this; load(filename);}
         void addComponent(Component *c);
         static Pool* getInstance();
+        template<typename T> unsigned int getCount(){
+            unsigned int cnt=0;
+            for(auto c : components){
+                auto comp = dynamic_cast<T>(c);
+                if(comp != nullptr){
+                    cnt++;
+                }
+            }
+            return cnt;
+        }
+
         unsigned int getNonAbstractCount();
         unsigned int getComponentCount();
         Component* operator[](unsigned int id);
-        template<typename T> std::list<T> getItems(){
-            std::list<T> erg;
+        template<typename T> std::vector<T> getItems(){
+            std::vector<T> erg;
 
             for(auto c : components){
                 auto comp = dynamic_cast<T>(c);

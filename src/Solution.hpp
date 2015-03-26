@@ -1,6 +1,7 @@
 #ifndef GECODE_COMPOSITION_MANAGEMENT_SOLUTION_H
 #define GECODE_COMPOSITION_MANAGEMENT_SOLUTION_H
 
+#include <gecode/set.hh>
 #include <gecode/int.hh>
 #include <gecode/search.hh>
 #include "Pool.hpp"
@@ -26,18 +27,22 @@ protected:
      */
     std::vector<Gecode::IntVarArray> ir_assignments;
     Gecode::BoolVarArray active;
+    Gecode::BoolVarArray inactive;
+    Gecode::SetVarArray depends;
 public:
     /**
      * Construct a solution with an initial situation to search.
      */
     Solution(Pool *pool = Pool::getInstance());
-    
+   
+#ifdef CONSTRAIN
     /*
      * constrain function for best solution search. the
      * currently best solution _b is passed and we have to constraint that this solution can only
      * be better than b, for it to be excluded if it isn't
      */
     virtual void constrain(const Gecode::Space& _b);
+#endif
     
     /**
      * search support. There must be a copy constructor like this for the search engine.

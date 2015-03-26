@@ -20,47 +20,29 @@ namespace constrained_based_networks {
 
 Solution::Solution(Pool *pool)
     : active(*this, pool->getComponentCount(), 0, 1)
+    , inactive(*this, pool->getComponentCount(), 0, 1)
+    , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getCount<Composition*>()-1))
 //    : query(query)
 //    , componentPool(componentPool)
 //    , assignments_int(*this, query.getCompositions().size(), 0, componentPool.getCompositions().size() - 1)
 {
-//    Pool *pool = Pool::getInstance();
-//    unsigned int cmp_id=0;
-
 /*
     std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
     std::cout << "Got " << pool->getItems<Composition*>().size() << "Compositions" << std::endl;
     std::cout << "Got " << pool->getItems<Task*>().size() << "Tasks" << std::endl;
 */
-    /*
-    for(auto provider : pool->getItems<Component*>()){
-        if(provider->getName() == "Base::ZProviderSrv"){
-            std::cout << std::endl;
-            std::cout << "I got a Base::ZProviderSrv" << std::endl;
-
-            if(dynamic_cast<DataService*>(provider)){
-                std::cout << "It is a data-service" << std::endl;
-            }
-            if(dynamic_cast<Composition*>(provider)){
-                std::cout << "It is a Composition" << std::endl;
-            }
-            if(dynamic_cast<Component*>(provider)){
-                std::cout << "It is a Component" << std::endl;
-            }
-            if(dynamic_cast<Task*>(provider)){
-                std::cout << "It is a Task" << std::endl;
-            }
-            std::cout << std::endl;
-        }
+    for(size_t i = 0;i<active.size();i++)
+    {
+        rel(*this,active[i],IRT_EQ, 0, inactive[i]);
     }
-    */
+    
     
     for(auto provider : pool->getItems<DataService*>()){
         if(provider->abstract()){
             rel(*this,active[pool->getId(provider)],IRT_EQ, 0);
     //        std::cout << "Got some abstract" << std::endl;
         }else{
-    //        std::cout << "Got non abstract data-service?\n";
+            std::cout << "Got non abstract data-service?\n";
         }
     }
 
@@ -71,42 +53,81 @@ Solution::Solution(Pool *pool)
         }
     }
 
+    bool used_components[pool->getComponentCount()];
+    for(size_t i=0;i<pool->getComponentCount();i++){
+        used_components[i] = false;
+    }
+
+
+    for(auto component: pool->getItems<Component*>()){
+        unsigned int cnt=0;
+        for(auto composition : pool->getItems<Composition*>()){
+            if(composition->getName() == component->getName()){
+//                std::cout << "Ignore " << component->getName() << " " << cnt << std::endl;              
+                dom(*this,depends[pool->getId(component)], SRT_DISJ, cnt);
+            }
+            cnt++;
+        }
+    }
+
+    size_t cmp_counter=0;
     for(auto composition : pool->getItems<Composition*>()){
         unsigned int cmp_id = pool->getId(composition);
 
         auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
 
-        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
 
 
         unsigned int child_id=0;
-        for(auto child : composition->getChildren()){
-            //unsigned int child_id = pool->getId(child.second);
+        if(composition->getChildren().size() == 0){
             for(auto provider : pool->getItems<Component*>()){
+                dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter);
+            }
+
+        }//else
+        for(auto child : composition->getChildren()){
+            for(auto provider : pool->getItems<Component*>()){
+                //If any child is assigned to the DUMMY comonent, this composition cannot run
+                rel(*this,composition_child_constraints[child_id],IRT_EQ, 0, imp(inactive[cmp_id]));
+
+
+
                 if(provider->abstract()){
+                    //Prevent selection of data-services for children
                     rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));
+                    dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter);
+                    /*
                     if(composition->isActive()){
-                        //std::cout << "!!!!!!! forbidding DS for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
+                        std::cout << "!!!!!!! forbidding DS for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
                     }
+                    */
                     continue;
                     
                 }
 
+                used_components[pool->getId(provider)] = true;
+
                 if(provider->isFullfilling(child.second->getName())){
 //                    std::cout << "+++++++ allowing for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
-                    if(composition->isActive()){
-//                        printf("+++++++ Allowing %s (%u) for %s\n",provider->getName().c_str(),pool->getId(provider), child.second->getName().c_str());
-                    }
+//
                     //This provider is able fo fullfill the requested DS from the child
                     //rel(*this,active[cmp_id], 
                     //Do nothing later add weights
-            //        rel(*this,composition_child_constraints[child_id],IRT_EQ, 0, active[cmp_id]);
+           //         rel(*this,composition_child_constraints[child_id],IRT_EQ, 0, active[cmp_id]);
 
                     //define that if the child is used, then it needs to be active
-                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[pool->getId(provider)]));
+
+                     rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[pool->getId(provider)]));
+                     dom(*this,depends[pool->getId(provider)], SRT_SUB, cmp_counter, active[cmp_id]);
+
+//                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[cmp_id]));
+
                 }else{
 //                    std::cout << "####### forbidding for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
-                    rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), imp(active[cmp_id]));
+                    //if(pool->getId(provider) != 0){
+                        rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), imp(active[cmp_id]));
+                        dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter);
+                    //}
                     //rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), imp(active[cmp_id]));
 //                    rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), (active[cmp_id]));
 
@@ -114,9 +135,25 @@ Solution::Solution(Pool *pool)
             }
         child_id++;
         }
+    
+        for(size_t i=0;i<pool->getComponentCount();i++){
+            if(!used_components[i]){
+                rel(*this,active[i],IRT_EQ,0);   
+            }
+        }
+
+        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+        //branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+        //branch(*this, composition_child_constraints, INT_VAR_NONE(), INT_VAL_MIN());//, INT_VAL_MIN(),NULL,&print);
         ir_assignments.push_back(composition_child_constraints);
 //        cmp_id++;
+        cmp_counter++;
     }
+    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+    branch(*this, inactive, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+    branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
+
+}
 
     //assignment_cmps 
     
@@ -223,10 +260,9 @@ Solution::Solution(Pool *pool)
     // that is the variables where there are less components of that type in the pool
     // The engine will then try the possible values (assignments) in ascending order.
     
-    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+    //branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
 
-}
-
+#ifdef CONSTRAN
 void Solution::constrain(const Space& _b) 
 {
     const Solution& b = static_cast<const Solution&>(_b);
@@ -255,11 +291,16 @@ void Solution::constrain(const Space& _b)
     //nvalues(*this, assignments_int, IRT_LQ, valuesCount, equalAmountOfValues);
     
     //std::cout << " Adding best search constraint. This ";
-    //print();
+    /*
+    std::cerr << "##########################################################################" << std::endl;
+    rprint();
+    std::cerr << "##########################################################################" << std::endl;
+    */
     //std::cout << " must be better than so far best ";
     //b.print();
     
 }
+#endif
 
 Solution::Solution(bool share, Solution& s) 
     : Space(share, s)
@@ -267,6 +308,8 @@ Solution::Solution(bool share, Solution& s)
     //, componentPool(s.componentPool)
 {
     active.update(*this, share, s.active);
+    inactive.update(*this, share, s.inactive);
+    depends.update(*this, share, s.depends);
     ir_assignments.resize(s.ir_assignments.size());
 
     for(size_t i = 0; i < s.ir_assignments.size();i++){
@@ -295,12 +338,12 @@ void Solution::printToStream(std::ostream& os, bool full) const
         if(active[i].assigned())
         {
             if(active[i].val() || full){
-                os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
+                os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << "(" << inactive[i] << ")" << std::endl;
             }
         }
         else
         {
-            os << "\t" << (*Pool::getInstance())[i]->getName() << "=?" << std::endl;
+            os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
         }
 //        os << ", "<< std::endl;
     }
@@ -320,13 +363,22 @@ void Solution::printToStream(std::ostream& os, bool full) const
                     os <<  " (" << ir_assignments[cmp_id][child_id] << ")" << std::endl;
                  }
             }else{
-                os << composition->getName() << "." << child.first << "=?" << std::endl;
+                os << composition->getName() << "." << child.first << "=" << ir_assignments[cmp_id][child_id] << std::endl;
             }
             child_id++;
         }
         cmp_id++;
     }
-
+#if 1
+    for(size_t i = 0; i< depends.size();i++){
+        //auto o = pool->getItems<Composition*>()[i];//(*pool)[i];
+        auto o = (*pool)[i];
+        os << "Deps for " << o->getName() << ": " <<std::endl;//<< depends << std::endl; 
+        for (SetVarGlbValues j(depends[i]); j(); ++j){
+            os << "- " << j.val() << " " <<  pool->getItems<Composition*>()[j.val()]->getName() << std::endl;
+        }
+    }
+#endif
 }
 
 void Solution::print(const Space& home, const BrancherHandle& bh, unsigned int a, BoolVar x, int i, const int& n, std::ostream& o) {
@@ -355,17 +407,23 @@ Solution* Solution::babSearch(Pool *pool)
     // Initial situation
     Solution* so = new Solution(pool);
     // BAB search engine
+    //BAB<Solution> e(so);
     BAB<Solution> e(so);
     // search
     Solution* best = NULL;
     
-    while (Solution* s = e.next()) {
+    while (Solution* s = e.next()){
         if(best != NULL)
         {
             delete best;
+            best=0;
         }
         // Save current solution as best
+        s->rprint();
+        std::cout << "------------------------------------------------------------------------------------------" << std::endl;
+        std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         best = s;
+
     } 
     
     // throw exception if there is no solution
