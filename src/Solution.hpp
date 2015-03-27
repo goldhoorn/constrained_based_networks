@@ -30,6 +30,7 @@ protected:
     std::vector<Gecode::IntVarArray> ir_assignments;
     Gecode::BoolVarArray active;
     Gecode::SetVarArray depends;
+    void markInactiveAsInactive();
     void markAbstractAsInactive();
     void markActiveAsActive();
     void removeSelfCompositonsFromDepends();

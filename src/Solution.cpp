@@ -18,6 +18,15 @@ using namespace Gecode;
 
 namespace constrained_based_networks {
 
+void Solution::markInactiveAsInactive(){
+    for(auto c: pool->getItems<Component*>()){
+        unsigned int cmp_id = pool->getId(c);
+        if(!c->isActive()){
+            rel(*this,expr(*this,active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
+        }
+    }
+}
+
 void Solution::markAbstractAsInactive(){
     rel(*this,active[0],IRT_EQ, 0);
     for(auto provider : pool->getItems<DataService*>()){
@@ -78,6 +87,7 @@ Solution::Solution(Pool *_pool): pool(_pool)
     //Defining inactive as the opposide to active 
    
     markAbstractAsInactive();
+    markInactiveAsInactive();
     markActiveAsActive();
     removeSelfCompositonsFromDepends();
 
@@ -115,23 +125,18 @@ Solution::Solution(Pool *_pool): pool(_pool)
 //
 
                     //If something is used then it depends 
-//                    rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) &&  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
+                    rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) &&  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
                     //If something depends then it's active
-                     rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[pool->getId(provider)]));
+                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[pool->getId(provider)]));
 
-                     /*
-                     if(composition->isActive()){
-                        rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider));//, pmi(active[pool->getId(provider)]));
-                     }
-                     */
-                     rel(*this, (IntSet(cmp_id,cmp_id) <= depends[provider->getID()]));// <= composition_child_constraints[child_id]));
+//                     rel(*this, (IntSet(cmp_id,cmp_id) <= depends[provider->getID()]));// <= composition_child_constraints[child_id]));
 //                     dom(*this,depends[pool->getId(provider)], SRT_SUB, cmp_counter);
 
 
                 }else{
                     std::cout << "####### forbidding DS for " << composition->getName() << "." <<child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
                         rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), imp(active[cmp_id]));
-//                        rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));
+                        //rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider), active[cmp_id]);
                         dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter);
                 }
                 rel(*this, !active[cmp_id] >> (composition_child_constraints[child_id] == 0) );

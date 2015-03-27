@@ -45,7 +45,18 @@ void test_cmp_recursion2(){
 //    auto a2 = new Composition("AuvControl::DepthFusionCmp");
 }
 
-void test_cmp_recursion(){
+void test_cmp_recursion_w_unused_CS(){
+
+    //auto a2 = new Composition("A2");
+    auto a = new Composition("A");
+    auto b = new Composition("B");
+    auto b2 = new Composition("B2");
+    a->addChild(b,"b_child");
+    auto t = new Task("T");
+    b->addChild(t,"t_child");
+}
+
+void test_cmp_recursion_w_used_DS(){
 
     //auto a2 = new Composition("A2");
     auto a = new Composition("A");
@@ -55,22 +66,43 @@ void test_cmp_recursion(){
     //auto ds2 = new DataService("DS2");
 
 
-    //b->addFullfillment("DS");
+    b->addFullfillment("DS");
     //b2->addFullfillment("DS");
     //b->addFullfillment("DS2");
     //b2->addFullfillment("DS2");
 
-    a->addChild(b,"b_child");
+    a->addChild(ds,"b_child_is_ds");
     //a2->addChild(ds,"b_child");
     auto t = new Task("T");
     b->addChild(t,"t_child");
 
 }
 
+void test_cmp_recursion_w_unused_DS(){
+
+    auto a = new Composition("A");
+    auto b = new Composition("B");
+    auto ds = new DataService("DS");
+    a->addChild(b,"b_child");
+    auto t = new Task("T");
+    b->addChild(t,"t_child");
+
+}
+
+void test_cmp_recursion(){
+    auto a = new Composition("A");
+    auto b = new Composition("B");
+    a->addChild(b,"b_child");
+    auto t = new Task("T");
+    b->addChild(t,"t_child");
+}
+
 // main test function
 int main(int argc, char* argv[]) {
     using namespace constrained_based_networks;
-    test_cmp_recursion();
+    //test_cmp_recursion();
+//    test_cmp_recursion_w_used_DS();
+    test_cmp_recursion_w_unused_CS();
 //    test_cmp_recursion2();
     std::string name("A");
     
