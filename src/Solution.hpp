@@ -8,6 +8,7 @@
 
 namespace constrained_based_networks {
 
+    class Composition;
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type Solution.
  */
@@ -25,10 +26,18 @@ protected:
     /**
      * Assignments of query components to pool components. This is what has to be solved.
      */
+    Pool *pool;
     std::vector<Gecode::IntVarArray> ir_assignments;
+#if ACTIVE_USED
     Gecode::BoolVarArray active;
     Gecode::BoolVarArray inactive;
+#endif
     Gecode::SetVarArray depends;
+    void markAbstractAsInactive();
+    void markActiveAsActive();
+    void removeSelfCompositonsFromDepends();
+    bool markCompositionAsChildless(Composition *composition, size_t composition_id);
+
 public:
     /**
      * Construct a solution with an initial situation to search.

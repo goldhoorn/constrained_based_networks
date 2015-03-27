@@ -62,7 +62,7 @@ public:
    
     Gecode::IntVarArray getPossibleTaskAssignments(Gecode::Space *space);
     
-    std::list<std::pair<std::string, Component*> > getChildren();
+    std::vector<std::pair<std::string, Component*> > getChildren();
     //std::list<Component*> getChildren();
 
     /**

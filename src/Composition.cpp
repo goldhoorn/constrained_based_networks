@@ -94,8 +94,8 @@ Gecode::IntVarArray Composition::getPossibleTaskAssignments(Gecode::Space *space
         return arr;
 }
 
-std::list<std::pair<std::string, Component*> > Composition::getChildren(){
-    std::list<std::pair<std::string, Component*> > erg;
+std::vector<std::pair<std::string, Component*> > Composition::getChildren(){
+    std::vector<std::pair<std::string, Component*> > erg;
     for(auto i : children){
         erg.push_back(std::pair<std::string,Component*>(i.first,i.second));
     }
