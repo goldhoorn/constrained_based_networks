@@ -101,8 +101,8 @@ void test_cmp_recursion(){
 int main(int argc, char* argv[]) {
     using namespace constrained_based_networks;
     //test_cmp_recursion();
-//    test_cmp_recursion_w_used_DS();
-    test_cmp_recursion_w_unused_CS();
+    test_cmp_recursion_w_used_DS();
+//    test_cmp_recursion_w_unused_CS();
 //    test_cmp_recursion2();
     std::string name("A");
     
