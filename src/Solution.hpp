@@ -28,10 +28,7 @@ protected:
      */
     Pool *pool;
     std::vector<Gecode::IntVarArray> ir_assignments;
-#if ACTIVE_USED
     Gecode::BoolVarArray active;
-    Gecode::BoolVarArray inactive;
-#endif
     Gecode::SetVarArray depends;
     void markAbstractAsInactive();
     void markActiveAsActive();

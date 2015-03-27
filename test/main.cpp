@@ -51,11 +51,11 @@ void test_cmp_recursion(){
     auto a = new Composition("A");
     auto b = new Composition("B");
     //auto b2 = new Composition("B2");
-//    auto ds = new DataService("DS");
+    auto ds = new DataService("DS");
     //auto ds2 = new DataService("DS2");
 
 
-//    b->addFullfillment("DS");
+    //b->addFullfillment("DS");
     //b2->addFullfillment("DS");
     //b->addFullfillment("DS2");
     //b2->addFullfillment("DS2");
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     using namespace constrained_based_networks;
     test_cmp_recursion();
 //    test_cmp_recursion2();
-//    std::string name("A");
+    std::string name("A");
     
 // auto c2 = new Composition("AuvControl::DepthFusionCmp");
     //create_model();
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
     //std::string name("Base::WorldXYPositionControllerSrv");
     //std::string name("AuvCont::WorldXYPositionCmp");
 //    std::string name("Pipeline::Detector_new"); //Nicht ok!!!
-//    std::string name("AuvControl::DepthFusionCmp"); //ok!!!
+    //std::string name("AuvControl::DepthFusionCmp"); //ok!!!
 //    std::string name("Base::OrientationWithZSrv_cmp"); //Nicht ok!!!
 //    std::string name("PoseAuv::PoseEstimatorBlindCmp"); //Nicht ok!!!
 
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     //std::string name("Localization::ParticleDetector"); //NICHT ok //Hough service
     //std::string name("Localization::HoughDetector"); //NICHT ok //Hough service
     
-    std::string name("A"); //NICHT ok //Hough service
+    //std::string name("A"); //NICHT ok //Hough service
 
 //    auto a = new Composition("A");
 //    a->addChild(pool->getComponent("AuvControl::DepthFusionCmp"),"main_child");
