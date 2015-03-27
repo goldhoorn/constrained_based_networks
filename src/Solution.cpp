@@ -106,6 +106,8 @@ Solution::Solution(Pool *_pool): pool(_pool)
             auto child = composition->getChildren()[child_id];
             //If this composition is used all children needs to be active
             rel(*this, composition_child_constraints[child_id], IRT_NQ, 0 , imp(active[composition->getID()]));
+            //Mark all children as invalid if composition is inactive
+            rel(*this, !active[composition->getID()] >> (composition_child_constraints[child_id] == 0) );
 
             for(auto provider : pool->getItems<Component*>()){
                 
@@ -135,13 +137,13 @@ Solution::Solution(Pool *_pool): pool(_pool)
 
 
                 }else{
+                        //TODO continue here, the problem is that children get marked as invalid independed if the fit for another child
                         if(provider->getID() != 0){
                             //std::cout << "####### forbidding for " << composition->getName() << "." <<child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
-                            rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));//, imp(active[cmp_id]));
+//                            rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));//, imp(active[cmp_id]));
                         }
-                        dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter);
+                        dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter); //TODO causes too much removing, might influence from above
                 }
-                rel(*this, !active[composition->getID()] >> (composition_child_constraints[child_id] == 0) );
             }
         }
     
@@ -388,7 +390,7 @@ void Solution::printToStream(std::ostream& os, bool full) const
             }
         }
     }
-    os << std::endl;
+    os << "}" <<std::endl;
 #endif
 }
 

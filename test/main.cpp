@@ -170,6 +170,17 @@ std::string test_cmp_recursion(){
     return "A";
 }
 
+std::string test_cmp_recursion_child2_time(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
+    auto a = new Composition("A");
+    auto b = new Composition("B");
+    auto t = new Task("T");
+    a->addChild(t,"t_child");
+    a->addChild(b,"b_child");
+    b->addChild(t,"t_child");
+    return "A";
+}
+
 // main test function
 int main(int argc, char* argv[]) {
     using namespace constrained_based_networks;
@@ -189,6 +200,7 @@ int main(int argc, char* argv[]) {
         test_ds,
         test_ambigious_ds,
         test_cmp_recursion_w_more_used,
+        test_cmp_recursion_child2_time,
         create_model
     };
 
