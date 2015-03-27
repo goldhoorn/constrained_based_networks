@@ -23,6 +23,7 @@ void Solution::markInactiveAsInactive(){
         unsigned int cmp_id = pool->getId(c);
         if(!c->isActive()){
             rel(*this,expr(*this,active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
+            rel(*this,expr(*this,active[cmp_id] == 1) << (depends[cmp_id] != IntSet::empty));
         }
     }
 }
@@ -43,9 +44,8 @@ void Solution::markAbstractAsInactive(){
 
 void Solution::markActiveAsActive(){
     for(auto c: pool->getItems<Component*>()){
-        unsigned int cmp_id = pool->getId(c);
         if(c->isActive()){
-            rel(*this,active[cmp_id],IRT_EQ, 1);
+            rel(*this,active[c->getID()],IRT_EQ, 1);
         }
     }
 }
@@ -87,7 +87,7 @@ Solution::Solution(Pool *_pool): pool(_pool)
     std::cout << "Got " << pool->getItems<Task*>().size() << "Tasks" << std::endl;
 */
     //Defining inactive as the opposide to active 
-   
+  
     markAbstractAsInactive();
     markInactiveAsInactive();
     markActiveAsActive();
@@ -104,6 +104,9 @@ Solution::Solution(Pool *_pool): pool(_pool)
 
         for(size_t child_id = 0; child_id != composition->getChildren().size(); child_id++){
             auto child = composition->getChildren()[child_id];
+            //If this composition is used all children needs to be active
+            rel(*this, composition_child_constraints[child_id], IRT_NQ, 0 , imp(active[composition->getID()]));
+
             for(auto provider : pool->getItems<Component*>()){
                 
                 //Prevent selection of data-services for children
@@ -121,10 +124,11 @@ Solution::Solution(Pool *_pool): pool(_pool)
 
                     //If something is used then it depends 
                     //rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) &&  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
-                    rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) &&  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
+                    rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
                     //If something depends then it's active
                     rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[provider->getID()]));
-                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[composition->getID()]));
+//                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), imp(active[composition->getID()]));
+                    
 
 
 

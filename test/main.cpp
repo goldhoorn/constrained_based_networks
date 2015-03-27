@@ -78,13 +78,13 @@ std::string test_ambigious_ds(){
 
     auto a = new Composition("A");
     auto b = new Task("B");
-//    auto b2 = new Task("B2");
+    auto b2 = new Task("B2");
     auto ds = new DataService("DS");
 
     b->addFullfillment("DS");
-//    b2->addFullfillment("DS");
+    b2->addFullfillment("DS");
 
-    a->addChild(b,"b_child_is_ds");
+    a->addChild(ds,"b_child_is_ds");
     return "A";
 
 }
