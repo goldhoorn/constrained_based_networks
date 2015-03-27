@@ -12,10 +12,8 @@ DataService::DataService(std::string name)
     : Component(Pool::getInstance())
 {
     this->name = name;
-    /*
     auto c = new Composition(name + "_cmp");
     c->addChild(this,"virtual_main_child");
-    */
 }
 
 bool DataService::operator ==( const DataService &comp ) const

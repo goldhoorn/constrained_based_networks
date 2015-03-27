@@ -19,6 +19,7 @@ void resolve(std::string name, bool res){
 //        Solution* s = Solution::gistBaBSeach();
         std::cout << "+++++ Is solveable: " << name << std::endl;
         s->rprint();
+        std::cout << "End Solution " << name << std::endl;
     }catch(std::runtime_error e){
         std::cout << "!!!!! UN-Solveable: " << name << " " << e.what() << " " << std::endl;
         if(res){ 

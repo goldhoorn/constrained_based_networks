@@ -69,7 +69,7 @@ bool Solution::markCompositionAsChildless(Composition *composition, size_t compo
     if(composition->getChildren().size() == 0){
         std::cout << "Composition (cmp id:" << composition_id << ", component id " << composition->getID() << "): " << composition->getName() << " is childless" << std::endl;
         for(auto provider : pool->getItems<Component*>()){
-            std::cout << "- Forbidding: " << provider->getName() << " (" << provider->getID() << ")" << std::endl;
+//            std::cout << "- Forbidding: " << provider->getName() << " (" << provider->getID() << ")" << std::endl;
             dom(*this,depends[provider->getID()], SRT_DISJ, composition_id);
         }
         return true;
@@ -125,6 +125,8 @@ Solution::Solution(Pool *_pool): pool(_pool)
                     //If something is used then it depends 
                     //rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) &&  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
                     rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
+                    rel(*this, (expr(*this,composition_child_constraints[child_id] != pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
+                    //rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
                     //If something depends then it's active
                     rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[provider->getID()]));
 //                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), imp(active[composition->getID()]));
@@ -371,10 +373,19 @@ void Solution::printToStream(std::ostream& os, bool full) const
     for(size_t i = 0; i< depends.size();i++){
         //auto o = pool->getItems<Composition*>()[i];//(*pool)[i];
         auto o = (*pool)[i];
-        //os << "Deps for " << o->getName() << ": " << std::endl;//<< depends << std::endl; 
-        os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends[i] << std::endl; 
+        //os << "Deps for " << o->getName() << ": " << std::endl;//<< depends << std::endl;
+
+        //TODO ugly check
+        bool empty=true;
         for (SetVarGlbValues j(depends[i]); j(); ++j){
-            os  << "\t" << "- " << j.val() << " " <<  pool->getItems<Composition*>()[j.val()]->getName() << std::endl;
+            empty=false;
+            break;
+        }
+        if(!empty){
+            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends[i] << std::endl; 
+            for (SetVarGlbValues j(depends[i]); j(); ++j){
+                os  << "\t" << "- " << j.val() << " " <<  pool->getItems<Composition*>()[j.val()]->getName() << std::endl;
+            }
         }
     }
     os << std::endl;
