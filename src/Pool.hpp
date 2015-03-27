@@ -26,12 +26,15 @@ class Pool{
             return cnt;
         }
 
+        unsigned int size() const{
+            return components.size();
+        }
+
         unsigned int getNonAbstractCount();
         unsigned int getComponentCount();
         Component* operator[](unsigned int id);
         template<typename T> std::vector<T> getItems(){
             std::vector<T> erg;
-
             for(auto c : components){
                 auto comp = dynamic_cast<T>(c);
                 if(comp != nullptr){

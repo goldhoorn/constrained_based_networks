@@ -9,7 +9,7 @@
 using namespace constrained_based_networks;
 Pool *pool;
 
-void resolve(std::string name){
+void resolve(std::string name, bool res){
     
     Component *c = pool->getComponent(name);
     pool->getComponent(name);
@@ -21,31 +21,35 @@ void resolve(std::string name){
         s->rprint();
     }catch(std::runtime_error e){
         std::cout << "!!!!! UN-Solveable: " << name << " " << e.what() << " " << std::endl;
-        c->setActive(false);
-        Composition *comp = dynamic_cast<Composition*>(c);
-        if(!comp){
-            std::cerr << name << " is No compositon FATAL" << std::endl;
-            return;
-        }
-        for(auto child : comp->getChildren()){
-            if(child.second->abstract()){
-                if(name == (child.second->getName() + "_cmp")){
-                    std::cerr << "Cannot finally solve " <<  name << std::endl;
-                    return;
+        if(res){ 
+            c->setActive(false);
+            Composition *comp = dynamic_cast<Composition*>(c);
+            if(!comp){
+                std::cerr << name << " is No compositon FATAL" << std::endl;
+                return;
+            }
+            for(auto child : comp->getChildren()){
+                if(child.second->abstract()){
+                    if(name == (child.second->getName() + "_cmp")){
+                        std::cerr << "Cannot finally solve " <<  name << std::endl;
+                        return;
+                    }
+                    resolve(child.second->getName() + "_cmp",res);
+                }else{
+                    resolve(child.second->getName(),res);
                 }
-                resolve(child.second->getName() + "_cmp");
-            }else{
-                resolve(child.second->getName());
             }
         }
     }
 }
 
-void test_cmp_recursion2(){
+std::string test_cmp_recursion2(){
 //    auto a2 = new Composition("AuvControl::DepthFusionCmp");
+    return "A";
 }
 
-void test_cmp_recursion_w_unused_CS(){
+std::string test_cmp_recursion_w_unused_CS(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
 
     //auto a2 = new Composition("A2");
     auto a = new Composition("A");
@@ -54,9 +58,63 @@ void test_cmp_recursion_w_unused_CS(){
     a->addChild(b,"b_child");
     auto t = new Task("T");
     b->addChild(t,"t_child");
+    return "A";
 }
 
-void test_cmp_recursion_w_used_DS(){
+std::string test_ds(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
+
+    auto a = new Composition("A");
+    auto b = new Task("B");
+    auto ds = new DataService("DS");
+    b->addFullfillment("DS");
+    a->addChild(b,"b_child_is_ds");
+    return "A";
+
+}
+
+std::string test_ambigious_ds(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
+
+    auto a = new Composition("A");
+    auto b = new Task("B");
+//    auto b2 = new Task("B2");
+    auto ds = new DataService("DS");
+
+    b->addFullfillment("DS");
+//    b2->addFullfillment("DS");
+
+    a->addChild(b,"b_child_is_ds");
+    return "A";
+
+}
+
+std::string test_cmp_recursion_w_more_used(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
+
+    auto a2 = new Composition("A2");
+    auto a = new Composition("A");
+    auto b = new Composition("B");
+    auto b2 = new Composition("B2");
+    auto ds = new DataService("DS");
+    auto ds2 = new DataService("DS2");
+
+
+    b->addFullfillment("DS");
+    b2->addFullfillment("DS");
+    b->addFullfillment("DS2");
+    b2->addFullfillment("DS2");
+
+    a->addChild(ds,"b_child_is_ds");
+    a2->addChild(ds,"b_child");
+    auto t = new Task("T");
+    b->addChild(t,"t_child");
+    return "A";
+
+}
+
+std::string test_cmp_recursion_w_used_DS(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
 
     //auto a2 = new Composition("A2");
     auto a = new Composition("A");
@@ -75,47 +133,72 @@ void test_cmp_recursion_w_used_DS(){
     //a2->addChild(ds,"b_child");
     auto t = new Task("T");
     b->addChild(t,"t_child");
+    return "A";
 
 }
 
-void test_cmp_recursion_w_unused_DS(){
+std::string test_cmp_recursion_w_unused_DS(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
+    auto a = new Composition("A");
+    auto b = new Composition("B");
+    a->addChild(b,"b_child");
+    auto t = new Task("T");
+    b->addChild(t,"t_child");
+    auto ds = new DataService("DS");
+    return "A";
+}
 
+std::string test_cmp_recursion_w_unused_DS2(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
     auto a = new Composition("A");
     auto b = new Composition("B");
     auto ds = new DataService("DS");
     a->addChild(b,"b_child");
     auto t = new Task("T");
     b->addChild(t,"t_child");
-
+    return "A";
 }
 
-void test_cmp_recursion(){
+std::string test_cmp_recursion(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
     auto a = new Composition("A");
     auto b = new Composition("B");
     a->addChild(b,"b_child");
     auto t = new Task("T");
     b->addChild(t,"t_child");
+    return "A";
 }
 
 // main test function
 int main(int argc, char* argv[]) {
     using namespace constrained_based_networks;
-    //test_cmp_recursion();
-    test_cmp_recursion_w_used_DS();
-//    test_cmp_recursion_w_unused_CS();
-//    test_cmp_recursion2();
-    std::string name("A");
+    int test_id =0;
+    if(argc == 2 || argc ==3){
+        test_id = atoi(argv[1]);
+    }
+    bool res = false;
+    res = argc==3;
+
+    std::string (*v[])() = {
+        test_cmp_recursion,
+        test_cmp_recursion_w_unused_CS,
+        test_cmp_recursion_w_unused_DS,
+        test_cmp_recursion_w_unused_DS2,
+        test_cmp_recursion_w_used_DS,
+        test_ds,
+        test_ambigious_ds,
+        test_cmp_recursion_w_more_used,
+        create_model
+    };
+
+
+    std::string name = v[test_id]();
+    if(name==""){
+        name = "AuvControl::DepthFusionCmp";
+    }
     
-// auto c2 = new Composition("AuvControl::DepthFusionCmp");
-    //create_model();
+    
     pool = Pool::getInstance();
-
-
-
-
-
-
-
     //std::string name("Base::WorldXYPositionControllerSrv");
     //std::string name("AuvCont::WorldXYPositionCmp");
 //    std::string name("Pipeline::Detector_new"); //Nicht ok!!!
@@ -138,11 +221,11 @@ int main(int argc, char* argv[]) {
     //pool->getComponent("Pipeline::Follower")->setActive(true);
     //pool->getComponent("AuvControl::DepthFusionCmp")->setActive(true);
     
-    try{ 
-    resolve(name);
-    }catch(...){
-        std::cerr << " Got maybe a out of mem error" << std::endl;
-    }
+    //try{ 
+    resolve(name,res);
+    //}catch(...){
+    //    std::cerr << " Got maybe a out of mem error" << std::endl;
+    //}
 //    Solution* s = Solution::babSearch(pool);
 //    s->rprint();
     return 0;

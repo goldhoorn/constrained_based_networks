@@ -90,7 +90,8 @@ std::vector<std::string> Composition::unsolveableChildren(){
 
 Gecode::IntVarArray Composition::getPossibleTaskAssignments(Gecode::Space *space)
 {
-        auto arr = Gecode::IntVarArray(*space,children.size(),0,pool->getNonAbstractCount()-1);
+        //auto arr = Gecode::IntVarArray(*space,children.size(),0,pool->getNonAbstractCount()-1);
+        auto arr = Gecode::IntVarArray(*space,children.size(),0,pool->size()-1);
         return arr;
 }
 
