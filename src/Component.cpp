@@ -31,7 +31,16 @@ unsigned int Component::getID() const{
     return id;
 };
 
+bool Component::isIgnored(){
+    return
+//        (getName().find("Hbridge") != std::string::npos) ||
+//        (getName().find("Control") != std::string::npos) ||
+//        (getName().find("Particle") != std::string::npos) ||
+        (false);
+}
+
 void Component::addFullfillment(std::string str){
+    if(isIgnored())return;
     fullfillments.push_back(str);
 }
 

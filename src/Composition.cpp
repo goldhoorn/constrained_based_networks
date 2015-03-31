@@ -58,6 +58,7 @@ void Composition::setConfiguration(const std::vector<std::string>& configuration
 }
 
 void Composition::addChild(Component *c,std::string name){
+    if(isIgnored()) return;
     children[name] = c;
 }
 

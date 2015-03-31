@@ -92,7 +92,7 @@ std::string test_ambigious_ds(){
 
 std::string test_cmp_recursion_w_more_used(){
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-
+    
     auto a2 = new Composition("A2");
     auto a = new Composition("A");
     auto b = new Composition("B");
@@ -181,6 +181,50 @@ std::string test_cmp_recursion_child2_time(){
     return "A";
 }
 
+std::string test_cmp_recursion_child2_time_abstract(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
+    auto ds2 = new DataService("DS2-task");
+    auto a = new Composition("A");
+    auto b = new Composition("B");
+    auto t = new Task("T");
+    a->addChild(ds2,"t_abstract_child");
+    a->addChild(b,"b_child");
+    b->addChild(ds2,"t_abstract_child");
+    auto a2 = new Composition("A2");
+    auto a3 = new Composition("A3");
+    auto b3 = new Composition("B2");
+    auto b2 = new Composition("B2");
+    auto ds = new DataService("DS");
+
+    b3->addChild(t,"task_child");
+    b3->addFullfillment(ds2->getName());
+
+    t->addFullfillment(ds2->getName());
+    b3->addFullfillment("DS");
+    b2->addFullfillment("DS");
+    b3->addFullfillment("DS2");
+    b2->addFullfillment("DS2");
+
+    return "A";
+}
+
+std::string test_possible_loop_unused(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
+    auto a = new Composition("A");
+    auto a2 = new Composition("A2");
+    auto b = new Composition("B");
+    auto c = new Composition("C");
+    auto t = new Task("T");
+    
+    a->addChild(a2,"a2_child");
+    
+    b->addChild(c,"c_child");
+    c->addChild(t,"task_child");
+    c->addChild(b,"b_child");
+
+    return "A";
+}
+
 // main test function
 int main(int argc, char* argv[]) {
     using namespace constrained_based_networks;
@@ -201,6 +245,8 @@ int main(int argc, char* argv[]) {
         test_ambigious_ds,
         test_cmp_recursion_w_more_used,
         test_cmp_recursion_child2_time,
+        test_cmp_recursion_child2_time_abstract,
+        test_possible_loop_unused,
         create_model
     };
 

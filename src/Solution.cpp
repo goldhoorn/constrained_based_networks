@@ -19,6 +19,85 @@ using namespace Gecode;
 namespace constrained_based_networks {
 
 void Solution::markInactiveAsInactive(){
+    //Remove all loops that are unneeded by a master requirement
+    for(auto c: pool->getItems<Component*>()){
+        size_t id_child= c->getID();
+
+
+        for(int id_parent=0;id_parent != pool->getItems<Composition*>().size();id_parent++){
+            Composition *cmp = pool->getItems<Composition*>()[id_parent];
+
+//            rel(*this, active_propagator[id_child], IRT_EQ, 1, imp(expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) ))));
+            rel(*this, active_propagator[id_child], IRT_EQ, 1, imp(expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) && active_propagator[cmp->getID()]))));
+            //ARGH kack child cosntraints
+            rel(*this, active_propagator[id_child], IRT_EQ, 0, (expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) && !active_propagator[cmp->getID()]))));
+//            rel(*this, active[id_child], IRT_EQ, active_propagator[id_child]);
+//            rel(*this, active_propagator[id_child], IRT_EQ, 1, (expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) && active_propagator[cmp->getID()]))));
+//            rel(*this, active_propagator[id_child], IRT_EQ, 1, (expr(*this, ((BoolExpr)active_propagator[cmp->getID()]))));
+            //dom(*this,depends[id_child], SRT_DISJ, i, imp(expr(*this,!active_propagator[id_child])));
+        }
+    }
+
+//                dom(*this, depends[pool->getId(provider)], SRT_DISJ, cmp_counter, imp(expr(*this,!bv)));
+#if 0
+
+
+        BoolVarArray bv(*this,pool->getItems<Composition*>().size(),0,1);
+        for(size_t i = 0; i<  ir_assignments.size(); i++){ //Assignments for composition i
+
+            size_t id_parent = pool->getItems<Composition*>()[i]->getID();
+
+            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, bv[i]));//expr(*this, bv[i] == active_propagator[c->getID()]));
+            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, bv[i] );
+            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, bv[i] && active_propagator[pool->getItems<Composition*>()[i]->getID()] ));
+            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, bv[i] && (active_propagator[c->getID()] )));
+            BoolVar used(*this, 0,1);
+            member(*this,  ir_assignments[i], expr(*this,id_child), used);
+//            rel(*this, used, IRT_EQ, 1, active_propagator[id_parent]);
+//            rel(*this, used, IRT_EQ, 1, pmi(active_propagator[id_parent]));
+            rel(*this, used, IRT_EQ, 1, pmi(active_propagator[id_child]));
+        //    rel(*this, active_propagator[id_child], IRT_EQ, 0, (expr(*this, !active_propagator[id_parent])));
+            rel(*this, used, IRT_EQ, bv[i]);
+
+//            BoolVar helper2(*this,0,1);
+//            BoolVar helper3(*this,0,1);
+                                       //component  should match helper if not activly used
+            //rel(*this, used, IRT_EQ, bv[i], active_propagator[pool->getItems<Composition*>()[i]->getID()]);
+//            rel(*this, active_propagator[id_parent], IRT_EQ, bv[i], expr(*this,!used));
+ //           rel(*this, active_propagator[pool->getItems<Composition*>()[i]->getID()], IRT_EQ, bv[i], expr(*this,!used));
+
+//            rel(*this, [c->getID()], IRT_EQ, bv[i], expr(*this,used));
+
+            //rel(*this, ((helper && active_propagator[c->getID()]) || active_propagator[pool->getItems<Composition*>()[i]->getID()]) >> bv[i]);
+            
+            //rel(*this, helper, IRT_EQ, 
+            //        expr(active_propagator[c->getID()]) || active_propagator[pool->getItems<Composition*>()[i]->getID()]) >> bv[i]);
+            
+//            expr(*this, bv[i] && (active_propagator[c->getID()] || active_propagator[pool->getItems<Composition*>()[i]->getID()] )));
+            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, (BoolExpr)active_propagator[pool->getItems<Composition*>()[i]->getID()] ));
+//            member(*this,  ir_assignments[i], expr(*this,c->getID()), bv[i] );
+        }
+        //rel(*this, bv, IRT_NQ, 1 , imp(expr(*this,!active_propagator[id_child])));
+
+                //rel(*this, (!bv) >> (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]));
+                dom(*this, depends[pool->getId(provider)], SRT_DISJ, cmp_counter, imp(expr(*this,!bv)));
+
+//        rel(*this,bv[ir_assignments.size()], IRT_EQ, active_propagator[id_child]);
+        if(c->getID() != 0 && !c->isActive()){
+            member(*this, bv, BoolVar(*this,1,1), expr(*this, !active_propagator[id_child]));
+        }
+
+//        member(*this, bv, BoolVar(*this,1,1), (expr(*this, !active[c->getID()])));
+//        branch(*this, bv, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+        workaround2.push_back(bv);
+        //member(*this, , expr(*this,c->getID()), bv[i]);
+
+        //rel(*this, (!bv) >> (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]));
+        //dom(*this, depends[pool->getId(provider)], SRT_DISJ, cmp_counter, imp(expr(*this,!bv)));
+    }
+#endif
+
+    //Remove all unneeded depends
     for(auto c: pool->getItems<Component*>()){
         unsigned int cmp_id = pool->getId(c);
         if(!c->isActive()){
@@ -34,7 +113,6 @@ void Solution::markAbstractAsInactive(){
         if(provider->abstract()){
             rel(*this,active[pool->getId(provider)],IRT_EQ, 0);
             rel(*this,depends[pool->getId(provider)] == IntSet::empty);
-
     //        std::cout << "Got some abstract" << std::endl;
         }else{
             std::cout << "Got non abstract data-service?\n";
@@ -46,6 +124,7 @@ void Solution::markActiveAsActive(){
     for(auto c: pool->getItems<Component*>()){
         if(c->isActive()){
             rel(*this,active[c->getID()],IRT_EQ, 1);
+            rel(*this,active_propagator[c->getID()],IRT_EQ, 1);
         }
     }
 }
@@ -79,6 +158,7 @@ bool Solution::markCompositionAsChildless(Composition *composition, size_t compo
 
 Solution::Solution(Pool *_pool): pool(_pool)
     , active(*this, pool->getComponentCount(), 0, 1)
+    , active_propagator(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getCount<Composition*>()-1))
 {
 /*
@@ -87,9 +167,9 @@ Solution::Solution(Pool *_pool): pool(_pool)
     std::cout << "Got " << pool->getItems<Task*>().size() << "Tasks" << std::endl;
 */
     //Defining inactive as the opposide to active 
-  
+
+
     markAbstractAsInactive();
-    markInactiveAsInactive();
     markActiveAsActive();
     removeSelfCompositonsFromDepends();
 
@@ -106,43 +186,50 @@ Solution::Solution(Pool *_pool): pool(_pool)
             auto child = composition->getChildren()[child_id];
             //If this composition is used all children needs to be active
             rel(*this, composition_child_constraints[child_id], IRT_NQ, 0 , imp(active[composition->getID()]));
+
+
             //Mark all children as invalid if composition is inactive
             rel(*this, !active[composition->getID()] >> (composition_child_constraints[child_id] == 0) );
 
+
+
             for(auto provider : pool->getItems<Component*>()){
-                
+
+                //Remove all children That are NOT used as dependancy
+                //Unfourtnalty it is not possible to have a mini-model for membership constraints
+                //this make this ugly and the workaround needed
+                BoolVar bv(*this,0,1);
+                member(*this, composition_child_constraints, expr(*this,provider->getID()), bv);
+                //rel(*this, (!bv) >> (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]));
+                dom(*this, depends[pool->getId(provider)], SRT_DISJ, cmp_counter, imp(expr(*this,!bv)));
+                workaround.push_back(bv);
+            
+                //Todo do we need to branch here???
+                //branch(*this, bv, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+
                 //Prevent selection of data-services for children
                 if(provider->abstract()){
                     rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));
                     dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter);
-                    //if(composition->isActive())  
-                    //std::cout << "!!!!!!! forbidding DS for child " << composition->getName() << "." <<child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
+                    rel(*this,bv,IRT_EQ,0);
                     continue;
                 }
                 
                 //Check if this provider is fullfilling the requested DataService
                 if(provider->isFullfilling(child.second->getName())){
                 //std::cout << "+++++++ allowing for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
-
-                    //If something is used then it depends 
-                    //rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) &&  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
-                    rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
-                    rel(*this, (expr(*this,composition_child_constraints[child_id] != pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
-                    //rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
-                    //If something depends then it's active
-                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), pmi(active[provider->getID()]));
-//                    rel(*this, composition_child_constraints[child_id],IRT_EQ, pool->getId(provider), imp(active[composition->getID()]));
                     
-
-
-
+                    //If something is used then it depends 
+                    BoolVar is_used = expr(*this, composition_child_constraints[child_id] == provider->getID());
+                    rel(*this, depends[provider->getID()], SRT_SUP, expr(*this,cmp_counter), imp(is_used) );// <= composition_child_constraints[child_id]));
+                    //The following should be equivalent but isn't
+//                  rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
                 }else{
-                        //TODO continue here, the problem is that children get marked as invalid independed if the fit for another child
                         if(provider->getID() != 0){
                             //std::cout << "####### forbidding for " << composition->getName() << "." <<child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
-//                            rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));//, imp(active[cmp_id]));
+                            //THIS provider cannot be Used for THIS child (always true because service does not fit
+                            rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));//, imp(active[cmp_id]));
                         }
-                        dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter); //TODO causes too much removing, might influence from above
                 }
             }
         }
@@ -151,117 +238,13 @@ Solution::Solution(Pool *_pool): pool(_pool)
         branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
         ir_assignments.push_back(composition_child_constraints);
     }
+    
+    markInactiveAsInactive();
     branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
     branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
 
 }
 
-    //assignment_cmps 
-    
-    /*
-    // Check types of all query components against all pool components and only allow identical types to be assigned
-    for(int i = 0; i < assignments_int.size(); i++)
-    {
-        for(int j = 0; j < componentPool.getCompositions().size(); j++)
-        {
-            if(query.getCompositions().at(i).getType() != componentPool.getCompositions().at(j).getType())
-            {
-                // This constrains to that the ith query component cannot be assigned the jth pool component,
-                // as their types differ.
-                rel(*this, assignments_int[i], IRT_NQ, j);
-            }
-        }
-    }
-    
-    // For all queried components
-    for(int i = 0; i < assignments_int.size(); i++)
-    {
-        std::cout << "Constraints for query " << query.getCompositions()[i].toString() << std::endl;
-        std::cout << "With domian " << assignments_int[i] << std::endl;
-        
-        // Differently configured query components may not be assigned the same unconfigured pool component
-        for(int j = 0; j < assignments_int.size(); j++)
-        {
-            if(i == j || query.getCompositions().at(i).getType() != query.getCompositions().at(j).getType())
-            {
-                continue;
-            }
-            std::cout << " Against query " << query.getCompositions()[j].toString() << std::endl;
-            
-            const std::vector<std::string>& requiredConfiguration0 = query.getCompositions().at(i).getConfiguration();
-            const std::vector<std::string>& requiredConfiguration1 = query.getCompositions().at(j).getConfiguration();
-            // If the configurations are not compatible, post != constraint on this assignment
-            if(!requiredConfiguration0.empty()&& !requiredConfiguration1.empty() && requiredConfiguration0 != requiredConfiguration1)
-            {
-                std::cout << "Adding configuration constraint. Composition " << query.getCompositions()[i].getName() << "!=" <<  query.getCompositions()[j].getName() << std::endl;
-                // This means that the ith query component and the jth query component cannot be assigned the same pool component,
-                // since the configurations are incompatible.
-                rel(*this, assignments_int[i], IRT_NQ, assignments_int[j]);
-            }
-        }
-        
-        // For all possible pool components they can be assigned
-        for(int j = assignments_int[i].min(); j <= assignments_int[i].max(); j++)
-        {
-            std::cout << " Against pool " << componentPool.getCompositions()[j].toString() << std::endl;
-            
-            // TODO extern method testing if two components are compitable regarding their configurations
-            // as vector<string>
-            // At the moment, the conf vector just has to be equal
-            const std::vector<std::string>& requiredConfiguration = query.getCompositions().at(i).getConfiguration();
-            const std::vector<std::string>& actualConfiguration = componentPool.getCompositions().at(j).getConfiguration();
-            // If the configurations are not compatible, post != constraint on this assignment
-            if(!requiredConfiguration.empty()&& !actualConfiguration.empty() && requiredConfiguration != actualConfiguration)
-            {
-                std::cout << "Adding configuration constraint. Composition " << query.getCompositions()[i].getName() << "!=" << componentPool.getCompositions()[j].getName() << std::endl;
-                // This means that the ith query component cannot be assigned the jth pool component,
-                // since the configurations are incompatible.
-                rel(*this, assignments_int[i], IRT_NQ, j);
-            }
-            
-            
-            // For all incoming ports of the query component
-            const std::map<IncomingPort, std::string> map = query.getCompositions().at(i).getIncomingConnections();
-            for(std::map<IncomingPort, std::string>::const_iterator it = map.begin(); it != map.end(); ++it)
-            {
-                std::cout << "Checking connection constraint. Composition " << query.getCompositions()[i].getName() << "=" << componentPool.getCompositions()[j].getName() 
-                                << " on in port " << it->first.name << std::endl;
-                
-                // If the ith query component gets assigned to the jth pool component
-                // and they both are connected on the same input port,
-                // the connection origin must also be assigned equally.
-                std::map<IncomingPort, std::string> poolCompositionMap = componentPool.getCompositions().at(j).getIncomingConnections();
-                if(poolCompositionMap.count(it->first) != 0)
-                {
-                    // Get number of the origins
-                    int originQueryNum = query.getCompositionIndex(it->second);
-                    int originPoolNum = componentPool.getCompositionIndex(poolCompositionMap.at(it->first));
-                                        
-                    std::cout << "Adding connection constraint. Composition " << query.getCompositions()[i].getName() << "=" << componentPool.getCompositions()[j].getName() 
-                                << " => " << it->second << "=" << poolCompositionMap.at(it->first) << std::endl;
-                    
-                    // Both connected on same port
-                    BoolVar ithAssignedToJth(*this, 0, 1);
-                    rel(*this, assignments_int[i], IRT_EQ, j, ithAssignedToJth);
-                    // Origins connected on same port
-                    BoolVar originsConnectedEqually(*this, 0, 1);
-                    rel(*this, assignments_int[originQueryNum], IRT_EQ, originPoolNum, originsConnectedEqually);
-                    // Implication as a constraint e.g. A=a0 => B=b0
-                    BoolVar implication(*this, 0, 1);
-                    rel(*this, ithAssignedToJth, BOT_IMP, originsConnectedEqually, 1);
-                }
-            }
-        }
-    }
-    */
-    
-    // branching TODO test and improve
-    
-    // this tells the search engine to branch first on the variable with the smallest domain,
-    // that is the variables where there are less components of that type in the pool
-    // The engine will then try the possible values (assignments) in ascending order.
-    
-    //branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
 
 #ifdef CONSTRAN
 void Solution::constrain(const Space& _b) 
@@ -308,12 +291,22 @@ Solution::Solution(bool share, Solution& s)
     //, query(s.query)
     //, componentPool(s.componentPool)
 {
+    active_propagator.update(*this, share, s.active_propagator);
     active.update(*this, share, s.active);
     depends.update(*this, share, s.depends);
     ir_assignments.resize(s.ir_assignments.size());
-
     for(size_t i = 0; i < s.ir_assignments.size();i++){
         ir_assignments[i].update(*this,share,s.ir_assignments[i]);
+    }
+    
+    workaround.resize(s.workaround.size());
+    for(size_t i = 0; i < s.workaround.size();i++){
+        workaround[i].update(*this,share,s.workaround[i]);
+    }
+
+    workaround2.resize(s.workaround2.size());
+    for(size_t i = 0; i < s.workaround2.size();i++){
+        workaround2[i].update(*this,share,s.workaround2[i]);
     }
 }
 
@@ -391,6 +384,22 @@ void Solution::printToStream(std::ostream& os, bool full) const
         }
     }
     os << "}" <<std::endl;
+#endif
+#if 1
+    os << "MasterUsed:" <<std::endl;
+    for(size_t i = 0; i< active_propagator.size();i++){
+        auto o = (*pool)[i];
+        os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") activly used:"  << active_propagator[i] << std::endl; 
+    }
+
+#endif
+#if 1
+    os << "Workarounds:" <<std::endl;
+    for(size_t i = 0; i< workaround2.size();i++){
+        auto o = (*pool)[i];
+        os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") activly used:"  << workaround2[i] << std::endl; 
+    }
+
 #endif
 }
 
