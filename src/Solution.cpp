@@ -26,11 +26,12 @@ void Solution::markInactiveAsInactive(){
 
         for(int id_parent=0;id_parent != pool->getItems<Composition*>().size();id_parent++){
             Composition *cmp = pool->getItems<Composition*>()[id_parent];
+            unsigned int id = cmp->getID();
 
 //            rel(*this, active_propagator[id_child], IRT_EQ, 1, imp(expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) ))));
-            rel(*this, active_propagator[id_child], IRT_EQ, 1, imp(expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) && active_propagator[cmp->getID()]))));
+            rel(*this, active_propagator[id_child], IRT_EQ, 1, imp(expr(*this, ((depends[id_child] >= IntSet(id,id)) && active_propagator[cmp->getID()]))));
             //ARGH kack child cosntraints
-            rel(*this, active_propagator[id_child], IRT_EQ, 0, (expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) && !active_propagator[cmp->getID()]))));
+            rel(*this, active_propagator[id_child], IRT_EQ, 0, (expr(*this, ((depends[id_child] >= IntSet(id,id)) && !active_propagator[cmp->getID()]))));
 //            rel(*this, active[id_child], IRT_EQ, active_propagator[id_child]);
 //            rel(*this, active_propagator[id_child], IRT_EQ, 1, (expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) && active_propagator[cmp->getID()]))));
 //            rel(*this, active_propagator[id_child], IRT_EQ, 1, (expr(*this, ((BoolExpr)active_propagator[cmp->getID()]))));
@@ -130,12 +131,22 @@ void Solution::markActiveAsActive(){
 }
 
 void Solution::removeSelfCompositonsFromDepends(){
+    for(auto child : pool->getItems<Component*>()){
+        for(auto component : pool->getItems<Component*>()){
+            if(!dynamic_cast<Composition*>(component)){
+                dom(*this,depends[child->getID()], SRT_DISJ, component->getID());
+            }
+        }
+    }
+}
+
+void Solution::depsOnlyOnCmp(){
     for(auto component: pool->getItems<Component*>()){
         unsigned int cnt=0;
         for(auto composition : pool->getItems<Composition*>()){
             if(composition->getName() == component->getName()){
 //                std::cout << "Ignore " << component->getName() << " " << cnt << std::endl;              
-                dom(*this,depends[pool->getId(component)], SRT_DISJ, cnt);
+                dom(*this,depends[pool->getId(component)], SRT_DISJ, composition->getID());
             }
 //            std::cerr << "Debug: " << pool->getId(component) << "==" << component->getID() << std::endl;
             cnt++;
@@ -146,10 +157,10 @@ void Solution::removeSelfCompositonsFromDepends(){
 
 bool Solution::markCompositionAsChildless(Composition *composition, size_t composition_id){
     if(composition->getChildren().size() == 0){
-        std::cout << "Composition (cmp id:" << composition_id << ", component id " << composition->getID() << "): " << composition->getName() << " is childless" << std::endl;
+        std::cout << "Composition (cmp id:" << composition->getID() << ", component id " << composition->getID() << "): " << composition->getName() << " is childless" << std::endl;
         for(auto provider : pool->getItems<Component*>()){
 //            std::cout << "- Forbidding: " << provider->getName() << " (" << provider->getID() << ")" << std::endl;
-            dom(*this,depends[provider->getID()], SRT_DISJ, composition_id);
+            dom(*this,depends[provider->getID()], SRT_DISJ, composition->getID());
         }
         return true;
     }
@@ -159,8 +170,8 @@ bool Solution::markCompositionAsChildless(Composition *composition, size_t compo
 Solution::Solution(Pool *_pool): pool(_pool)
     , active(*this, pool->getComponentCount(), 0, 1)
     , active_propagator(*this, pool->getComponentCount(), 0, 1)
-    , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getCount<Composition*>()-1))
-    , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount())) //pool->getCount<Composition*>()-1))
+    , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
+    , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
 {
 /*
     std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
@@ -173,7 +184,7 @@ Solution::Solution(Pool *_pool): pool(_pool)
     markAbstractAsInactive();
     markActiveAsActive();
     removeSelfCompositonsFromDepends();
-
+    depsOnlyOnCmp();
 
     auto compositions = pool->getItems<Composition*>();
     for(size_t cmp_counter = 0; cmp_counter != compositions.size();cmp_counter++){
@@ -202,7 +213,7 @@ Solution::Solution(Pool *_pool): pool(_pool)
                 BoolVar bv(*this,0,1);
                 member(*this, composition_child_constraints, expr(*this,provider->getID()), bv);
                 //rel(*this, (!bv) >> (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]));
-                dom(*this, depends[pool->getId(provider)], SRT_DISJ, cmp_counter, imp(expr(*this,!bv)));
+                dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), imp(expr(*this,!bv)));
                 workaround.push_back(bv);
             
                 //Todo do we need to branch here???
@@ -211,7 +222,7 @@ Solution::Solution(Pool *_pool): pool(_pool)
                 //Prevent selection of data-services for children
                 if(provider->abstract()){
                     rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));
-                    dom(*this,depends[pool->getId(provider)], SRT_DISJ, cmp_counter);
+                    dom(*this,depends[pool->getId(provider)], SRT_DISJ, composition->getID());
                     rel(*this,bv,IRT_EQ,0);
                     continue;
                 }
@@ -222,9 +233,10 @@ Solution::Solution(Pool *_pool): pool(_pool)
                     
                     //If something is used then it depends 
                     BoolVar is_used = expr(*this, composition_child_constraints[child_id] == provider->getID());
-                    rel(*this, depends[provider->getID()], SRT_SUP, expr(*this,cmp_counter), imp(is_used) );// <= composition_child_constraints[child_id]));
+                    rel(*this, depends[provider->getID()], SRT_SUP, expr(*this,composition->getID()), imp(is_used) );// <= composition_child_constraints[child_id]));
+                   
                     //Bulding recusrive dependencies
-//                    rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends[composition->getID()] | depends[provider->getID()]), imp(is_used) );// <= composition_child_constraints[child_id]));
+                    rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends[composition->getID()] | depends[provider->getID()]), imp(is_used) );// <= composition_child_constraints[child_id]));
 
                     //The following should be equivalent but isn't
 //                  rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
@@ -380,7 +392,7 @@ void Solution::printToStream(std::ostream& os, bool full) const
         if(!empty){
             os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends[i] << std::endl; 
             for (SetVarGlbValues j(depends[i]); j(); ++j){
-                os  << "\t" << "- " << j.val() << " " <<  pool->getItems<Composition*>()[j.val()]->getName() << std::endl;
+                os  << "\t" << "- " << j.val() << " " <<  (*pool)[j.val()]->getName() << std::endl;
             }
         }
     }
@@ -408,7 +420,7 @@ void Solution::printToStream(std::ostream& os, bool full) const
         if(!empty){
             os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends_recursive[i] << std::endl; 
             for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
-                os  << "\t" << "- " << j.val() << " " <<  pool->getItems<Composition*>()[j.val()]->getName() << std::endl;
+                os  << "\t" << "- " << j.val() << " " <<  (*pool)[j.val()]->getName() << std::endl;
             }
         }
     }

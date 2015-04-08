@@ -34,6 +34,7 @@ protected:
     Gecode::SetVarArray depends;
     Gecode::SetVarArray depends_recursive;
     void markInactiveAsInactive();
+    void depsOnlyOnCmp();
     void markAbstractAsInactive();
     void markActiveAsActive();
     void removeSelfCompositonsFromDepends();

@@ -2738,9 +2738,10 @@ c->addFullfillment("Roby::Task");
 {
 // auto c2 = new Composition("AuvControl::DepthFusionCmp");
 auto c = new Composition("AuvControl::DepthFusionCmp");
-c->addChild(pool->getComponent("Base::ZProviderSrv"),"z");
-c->addChild(pool->getComponent("Base::OrientationSrv"),"ori");
-c->addChild(pool->getComponent("AuvHelper::DepthAndOrientationFusion"),"task");
+#if 0
+//c->addChild(pool->getComponent("Base::ZProviderSrv"),"z");
+//c->addChild(pool->getComponent("Base::OrientationSrv"),"ori");
+//c->addChild(pool->getComponent("AuvHelper::DepthAndOrientationFusion"),"task");
 c->addFullfillment("AuvControl::DepthFusionCmp");
 c->addFullfillment("Base::OrientationWithZSrv");
 c->addFullfillment("Base::ZProviderSrv");
@@ -2764,6 +2765,7 @@ c->addFullfillment("Roby::Task");
 c->addFullfillment("Syskit::Component");
 c->addFullfillment("Roby::Task");
 c->addFullfillment("Roby::Task");
+#endif
 }
 {
 auto c = new Composition("LowLevel::Cmp");
