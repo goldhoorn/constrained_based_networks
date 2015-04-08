@@ -137,27 +137,21 @@ Solution::Solution(Pool *_pool): pool(_pool)
 
 
             for(auto provider : pool->getItems<Component*>()){
-
                 //Remove all children That are NOT used as dependancy
                 //Unfourtnalty it is not possible to have a mini-model for membership constraints
                 //this make this ugly and the workaround needed
-                BoolVar bv(*this,0,1);
-                member(*this, composition_child_constraints, expr(*this,provider->getID()), bv);
-                //rel(*this, (!bv) >> (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]));
-                dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), imp(expr(*this,!bv)));
-                workaround.push_back(bv);
+                BoolVar is_member(*this,0,1);
+                member(*this, composition_child_constraints, expr(*this,provider->getID()), is_member);
+                dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), imp(expr(*this,!is_member)));
                     
                 //A component cannot (anyhow) depend on itself (testcase #10) 
                 dom(*this, depends_recursive[provider->getID()], SRT_DISJ, provider->getID() );// <= composition_child_constraints[child_id]));
             
-                //Todo do we need to branch here???
-                //branch(*this, bv, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
-
                 //Prevent selection of data-services for children
                 if(provider->abstract()){
                     rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));
                     dom(*this,depends[pool->getId(provider)], SRT_DISJ, composition->getID());
-                    rel(*this,bv,IRT_EQ,0);
+                    rel(*this,is_member,IRT_EQ,0);
                     continue;
                 }
                 
@@ -247,11 +241,6 @@ Solution::Solution(bool share, Solution& s)
     ir_assignments.resize(s.ir_assignments.size());
     for(size_t i = 0; i < s.ir_assignments.size();i++){
         ir_assignments[i].update(*this,share,s.ir_assignments[i]);
-    }
-    
-    workaround.resize(s.workaround.size());
-    for(size_t i = 0; i < s.workaround.size();i++){
-        workaround[i].update(*this,share,s.workaround[i]);
     }
 
 }
