@@ -160,6 +160,7 @@ Solution::Solution(Pool *_pool): pool(_pool)
     , active(*this, pool->getComponentCount(), 0, 1)
     , active_propagator(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getCount<Composition*>()-1))
+    , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount())) //pool->getCount<Composition*>()-1))
 {
 /*
     std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
@@ -222,6 +223,9 @@ Solution::Solution(Pool *_pool): pool(_pool)
                     //If something is used then it depends 
                     BoolVar is_used = expr(*this, composition_child_constraints[child_id] == provider->getID());
                     rel(*this, depends[provider->getID()], SRT_SUP, expr(*this,cmp_counter), imp(is_used) );// <= composition_child_constraints[child_id]));
+                    //Bulding recusrive dependencies
+//                    rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends[composition->getID()] | depends[provider->getID()]), imp(is_used) );// <= composition_child_constraints[child_id]));
+
                     //The following should be equivalent but isn't
 //                  rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
                 }else{
@@ -294,6 +298,7 @@ Solution::Solution(bool share, Solution& s)
     active_propagator.update(*this, share, s.active_propagator);
     active.update(*this, share, s.active);
     depends.update(*this, share, s.depends);
+    depends_recursive.update(*this, share, s.depends_recursive);
     ir_assignments.resize(s.ir_assignments.size());
     for(size_t i = 0; i < s.ir_assignments.size();i++){
         ir_assignments[i].update(*this,share,s.ir_assignments[i]);
@@ -304,10 +309,6 @@ Solution::Solution(bool share, Solution& s)
         workaround[i].update(*this,share,s.workaround[i]);
     }
 
-    workaround2.resize(s.workaround2.size());
-    for(size_t i = 0; i < s.workaround2.size();i++){
-        workaround2[i].update(*this,share,s.workaround2[i]);
-    }
 }
 
 Space* Solution::copy(bool share) 
@@ -394,12 +395,24 @@ void Solution::printToStream(std::ostream& os, bool full) const
 
 #endif
 #if 1
-    os << "Workarounds:" <<std::endl;
-    for(size_t i = 0; i< workaround2.size();i++){
+    os << "Recursive Dependencies { " << std::endl;
+    for(size_t i = 0; i< depends_recursive.size();i++){
         auto o = (*pool)[i];
-        os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") activly used:"  << workaround2[i] << std::endl; 
-    }
 
+        //TODO ugly check
+        bool empty=true;
+        for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
+            empty=false;
+            break;
+        }
+        if(!empty){
+            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends_recursive[i] << std::endl; 
+            for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
+                os  << "\t" << "- " << j.val() << " " <<  pool->getItems<Composition*>()[j.val()]->getName() << std::endl;
+            }
+        }
+    }
+    os << "}" <<std::endl;
 #endif
 }
 

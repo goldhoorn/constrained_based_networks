@@ -29,10 +29,10 @@ protected:
     Pool *pool;
     std::vector<Gecode::IntVarArray> ir_assignments;
     std::vector<Gecode::BoolVar> workaround;
-    std::vector<Gecode::BoolVarArray> workaround2;
     Gecode::BoolVarArray active;
     Gecode::BoolVarArray active_propagator;
     Gecode::SetVarArray depends;
+    Gecode::SetVarArray depends_recursive;
     void markInactiveAsInactive();
     void markAbstractAsInactive();
     void markActiveAsActive();
