@@ -30,7 +30,6 @@ protected:
     std::vector<Gecode::IntVarArray> ir_assignments;
     std::vector<Gecode::BoolVar> workaround;
     Gecode::BoolVarArray active;
-    Gecode::BoolVarArray active_propagator;
     Gecode::SetVarArray depends;
     Gecode::SetVarArray depends_recursive;
     void markInactiveAsInactive();

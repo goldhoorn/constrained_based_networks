@@ -27,76 +27,8 @@ void Solution::markInactiveAsInactive(){
         for(int id_parent=0;id_parent != pool->getItems<Composition*>().size();id_parent++){
             Composition *cmp = pool->getItems<Composition*>()[id_parent];
             unsigned int id = cmp->getID();
-
-//            rel(*this, active_propagator[id_child], IRT_EQ, 1, imp(expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) ))));
-            rel(*this, active_propagator[id_child], IRT_EQ, 1, imp(expr(*this, ((depends[id_child] >= IntSet(id,id)) && active_propagator[cmp->getID()]))));
-            //ARGH kack child cosntraints
-            rel(*this, active_propagator[id_child], IRT_EQ, 0, (expr(*this, ((depends[id_child] >= IntSet(id,id)) && !active_propagator[cmp->getID()]))));
-//            rel(*this, active[id_child], IRT_EQ, active_propagator[id_child]);
-//            rel(*this, active_propagator[id_child], IRT_EQ, 1, (expr(*this, ((depends[id_child] >= IntSet(id_parent,id_parent)) && active_propagator[cmp->getID()]))));
-//            rel(*this, active_propagator[id_child], IRT_EQ, 1, (expr(*this, ((BoolExpr)active_propagator[cmp->getID()]))));
-            //dom(*this,depends[id_child], SRT_DISJ, i, imp(expr(*this,!active_propagator[id_child])));
         }
     }
-
-//                dom(*this, depends[pool->getId(provider)], SRT_DISJ, cmp_counter, imp(expr(*this,!bv)));
-#if 0
-
-
-        BoolVarArray bv(*this,pool->getItems<Composition*>().size(),0,1);
-        for(size_t i = 0; i<  ir_assignments.size(); i++){ //Assignments for composition i
-
-            size_t id_parent = pool->getItems<Composition*>()[i]->getID();
-
-            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, bv[i]));//expr(*this, bv[i] == active_propagator[c->getID()]));
-            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, bv[i] );
-            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, bv[i] && active_propagator[pool->getItems<Composition*>()[i]->getID()] ));
-            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, bv[i] && (active_propagator[c->getID()] )));
-            BoolVar used(*this, 0,1);
-            member(*this,  ir_assignments[i], expr(*this,id_child), used);
-//            rel(*this, used, IRT_EQ, 1, active_propagator[id_parent]);
-//            rel(*this, used, IRT_EQ, 1, pmi(active_propagator[id_parent]));
-            rel(*this, used, IRT_EQ, 1, pmi(active_propagator[id_child]));
-        //    rel(*this, active_propagator[id_child], IRT_EQ, 0, (expr(*this, !active_propagator[id_parent])));
-            rel(*this, used, IRT_EQ, bv[i]);
-
-//            BoolVar helper2(*this,0,1);
-//            BoolVar helper3(*this,0,1);
-                                       //component  should match helper if not activly used
-            //rel(*this, used, IRT_EQ, bv[i], active_propagator[pool->getItems<Composition*>()[i]->getID()]);
-//            rel(*this, active_propagator[id_parent], IRT_EQ, bv[i], expr(*this,!used));
- //           rel(*this, active_propagator[pool->getItems<Composition*>()[i]->getID()], IRT_EQ, bv[i], expr(*this,!used));
-
-//            rel(*this, [c->getID()], IRT_EQ, bv[i], expr(*this,used));
-
-            //rel(*this, ((helper && active_propagator[c->getID()]) || active_propagator[pool->getItems<Composition*>()[i]->getID()]) >> bv[i]);
-            
-            //rel(*this, helper, IRT_EQ, 
-            //        expr(active_propagator[c->getID()]) || active_propagator[pool->getItems<Composition*>()[i]->getID()]) >> bv[i]);
-            
-//            expr(*this, bv[i] && (active_propagator[c->getID()] || active_propagator[pool->getItems<Composition*>()[i]->getID()] )));
-            //member(*this,  ir_assignments[i], expr(*this,c->getID()), expr(*this, (BoolExpr)active_propagator[pool->getItems<Composition*>()[i]->getID()] ));
-//            member(*this,  ir_assignments[i], expr(*this,c->getID()), bv[i] );
-        }
-        //rel(*this, bv, IRT_NQ, 1 , imp(expr(*this,!active_propagator[id_child])));
-
-                //rel(*this, (!bv) >> (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]));
-                dom(*this, depends[pool->getId(provider)], SRT_DISJ, cmp_counter, imp(expr(*this,!bv)));
-
-//        rel(*this,bv[ir_assignments.size()], IRT_EQ, active_propagator[id_child]);
-        if(c->getID() != 0 && !c->isActive()){
-            member(*this, bv, BoolVar(*this,1,1), expr(*this, !active_propagator[id_child]));
-        }
-
-//        member(*this, bv, BoolVar(*this,1,1), (expr(*this, !active[c->getID()])));
-//        branch(*this, bv, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
-        workaround2.push_back(bv);
-        //member(*this, , expr(*this,c->getID()), bv[i]);
-
-        //rel(*this, (!bv) >> (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]));
-        //dom(*this, depends[pool->getId(provider)], SRT_DISJ, cmp_counter, imp(expr(*this,!bv)));
-    }
-#endif
 
     //Remove all unneeded depends
     for(auto c: pool->getItems<Component*>()){
@@ -125,7 +57,6 @@ void Solution::markActiveAsActive(){
     for(auto c: pool->getItems<Component*>()){
         if(c->isActive()){
             rel(*this,active[c->getID()],IRT_EQ, 1);
-            rel(*this,active_propagator[c->getID()],IRT_EQ, 1);
             //If a component is active it must depend on THIS
         }
     }
@@ -170,7 +101,6 @@ bool Solution::markCompositionAsChildless(Composition *composition, size_t compo
 
 Solution::Solution(Pool *_pool): pool(_pool)
     , active(*this, pool->getComponentCount(), 0, 1)
-    , active_propagator(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
     , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
 {
@@ -311,7 +241,6 @@ Solution::Solution(bool share, Solution& s)
     //, query(s.query)
     //, componentPool(s.componentPool)
 {
-    active_propagator.update(*this, share, s.active_propagator);
     active.update(*this, share, s.active);
     depends.update(*this, share, s.depends);
     depends_recursive.update(*this, share, s.depends_recursive);
@@ -401,14 +330,6 @@ void Solution::printToStream(std::ostream& os, bool full) const
         }
     }
     os << "}" <<std::endl;
-#endif
-#if 1
-    os << "MasterUsed:" <<std::endl;
-    for(size_t i = 0; i< active_propagator.size();i++){
-        auto o = (*pool)[i];
-        os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") activly used:"  << active_propagator[i] << std::endl; 
-    }
-
 #endif
 #if 1
     os << "Recursive Dependencies { " << std::endl;
