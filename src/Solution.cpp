@@ -126,6 +126,7 @@ void Solution::markActiveAsActive(){
         if(c->isActive()){
             rel(*this,active[c->getID()],IRT_EQ, 1);
             rel(*this,active_propagator[c->getID()],IRT_EQ, 1);
+            //If a component is active it must depend on THIS
         }
     }
 }
@@ -215,6 +216,9 @@ Solution::Solution(Pool *_pool): pool(_pool)
                 //rel(*this, (!bv) >> (IntSet(cmp_counter,cmp_counter) || depends[provider->getID()]));
                 dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), imp(expr(*this,!bv)));
                 workaround.push_back(bv);
+                    
+                //A component cannot (anyhow) depend on itself (testcase #10) 
+                dom(*this, depends_recursive[provider->getID()], SRT_DISJ, provider->getID() );// <= composition_child_constraints[child_id]));
             
                 //Todo do we need to branch here???
                 //branch(*this, bv, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
