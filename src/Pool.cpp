@@ -15,6 +15,8 @@ Pool* Pool::getInstance()
     if(pool == 0){
         pool = new Pool();
         new Task(pool, "NIL-Task"); 
+        auto c = new Composition("root-knot");
+        c->setActive(true);
     }
     return pool;
 }

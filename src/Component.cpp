@@ -1,6 +1,6 @@
 #include "Component.hpp"
 #include "Pool.hpp"
-
+#include "Composition.hpp"
 
 using namespace constrained_based_networks;
 
@@ -24,6 +24,9 @@ std::string Component::getName(){
 
 void Component::setActive(bool a){
     active = a;
+    if(a && id != ID_ROOT_KNOT){ //ID for the root-knot-composition
+        dynamic_cast<Composition*>((*pool)[1])->addChild(this,"child_" + getName());
+    }
 }
         
 

@@ -10,6 +10,9 @@
 
 namespace constrained_based_networks {
 
+#define ID_ROOT_KNOT 1
+#define ID_START 2
+
 class Pool{
     public:
         Pool(std::string filename){ if(pool) throw std::runtime_error("Pool already created"); pool= this; load(filename);}

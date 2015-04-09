@@ -35,9 +35,9 @@ void Solution::markInactiveAsInactive(){
         unsigned int cmp_id = pool->getId(c);
         
         //Remove all recursive depends if a component is inactive
-        rel(*this,expr(*this,active[c->getID()] == 0) >> (depends_recursive[c->getID()] == IntSet::empty));
+        rel(*this,!active[c->getID()]  >> (depends_recursive[c->getID()] == IntSet::empty));
         
-        if(!c->isActive()){
+        if(c->getID() != ID_ROOT_KNOT){
             rel(*this,expr(*this,active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
             rel(*this,expr(*this,active[cmp_id] == 1) << (depends[cmp_id] != IntSet::empty));
         }
@@ -58,7 +58,7 @@ void Solution::markAbstractAsInactive(){
 
 void Solution::markActiveAsActive(){
     for(auto c: pool->getItems<Component*>()){
-        if(c->isActive()){
+        if(c->getID() == ID_ROOT_KNOT){
             //If a component is active it must depend on THIS
             rel(*this,active[c->getID()],IRT_EQ, 1);
            
@@ -133,6 +133,10 @@ Solution::Solution(Pool *_pool): pool(_pool)
             //Mark all children as invalid if composition is inactive
             rel(*this, !active[composition->getID()] >> (composition_child_constraints[child_id] == 0) );
 
+            //Optmization to reduce the search-space is redundant to the loop closing #10
+            if(composition->getID() != ID_ROOT_KNOT){
+                rel(*this, active[composition->getID()] >> (depends_recursive[composition->getID()] >= IntSet(ID_ROOT_KNOT,ID_ROOT_KNOT) ));
+            }
 
 
             for(auto provider : pool->getItems<Component*>()){
@@ -183,16 +187,18 @@ Solution::Solution(Pool *_pool): pool(_pool)
     }
     
     markInactiveAsInactive();
-    //branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
-    //branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
-    //branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
+    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+    branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
+    branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
 
 }
 
 
-#ifdef CONSTRAN
+#ifdef CONSTRAIN
 void Solution::constrain(const Space& _b) 
 {
+    printf("In constrain block\n");
+
     const Solution& b = static_cast<const Solution&>(_b);
     
     // Number of used components
@@ -211,7 +217,7 @@ void Solution::constrain(const Space& _b)
     
     // We must have at most that many components used as the so far best solution
     // FIXME LQ, and stuff below
-    nvalues(*this, active, IRT_LE, valuesCount);
+    //nvalues(*this, active, IRT_LE, valuesCount);
     //nvalues(*this, active, IRT_GE, valuesCount);
     
     // If we have an equal amount of values used, the number of reconfigured components must be less
@@ -219,13 +225,13 @@ void Solution::constrain(const Space& _b)
     //nvalues(*this, assignments_int, IRT_LQ, valuesCount, equalAmountOfValues);
     
     //std::cout << " Adding best search constraint. This ";
-    /*
+    
     std::cerr << "##########################################################################" << std::endl;
     rprint();
     std::cerr << "##########################################################################" << std::endl;
-    */
-    //std::cout << " must be better than so far best ";
-    //b.print();
+    std::cout << " must be better than so far best ";
+    b.rprint();
+    std::cerr << "##########################################################################" << std::endl;
     
 }
 #endif
@@ -259,7 +265,7 @@ void Solution::printToStream(std::ostream& os, bool full) const
     os << "Count: " << active.size() << std::endl;
 
     os << "Running State: { " << std::endl;
-    for(int i = 0; i < active.size(); i++)
+    for(int i = full?0:ID_START; i < active.size(); i++)
     {
         //os << "\t" << (*Pool::getInstance())[i]->getName() << "=";
         if(active[i].assigned())
@@ -284,7 +290,7 @@ void Solution::printToStream(std::ostream& os, bool full) const
         size_t child_id=0;
         for(auto child : composition->getChildren()){
             if(ir_assignments[cmp_id][child_id].assigned()){
-                 if(ir_assignments[cmp_id][child_id].val() != 0 || full){ //Only print assigned solutions
+                 if(ir_assignments[cmp_id][child_id].val() > ID_START  || full){ //Only print assigned solutions
                     os << "\t" << composition->getName() << "." << child.first << "=";
                     os <<  (*pool)[ir_assignments[cmp_id][child_id].val()]->getName();
                     os <<  " (" << ir_assignments[cmp_id][child_id] << ")" << std::endl;
@@ -299,7 +305,7 @@ void Solution::printToStream(std::ostream& os, bool full) const
     os << "}" << std::endl;
 #if 1
     os << "Dependencies { " << std::endl;
-    for(size_t i = 0; i< depends.size();i++){
+    for(size_t i = full?0:ID_START; i< depends.size();i++){
         //auto o = pool->getItems<Composition*>()[i];//(*pool)[i];
         auto o = (*pool)[i];
         //os << "Deps for " << o->getName() << ": " << std::endl;//<< depends << std::endl;
@@ -307,12 +313,14 @@ void Solution::printToStream(std::ostream& os, bool full) const
         //TODO ugly check
         bool empty=true;
         for (SetVarGlbValues j(depends[i]); j(); ++j){
+            if(j.val() < ID_START && !full) continue;
             empty=false;
             break;
         }
         if(!empty){
             os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends[i] << std::endl; 
             for (SetVarGlbValues j(depends[i]); j(); ++j){
+                if(j.val() < ID_START && !full) continue;
                 os  << "\t" << "- " << j.val() << " " <<  (*pool)[j.val()]->getName() << std::endl;
             }
         }
@@ -321,18 +329,20 @@ void Solution::printToStream(std::ostream& os, bool full) const
 #endif
 #if 1
     os << "Recursive Dependencies { " << std::endl;
-    for(size_t i = 0; i< depends_recursive.size();i++){
+    for(size_t i = full?0:ID_START; i< depends_recursive.size();i++){
         auto o = (*pool)[i];
 
         //TODO ugly check
         bool empty=true;
         for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
+            if(j.val() < ID_START && !full) continue;
             empty=false;
             break;
         }
         if(!empty){
             os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends_recursive[i] << std::endl; 
             for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
+                if(j.val() < ID_START && !full) continue;
                 os  << "\t" << "- " << j.val() << " " <<  (*pool)[j.val()]->getName() << std::endl;
             }
         }
