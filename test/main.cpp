@@ -214,13 +214,34 @@ std::string test_possible_loop_unused(){
     auto a2 = new Composition("A2");
     auto b = new Composition("B");
     auto c = new Composition("C");
+    auto t = new Task("T-not");
+    auto t2 = new Task("T-yes");
+    
+    a->addChild(a2,"a2_child");
+    a2->addChild(t2,"t_child");
+    
+    b->addChild(c,"c_child");
+    c->addChild(t,"task_child");
+    c->addChild(b,"b_child");
+
+    return "A";
+}
+
+std::string test_possible_loop_unused2(){
+    std::cout << "Testing " << __FUNCTION__ << std::endl;
+    auto a = new Composition("A");
+    auto a2 = new Composition("A2");
+    auto b = new Composition("B");
+    auto c = new Composition("C");
+    auto d = new Composition("D");
     auto t = new Task("T");
     
     a->addChild(a2,"a2_child");
     
     b->addChild(c,"c_child");
     c->addChild(t,"task_child");
-    c->addChild(b,"b_child");
+    c->addChild(d,"d_child");
+    d->addChild(b,"b_child");
 
     return "A";
 }
@@ -247,6 +268,7 @@ int main(int argc, char* argv[]) {
         test_cmp_recursion_child2_time,
         test_cmp_recursion_child2_time_abstract,
         test_possible_loop_unused,
+        test_possible_loop_unused2,
         create_model
     };
 

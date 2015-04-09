@@ -33,6 +33,10 @@ void Solution::markInactiveAsInactive(){
     //Remove all unneeded depends
     for(auto c: pool->getItems<Component*>()){
         unsigned int cmp_id = pool->getId(c);
+        
+        //Remove all recursive depends if a component is inactive
+        rel(*this,expr(*this,active[c->getID()] == 0) >> (depends_recursive[c->getID()] == IntSet::empty));
+        
         if(!c->isActive()){
             rel(*this,expr(*this,active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
             rel(*this,expr(*this,active[cmp_id] == 1) << (depends[cmp_id] != IntSet::empty));
@@ -46,7 +50,6 @@ void Solution::markAbstractAsInactive(){
         if(provider->abstract()){
             rel(*this,active[pool->getId(provider)],IRT_EQ, 0);
             rel(*this,depends[pool->getId(provider)] == IntSet::empty);
-    //        std::cout << "Got some abstract" << std::endl;
         }else{
             std::cout << "Got non abstract data-service?\n";
         }
@@ -56,8 +59,11 @@ void Solution::markAbstractAsInactive(){
 void Solution::markActiveAsActive(){
     for(auto c: pool->getItems<Component*>()){
         if(c->isActive()){
-            rel(*this,active[c->getID()],IRT_EQ, 1);
             //If a component is active it must depend on THIS
+            rel(*this,active[c->getID()],IRT_EQ, 1);
+           
+            //Itself has no other dependancies, so making sure not --anything-- is selected
+            dom(*this,depends_recursive[c->getID()], SRT_EQ, IntSet::empty);
         }
     }
 }
@@ -74,17 +80,10 @@ void Solution::removeSelfCompositonsFromDepends(){
 
 void Solution::depsOnlyOnCmp(){
     for(auto component: pool->getItems<Component*>()){
-        unsigned int cnt=0;
-        for(auto composition : pool->getItems<Composition*>()){
-            if(composition->getName() == component->getName()){
-//                std::cout << "Ignore " << component->getName() << " " << cnt << std::endl;              
-                dom(*this,depends[pool->getId(component)], SRT_DISJ, composition->getID());
-            }
-//            std::cerr << "Debug: " << pool->getId(component) << "==" << component->getID() << std::endl;
-            cnt++;
-        }
+        //Nothing can depend on the dummy task
+        dom(*this,depends[pool->getId(component)], SRT_DISJ, 0);
+        dom(*this,depends_recursive[pool->getId(component)], SRT_DISJ, 0);
     }
-
 }
 
 bool Solution::markCompositionAsChildless(Composition *composition, size_t composition_id){
@@ -146,6 +145,9 @@ Solution::Solution(Pool *_pool): pool(_pool)
                     
                 //A component cannot (anyhow) depend on itself (testcase #10) 
                 dom(*this, depends_recursive[provider->getID()], SRT_DISJ, provider->getID() );// <= composition_child_constraints[child_id]));
+                    
+                //Bulding recusrive dependencies
+                rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends_recursive[composition->getID()] | depends[provider->getID()]), imp(is_member)) ;// <= composition_child_constraints[child_id]));
             
                 //Prevent selection of data-services for children
                 if(provider->abstract()){
@@ -162,9 +164,6 @@ Solution::Solution(Pool *_pool): pool(_pool)
                     //If something is used then it depends 
                     BoolVar is_used = expr(*this, composition_child_constraints[child_id] == provider->getID());
                     rel(*this, depends[provider->getID()], SRT_SUP, expr(*this,composition->getID()), imp(is_used) );// <= composition_child_constraints[child_id]));
-                   
-                    //Bulding recusrive dependencies
-                    rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends[composition->getID()] | depends[provider->getID()]), imp(is_used) );// <= composition_child_constraints[child_id]));
 
                     //The following should be equivalent but isn't
 //                  rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));// <= composition_child_constraints[child_id]));
@@ -184,8 +183,9 @@ Solution::Solution(Pool *_pool): pool(_pool)
     }
     
     markInactiveAsInactive();
-    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
-    branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
+    //branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+    //branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
+    //branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
 
 }
 
@@ -242,7 +242,6 @@ Solution::Solution(bool share, Solution& s)
     for(size_t i = 0; i < s.ir_assignments.size();i++){
         ir_assignments[i].update(*this,share,s.ir_assignments[i]);
     }
-
 }
 
 Space* Solution::copy(bool share) 

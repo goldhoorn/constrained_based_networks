@@ -33,7 +33,10 @@ unsigned int Component::getID() const{
 
 bool Component::isIgnored(){
     return
-//        (getName().find("Hbridge") != std::string::npos) ||
+        (getName().find("Syskit::Component") != std::string::npos) ||
+        (getName().find("Syskit::Composition") != std::string::npos) ||
+        (getName().find("Roby::Task") != std::string::npos) ||
+        (getName().find("Syskit::DataService") != std::string::npos) || 
 //        (getName().find("Control") != std::string::npos) ||
 //        (getName().find("Particle") != std::string::npos) ||
         (false);
