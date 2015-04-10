@@ -10,7 +10,8 @@
 #include "Task.hpp"
 #include "Composition.hpp"
 #include "DataService.hpp"
-
+#include <stdlib.h>
+#include <fstream>
 
 #include <gecode/gist.hh>
 
@@ -22,12 +23,15 @@ void Solution::markInactiveAsInactive(){
     //Remove all loops that are unneeded by a master requirement
     for(auto c: pool->getItems<Component*>()){
         size_t id_child= c->getID();
-
-
         for(int id_parent=0;id_parent != pool->getItems<Composition*>().size();id_parent++){
             Composition *cmp = pool->getItems<Composition*>()[id_parent];
             unsigned int id = cmp->getID();
         }
+    }
+
+    //Nothing can depend on the DUMMY node
+    for(auto c: pool->getItems<Component*>()){
+
     }
 
     //Remove all unneeded depends
@@ -81,9 +85,12 @@ void Solution::removeSelfCompositonsFromDepends(){
 void Solution::depsOnlyOnCmp(){
     for(auto component: pool->getItems<Component*>()){
         //Nothing can depend on the dummy task
-        dom(*this,depends[pool->getId(component)], SRT_DISJ, 0);
-        dom(*this,depends_recursive[pool->getId(component)], SRT_DISJ, 0);
+        dom(*this,depends[pool->getId(component)], SRT_DISJ, ID_NIL);
+        dom(*this,depends_recursive[pool->getId(component)], SRT_DISJ, ID_NIL);
     }
+    //The NIL node cannot have deps
+    dom(*this, depends[ID_NIL], SRT_EQ, IntSet::empty);
+    dom(*this, depends_recursive[ID_NIL], SRT_EQ, IntSet::empty);
 }
 
 bool Solution::markCompositionAsChildless(Composition *composition, size_t composition_id){
@@ -97,6 +104,8 @@ bool Solution::markCompositionAsChildless(Composition *composition, size_t compo
     }
     return false;
 }
+
+int Solution::print_count = 0;
 
 Solution::Solution(Pool *_pool): pool(_pool)
     , active(*this, pool->getComponentCount(), 0, 1)
@@ -128,7 +137,6 @@ Solution::Solution(Pool *_pool): pool(_pool)
             auto child = composition->getChildren()[child_id];
             //If this composition is used all children needs to be active
             rel(*this, composition_child_constraints[child_id], IRT_NQ, 0 , imp(active[composition->getID()]));
-
 
             //Mark all children as invalid if composition is inactive
             rel(*this, !active[composition->getID()] >> (composition_child_constraints[child_id] == 0) );
@@ -182,14 +190,62 @@ Solution::Solution(Pool *_pool): pool(_pool)
         }
     
 
-        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+//        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
         ir_assignments.push_back(composition_child_constraints);
     }
+
+    //No composition can directly be assigned as parent to another one becasue this would create a loop in the dependancy graph
+    //TODO re-think if this is always valid
+    for(size_t p = 0; p < ir_assignments.size();p++){
+        Composition *parent = pool->getItems<Composition*>()[p];
+        for(size_t c = 0; c < ir_assignments.size();c++){
+            Composition *child = pool->getItems<Composition*>()[c];
+            if(c==p)continue;
+
+            //Walk throught childs of first
+            for(size_t idxp=0; idxp < ir_assignments[p].size(); idxp++){ 
+                for(size_t idxc=0; idxc < ir_assignments[c].size(); idxc++){ 
+                    rel(*this,(parent->getID() == ir_assignments[c][idxc]) >> (ir_assignments[p][idxp] != child->getID()));
+                    rel(*this,(child->getID() == ir_assignments[p][idxp]) >> (ir_assignments[c][idxc] != parent->getID()));
+                }
+            }
+        }
+
+    }
+    
+
     
     markInactiveAsInactive();
+    for(size_t i = 0; i < ir_assignments.size();i++){
+        //branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+        branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN());
+        //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
+        //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MAX_EXC());
+    }
+    
+    //branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
+    /*
     branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
-    branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
-    branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
+    for(size_t i = 0; i < ir_assignments.size();i++){
+        branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+    }
+
+    branch(*this, depends_recursive, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
+    */
+
+    //branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
+    //branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
+    //branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+  /*  
+    for(size_t i = 0; i < ir_assignments.size();i++){
+        branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+    }
+    */
+//    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+//    branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
+   
+    printf("Finished creating constraints\n");
+//    branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
 
 }
 
@@ -197,10 +253,12 @@ Solution::Solution(Pool *_pool): pool(_pool)
 #ifdef CONSTRAIN
 void Solution::constrain(const Space& _b) 
 {
-    printf("In constrain block\n");
+    printf("In constrain block %i\n",print_count);
+
+    return;
 
     const Solution& b = static_cast<const Solution&>(_b);
-    
+   
     // Number of used components
     // Determine number of used values in b
     int valuesCount = 0;
@@ -259,6 +317,116 @@ Space* Solution::copy(bool share)
 //{
 //    printToStream(os);
 //}
+
+void Solution::printToDot(std::ostream& os) const 
+{
+    Pool *pool = Pool::getInstance();
+    /*
+    os << "Count: " << active.size() << std::endl;
+
+    os << "Running State: { " << std::endl;
+    for(int i = full?0:ID_START; i < active.size(); i++)
+    {
+        //os << "\t" << (*Pool::getInstance())[i]->getName() << "=";
+        if(active[i].assigned())
+        {
+            if(active[i].val() || full){
+                os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
+            }
+        }
+        else
+        {
+            os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
+        }
+//        os << ", "<< std::endl;
+    }
+    os << "}" << std::endl;
+   
+
+    os << "Child Selection: { " << std::endl;
+    */
+    
+    //TODO ugly
+    char buff[512];
+    sprintf(buff,"/tmp/dep-%i.dot", print_count);
+    std::ofstream file(buff);
+    file << "digraph G {" << std::endl;
+    size_t cmp_id=0;
+    for(auto composition : pool->getItems<Composition*>()){
+        size_t child_id=0;
+        for(auto child : composition->getChildren()){
+            if(ir_assignments[cmp_id][child_id].assigned()){
+                 if(ir_assignments[cmp_id][child_id].val() > ID_START){ //Only print assigned solutions
+                    file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[label=\"" << child.first << "\"];" << std::endl;
+                    //os <<  " (" << ir_assignments[cmp_id][child_id] << ")" << std::endl;
+                 }
+            }else{
+                for (IntVarValues j(ir_assignments[cmp_id][child_id]); j(); ++j){
+                    //file << "\t\"" << composition->getName() << "\" -> \"!" << ir_assignments[cmp_id][child_id] << "\"[color=red];" << std::endl;
+                    //file << "\t\"!" << ir_assignments[cmp_id][child_id] << "\"[color=red];" << std::endl;
+                    file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[j.val()]->getName() << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
+                    file << "\t\"" << (*pool)[j.val()]->getName() << "\"[color=red];" << std::endl;
+                    file << "\t\"" << composition->getName() << "\"[color=red];" << std::endl;
+                    if(active[j.val()].assigned()){
+                        if(active[j.val()].val()){
+                            file << "\t\"" << (*pool)[j.val()]->getName() << "\"[style=filled,fillcolor=green];" << std::endl;
+                        }else{
+                            file << "\t\"" << (*pool)[j.val()]->getName() << "\"[style=filled,fillcolor=red];" << std::endl;
+                        }
+                    }else{
+                        file << "\t\"" << (*pool)[j.val()]->getName() << "\"[style=filled,fillcolor=yellow];" << std::endl;
+                    }
+                }
+//                os << "\t" << composition->getName() << "." << child.first << "=" << ir_assignments[cmp_id][child_id] << std::endl;
+            }
+            child_id++;
+        }
+        cmp_id++;
+    }
+    file << "}" << std::endl;
+    sprintf(buff,"dot -Tsvg /tmp/dep-%i.dot -o /tmp/dep-%i.svg",print_count,print_count);
+    system(buff);
+    os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
+
+#if 1 
+    sprintf(buff,"/tmp/dep-graph-%i.dot", print_count);
+    std::ofstream file2(buff);
+    file2 << "digraph G {" << std::endl;
+    for(size_t i = 1; i< depends.size();i++){
+        auto o = (*pool)[i];
+
+        for (SetVarGlbValues j(depends[i]); j(); ++j){
+            //if(j.val() < ID_START && !full) continue;
+            file2 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\";" << std::endl;
+        }
+    }
+    file2 << "}" << std::endl;
+    file2.close();
+    sprintf(buff,"dot -Tsvg /tmp/dep-graph-%i.dot -o /tmp/dep-graph-%i.svg",print_count,print_count);
+    system(buff);
+    os << "<h1> Dependancy Selection: </h1><br/><img src=\"/tmp/dep-graph-" << print_count << ".svg\"\\>" << std::endl;
+#endif
+#if 1 
+    sprintf(buff,"/tmp/dep-rgraph-%i.dot", print_count);
+    std::ofstream file3(buff);
+    file3 << "digraph G {" << std::endl;
+    for(size_t i = 1; i< depends_recursive.size();i++){
+        auto o = (*pool)[i];
+        for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
+            //if(j.val() < ID_START && !full) continue;
+            file3 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\";" << std::endl;
+        }
+    }
+    file3 << "}" << std::endl;
+    file3.close();
+    sprintf(buff,"dot -Tsvg /tmp/dep-rgraph-%i.dot -o /tmp/dep-rgraph-%i.svg",print_count,print_count);
+    system(buff);
+    os << "<h1> Recursive dependancy Selection: </h1><br/><img src=\"/tmp/dep-rgraph-" << print_count << ".svg\"\\>" << std::endl;
+#endif
+
+
+    print_count++;
+}
 
 void Solution::printToStream(std::ostream& os, bool full) const 
 {
@@ -379,6 +547,7 @@ Solution* Solution::babSearch(Pool *pool)
     // BAB search engine
     //BAB<Solution> e(so);
     BAB<Solution> e(so);
+    //DFS<Solution> e(so);
     // search
     Solution* best = NULL;
     

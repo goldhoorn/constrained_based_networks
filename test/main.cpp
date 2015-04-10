@@ -9,14 +9,19 @@
 using namespace constrained_based_networks;
 Pool *pool;
 
-void resolve(std::string name, bool res){
+void resolve(std::string name, bool res, bool debug = false){
     
     Component *c = pool->getComponent(name);
     pool->getComponent(name);
     c->setActive(true);
     try{
-        Solution* s = Solution::babSearch(pool);
-//        Solution* s = Solution::gistBaBSeach();
+        Solution* s=0;
+        if(debug){
+            s = Solution::gistBaBSeach();
+        }else{
+            s = Solution::babSearch(pool);
+        }
+
         std::cout << "+++++ Is solveable: " << name << std::endl;
         s->rprint();
         std::cout << "End Solution " << name << std::endl;
@@ -35,9 +40,9 @@ void resolve(std::string name, bool res){
                         std::cerr << "Cannot finally solve " <<  name << std::endl;
                         return;
                     }
-                    resolve(child.second->getName() + "_cmp",res);
+                    resolve(child.second->getName() + "_cmp",res,debug);
                 }else{
-                    resolve(child.second->getName(),res);
+                    resolve(child.second->getName(),res, debug);
                 }
             }
         }
@@ -248,13 +253,31 @@ std::string test_possible_loop_unused2(){
 
 // main test function
 int main(int argc, char* argv[]) {
-    using namespace constrained_based_networks;
+    bool debug = false;
+    bool resolve_nonresolveable = false;
     int test_id =0;
-    if(argc == 2 || argc ==3){
-        test_id = atoi(argv[1]);
+
+    char c;
+    while((c=getopt(argc,argv,"dr")) != -1){
+        switch(c){
+            case 'd':
+                debug = true;
+                break;
+            case 'r':
+                resolve_nonresolveable=true;
+                break;
+            default:
+                printf("On default block\n");
+        }
     }
-    bool res = false;
-    res = argc==3;
+               
+    if(optind == argc){
+        std::cerr << "please pass testname" << std::endl;
+        exit(-1); 
+    }
+    test_id = atoi(argv[optind]);
+
+    using namespace constrained_based_networks;
 
     std::string (*v[])() = {
         test_cmp_recursion,
@@ -303,7 +326,7 @@ int main(int argc, char* argv[]) {
     //pool->getComponent("AuvControl::DepthFusionCmp")->setActive(true);
     
     //try{ 
-    resolve(name,res);
+    resolve(name,resolve_nonresolveable,debug);
     //}catch(...){
     //    std::cerr << " Got maybe a out of mem error" << std::endl;
     //}

@@ -6,9 +6,13 @@
 #include <gecode/search.hh>
 #include "Pool.hpp"
 
+
 namespace constrained_based_networks {
 
     class Composition;
+
+#define CONSTRAIN 
+
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type Solution.
  */
@@ -37,8 +41,8 @@ protected:
     void markActiveAsActive();
     void removeSelfCompositonsFromDepends();
     bool markCompositionAsChildless(Composition *composition, size_t composition_id);
-
 public:
+    static int print_count;
     /**
      * Construct a solution with an initial situation to search.
      */
@@ -67,11 +71,13 @@ public:
      * print support
      */
     void rprint() const{printToStream(std::cout);};
-    void print(std::ostream& os = std::cout) const{printToStream(os,true);};
+    //void print(std::ostream& os = std::cout) const{printToStream(os,false);};
+    void print(std::ostream& os = std::cout) const{printToDot(os);};
     /**
      * print support for given outputstream
      */
     void printToStream(std::ostream& os, bool full=false) const;
+    void printToDot(std::ostream& os) const;
 
     static void print(const Space& home,
            const Gecode::BrancherHandle& bh,
