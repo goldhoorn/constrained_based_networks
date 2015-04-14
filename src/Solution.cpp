@@ -17,6 +17,8 @@
 
 using namespace Gecode;
 
+#define REMOVE_REC
+
 namespace constrained_based_networks {
 
 void Solution::markInactiveAsInactive(){
@@ -37,9 +39,11 @@ void Solution::markInactiveAsInactive(){
     //Remove all unneeded depends
     for(auto c: pool->getItems<Component*>()){
         unsigned int cmp_id = pool->getId(c);
-        
+     
         //Remove all recursive depends if a component is inactive
+#ifdef REMOVE_REC 
         rel(*this,!active[c->getID()]  >> (depends_recursive[c->getID()] == IntSet::empty));
+#endif
         
         if(c->getID() != ID_ROOT_KNOT){
             rel(*this,expr(*this,active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
@@ -65,9 +69,10 @@ void Solution::markActiveAsActive(){
         if(c->getID() == ID_ROOT_KNOT){
             //If a component is active it must depend on THIS
             rel(*this,active[c->getID()],IRT_EQ, 1);
-           
+#ifdef REMOVE_REC 
             //Itself has no other dependancies, so making sure not --anything-- is selected
             dom(*this,depends_recursive[c->getID()], SRT_EQ, IntSet::empty);
+#endif
         }
     }
 }
@@ -86,11 +91,15 @@ void Solution::depsOnlyOnCmp(){
     for(auto component: pool->getItems<Component*>()){
         //Nothing can depend on the dummy task
         dom(*this,depends[pool->getId(component)], SRT_DISJ, ID_NIL);
+#ifdef REMOVE_REC
         dom(*this,depends_recursive[pool->getId(component)], SRT_DISJ, ID_NIL);
+#endif
     }
     //The NIL node cannot have deps
     dom(*this, depends[ID_NIL], SRT_EQ, IntSet::empty);
+#ifdef REMOVE_REC
     dom(*this, depends_recursive[ID_NIL], SRT_EQ, IntSet::empty);
+#endif
 }
 
 bool Solution::markCompositionAsChildless(Composition *composition, size_t composition_id){
@@ -110,7 +119,9 @@ int Solution::print_count = 0;
 Solution::Solution(Pool *_pool): pool(_pool)
     , active(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
+#ifdef REMOVE_REC
     , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
+#endif
 {
 /*
     std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
@@ -138,13 +149,17 @@ Solution::Solution(Pool *_pool): pool(_pool)
             //If this composition is used all children needs to be active
             rel(*this, composition_child_constraints[child_id], IRT_NQ, 0 , imp(active[composition->getID()]));
 
+            //It cannot depend on itself
+            rel(*this, composition_child_constraints[child_id], IRT_NQ, composition->getID());
+
             //Mark all children as invalid if composition is inactive
             rel(*this, !active[composition->getID()] >> (composition_child_constraints[child_id] == 0) );
-
+#ifdef REMOVE_REC
             //Optmization to reduce the search-space is redundant to the loop closing #10
             if(composition->getID() != ID_ROOT_KNOT){
                 rel(*this, active[composition->getID()] >> (depends_recursive[composition->getID()] >= IntSet(ID_ROOT_KNOT,ID_ROOT_KNOT) ));
             }
+#endif
 
 
             for(auto provider : pool->getItems<Component*>()){
@@ -154,13 +169,13 @@ Solution::Solution(Pool *_pool): pool(_pool)
                 BoolVar is_member(*this,0,1);
                 member(*this, composition_child_constraints, expr(*this,provider->getID()), is_member);
                 dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), imp(expr(*this,!is_member)));
-                    
+#ifdef REMOVE_REC
                 //A component cannot (anyhow) depend on itself (testcase #10) 
                 dom(*this, depends_recursive[provider->getID()], SRT_DISJ, provider->getID() );// <= composition_child_constraints[child_id]));
                     
                 //Bulding recusrive dependencies
                 rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends_recursive[composition->getID()] | depends[provider->getID()]), imp(is_member)) ;// <= composition_child_constraints[child_id]));
-            
+#endif 
                 //Prevent selection of data-services for children
                 if(provider->abstract()){
                     rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));
@@ -194,6 +209,7 @@ Solution::Solution(Pool *_pool): pool(_pool)
         ir_assignments.push_back(composition_child_constraints);
     }
 
+#if 1 
     //No composition can directly be assigned as parent to another one becasue this would create a loop in the dependancy graph
     //TODO re-think if this is always valid
     for(size_t p = 0; p < ir_assignments.size();p++){
@@ -212,18 +228,28 @@ Solution::Solution(Pool *_pool): pool(_pool)
         }
 
     }
+#endif
     
 
     
     markInactiveAsInactive();
+    branch(*this, active[ID_ROOT_KNOT], INT_VAL_MIN());
+    branch(*this, &Solution::postBranching2);
+    //active_brancher =  branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
+    //active_brancher =  branch(*this, active, INT_VAR_ACTIVITY_MAX(0.8), INT_VAL_MIN());
+    //branch(*this, &Solution::postBranching);
     for(size_t i = 0; i < ir_assignments.size();i++){
-        //branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
-        branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN());
-        //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
+//        ir_assignments_brancher.push_back(branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN()));
+        //ir_assignments_brancher.push_back(branch(*this, ir_assignments[i], INT_VAR_ACTIVITY_MAX(0.8), INT_VAL_MIN()));
+        //branch(*this, &Solution::postBranching);
+//        branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
         //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MAX_EXC());
     }
+    //branch(*this, &Solution::postBranching);
+    //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
+//    depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
+    //depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
     
-    //branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
     /*
     branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
     for(size_t i = 0; i < ir_assignments.size();i++){
@@ -244,17 +270,174 @@ Solution::Solution(Pool *_pool): pool(_pool)
 //    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
 //    branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
    
-    printf("Finished creating constraints\n");
+    printf("Finished creatingerHandleconstraints\n");
 //    branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
 
 }
 
+bool Solution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &ids){
+//    std::cout << "checking root " << pool->getItems<Composition*>()[cmp_id]->getName() << std::endl;
+    for(size_t i =0;i< ir_assignments[cmp_id].size();i++){
+        if(ir_assignments[cmp_id][i].assigned()){
+            unsigned int id = ir_assignments[cmp_id][i].val();
+//            std::cout << "checking " << id << std::endl;
+//            std::cout << "pool size is: " << pool->size() << std::endl;
+            auto c = (*pool)[id];
+            if(auto cmp = dynamic_cast<Composition*>(c)){
+                for(auto id2 : ids) if(id == id2){
+                    std::cout << "This cannot be we depend and outself?" << std::endl;
+                    //this is a failure posting invalid constrain
+                    rel(*this, active[0],IRT_EQ, 1);
+                    rel(*this, active[1],IRT_EQ, 0);
+                    return false; //TODO forbit this solution
+                }
+                ids.push_back(id);            
+                if(!allDepsResolved(cmp->getCmpID(), ids)){
+                    return false;
+                }else{
+                }
+            }
+        }else{
+//            std::cout << "Unresolved: " << (*pool)[i]->getName() << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+void Solution::removeAllUnsedCmps(std::vector<size_t> ids){
+    /*
+    std::cout << "Keep " << ids.size() << " components active #########################" << std::endl;
+       for(auto id : ids){
+           std::cout << "Cmp: " << (*pool)[id]->getName()  << std::endl;
+       }
+    std::cout << "#########################" << std::endl;
+*/
+    std::cout << "__FUNCTION_" << std::endl;
+   for(auto cmp : pool->getItems<Composition*>()){
+       bool contain=false;
+       for(auto id : ids){
+//           std::cout << "Cmp " << cmp->getName() << " has id: " << cmp->getCmpID() << std::endl;
+           if(id == cmp->getID()){
+            contain = true;
+            break;
+           }
+       }
+
+       if(!contain){
+//           std::cout << "Setting " << cmp->getName() << " to inactive" << std::endl;
+           rel(*this, active[cmp->getID()],IRT_EQ, 0);
+//           assign(*this, active[cmp->getID()], INT_ASSIGN_MAX());
+           //assign(*this, depends[cmp->getID()], SET_ASSIGN_MIN_INC());
+           //assign(*this, depends_recursive[cmp->getID()], SET_ASSIGN_MIN_INC());
+            rel(*this,depends[cmp->getID()] == IntSet::empty);
+#ifdef REMOVE_REC
+            rel(*this,depends_recursive[cmp->getID()] == IntSet::empty);
+#endif
+       }else{
+//           std::cout << "Ignore: " << cmp->getName() << " to inactive" << std::endl;
+       }
+   }
+}
+
+
+
+
+void Solution::postBranching2(Space &space){
+    Solution& home = static_cast<Solution&>(space);
+    std::vector<size_t> ids;
+    if(home.findNextBrancher(ID_ROOT_KNOT)){
+//        Solution::postBranching(space);
+        home.doMissingBranching();
+    }else{
+        branch(home, &Solution::postBranching2);
+    }
+}
+   
+void Solution::doMissingBranching(){
+    for(size_t i=0;i<active.size();i++){
+        if(!active[i].assigned()){ //It seems this is not used
+            rel(*this,active[i],IRT_EQ,0);
+            rel(*this,depends[i] == IntSet::empty);
+            rel(*this,depends_recursive[i] == IntSet::empty);
+       //     branch(*this, active[i], INT_VAL_MIN());
+        }
+    }
+    std::cout << "BUJAAACHACKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+    branch(*this, depends, SET_VAR_SIZE_MIN(), SET_VAL_MIN_EXC());
+    branch(*this, depends_recursive, SET_VAR_SIZE_MIN(), SET_VAL_MIN_EXC());
+        
+}
+
+bool Solution::findNextBrancher(unsigned int id){
+    bool finish = true;
+    if(auto cmp = dynamic_cast<Composition*>((*pool)[id])){
+        if(!depends[id].assigned()){
+            finish=false; 
+            branch(*this, depends[id], SET_VAL_MIN_INC());
+        }
+        if(!depends_recursive[id].assigned()){
+            finish=false; 
+            branch(*this, depends_recursive[id], SET_VAL_MIN_INC());
+        }
+
+        for(size_t c_id = 0; c_id < cmp->getChildren().size(); c_id++){
+//        for(auto child_p : cmp->getChildren()){
+            auto child = cmp->getChildren()[c_id].second;
+            if(!ir_assignments[cmp->getCmpID()][c_id].assigned()){
+                branch(*this, ir_assignments[cmp->getCmpID()][c_id], INT_VAL_MIN());
+
+                if(!active[child->getID()].assigned()){
+                    branch(*this, active[child->getID()],INT_VAL_MIN());
+                }
+                finish=false;
+            }else{
+                //printf("-- Got here id: %lu (%lu,%lu)\n",ir_assignments[cmp->getCmpID()][c_id].val(),cmp->getCmpID(),c_id);
+                if(!findNextBrancher(ir_assignments[cmp->getCmpID()][c_id].val())){
+                    finish=false;
+                }
+            }
+        }
+    }else{
+        if(!active[id].assigned()){
+            finish=false;
+            branch(*this, active[id],INT_VAL_MIN());
+        }
+    }
+    return finish;
+}
+
+void Solution::postBranching(Space &space){
+
+    //Solution* home = static_cast<Solution*>(&space);
+    Solution& home = static_cast<Solution&>(space);
+    std::vector<size_t> ids;
+    //ids.push_back((*pool)[ID_ROOT_KNOT]->getCmpID());
+    ids.push_back(ID_ROOT_KNOT);
+    //Check if all dependancies are fullfilled, then post another brancher here
+    if(home.allDepsResolved(0,ids)){
+        home.removeAllUnsedCmps(ids);
+        std::cout << "All Deps are resolved" << std::endl;
+    }else{
+//        std::cout << "All Deps are NOT resolved" << std::endl;
+    }
+}
 
 #ifdef CONSTRAIN
 void Solution::constrain(const Space& _b) 
 {
+    /*
     printf("In constrain block %i\n",print_count);
+    printf("active is: %s\n", active_brancher(*this)?"active":"inactive");
+    for(size_t i=0;i<ir_assignments_brancher.size();i++){
+        printf("ir_brancher[%lu] is: %s\n",i ,ir_assignments_brancher[i](*this)?"active":"inactive");
+    }
 
+//    this->brancher();
+    //printf("Current Brancher: %i\n",this->brancher(2));
+
+    Solution::postBranching(*this);
+    */
     return;
 
     const Solution& b = static_cast<const Solution&>(_b);
@@ -299,9 +482,22 @@ Solution::Solution(bool share, Solution& s)
     //, query(s.query)
     //, componentPool(s.componentPool)
 {
+    /*
+    active_brancher = s.active_brancher;
+    depends_brancher = s.depends_brancher;
+    depends_recursive_brancher = s.depends_recursive_brancher;
+    for(auto i : s.ir_assignments_brancher){
+        ir_assignments_brancher.push_back(i);
+    }
+    */
+
+
+    pool = s.pool;
     active.update(*this, share, s.active);
     depends.update(*this, share, s.depends);
+#ifdef REMOVE_REC
     depends_recursive.update(*this, share, s.depends_recursive);
+#endif
     ir_assignments.resize(s.ir_assignments.size());
     for(size_t i = 0; i < s.ir_assignments.size();i++){
         ir_assignments[i].update(*this,share,s.ir_assignments[i]);
@@ -317,6 +513,62 @@ Space* Solution::copy(bool share)
 //{
 //    printToStream(os);
 //}
+    
+void Solution::compare(const Space& _s, std::ostream& os) const{
+    auto s = static_cast<const Solution&>(_s);
+    char buff[512];
+    sprintf(buff,"/tmp/dep-%i.dot", print_count);
+    std::ofstream file(buff);
+    file << "digraph G {" << std::endl;
+    size_t cmp_id=0;
+    for(auto composition : pool->getItems<Composition*>()){
+        size_t child_id=0;
+        for(auto child : composition->getChildren()){
+            if(ir_assignments[cmp_id][child_id].assigned() && s.ir_assignments[cmp_id][child_id].assigned()){
+                if(s.ir_assignments[cmp_id][child_id].val() > ID_START){
+                    if(ir_assignments[cmp_id][child_id].val() == s.ir_assignments[cmp_id][child_id].val()){
+                        file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[label=\"" << child.first << "\"];" << std::endl;
+                    }else{
+                        file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
+                        file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[s.ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
+                    }
+                }
+            }else if(ir_assignments[cmp_id][child_id].assigned()){
+                if(ir_assignments[cmp_id][child_id].val() > ID_START){
+                file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
+                file << "\t\"" << composition->getName() << "\" -> \"" << "N/A (unresolved)" << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
+                }
+//                file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
+//                file << "\t\"" << composition->getName() << "\" -> \"" << "N/A (unresolved)" << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
+//                 if(ir_assignments[cmp_id][child_id].val() > ID_START){ //Only print assigned solutions
+//                    if(!s.ir_assignments[cmp_id][child_id].assigned()){
+ //                       file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
+//                        file << "\t\"" << composition->getName() << "\" -> \"" << "N/A (unresolved)" << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
+  //                  }else{
+//                    }
+//                 }
+            }else if(s.ir_assignments[cmp_id][child_id].assigned()){
+                if(s.ir_assignments[cmp_id][child_id].val() > ID_START){
+                    file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[s.ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
+                    file << "\t\"" << composition->getName() << "\" -> \"" << "N/A (unresolved)" << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
+                }
+            }else{
+                std::cerr << "somethign is really strange here" << std::endl;
+            }
+            child_id++;
+        }
+        cmp_id++;
+    }
+
+    
+    file << "}" << std::endl;
+    sprintf(buff,"dot -Tsvg /tmp/dep-%i.dot -o /tmp/dep-%i.svg",print_count,print_count);
+    system(buff);
+    os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
+    
+    const_cast<Solution*>(this)->print_count++;
+
+}
 
 void Solution::printToDot(std::ostream& os) const 
 {
@@ -399,6 +651,9 @@ void Solution::printToDot(std::ostream& os) const
             //if(j.val() < ID_START && !full) continue;
             file2 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\";" << std::endl;
         }
+        for (SetVarUnknownValues j(depends[i]); j(); ++j){
+            file2 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\"[color=yellow];" << std::endl;
+        }
     }
     file2 << "}" << std::endl;
     file2.close();
@@ -415,6 +670,9 @@ void Solution::printToDot(std::ostream& os) const
         for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
             //if(j.val() < ID_START && !full) continue;
             file3 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\";" << std::endl;
+        }
+        for (SetVarUnknownValues j(depends_recursive[i]); j(); ++j){
+            file3 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\"[color=yellow];" << std::endl;
         }
     }
     file3 << "}" << std::endl;
@@ -495,7 +753,7 @@ void Solution::printToStream(std::ostream& os, bool full) const
     }
     os << "}" <<std::endl;
 #endif
-#if 1
+#if 0 
     os << "Recursive Dependencies { " << std::endl;
     for(size_t i = full?0:ID_START; i< depends_recursive.size();i++){
         auto o = (*pool)[i];
@@ -579,10 +837,13 @@ Solution *Solution::gistBaBSeach(){
     Solution* m = new Solution(Pool::getInstance());
     //Solution* m = Solution::babSearch(Pool::getInstance());
     Gist::Print<Solution> printer("Print solution");
-//    Gist::VarComparator<Solution> c("Compare nodes");
+    Gist::VarComparator<Solution> c("Compare nodes");
    Gist::Options o;
+   o.c_d = 2;
+   o.a_d = 10;
+   o.threads = 4;
     o.inspect.click(&printer);
-//    o.inspect.compare(&c);
+    o.inspect.compare(&c);
     Gist::bab(m,o);
     return m;
 }

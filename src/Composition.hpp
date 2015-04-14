@@ -29,6 +29,8 @@ protected:
     
     std::map<std::string, Component*> children;
 
+    size_t cmp_id;
+
     /**
      * The configuration consists of a variable sized vector of strings, naming one configuration profile.
      * 
@@ -71,7 +73,11 @@ public:
     bool operator ==( const Composition &comp ) const;
 
     std::vector<std::string> unsolveableChildren();
-    
+   
+
+    /** Get the Composition ID, NOT the id within the pool*/
+    size_t getCmpID() const;
+
     /**
      * String representation of a component
      */

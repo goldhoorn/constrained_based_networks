@@ -35,14 +35,30 @@ protected:
     Gecode::BoolVarArray active;
     Gecode::SetVarArray depends;
     Gecode::SetVarArray depends_recursive;
+    std::vector<Gecode::BrancherHandle> ir_assignments_brancher;
+    Gecode::BrancherHandle active_brancher;
+    Gecode::BrancherHandle depends_brancher;
+    Gecode::BrancherHandle depends_recursive_brancher;
     void markInactiveAsInactive();
     void depsOnlyOnCmp();
     void markAbstractAsInactive();
     void markActiveAsActive();
     void removeSelfCompositonsFromDepends();
     bool markCompositionAsChildless(Composition *composition, size_t composition_id);
+    //Ids are the composition ids that are used within the core-root
+    bool allDepsResolved(unsigned int cmp_id, std::vector<size_t> &ids);
+
+    bool findNextBrancher(unsigned int id);
+
+    //pass all USED compotions, all other ones will be removed
+    void removeAllUnsedCmps(std::vector<size_t> ids);
+    void doMissingBranching();
+
 public:
+    void compare(const Space& s, std::ostream& os) const;
     static int print_count;
+    static void postBranching(Space &space);
+    static void postBranching2(Space &space);
     /**
      * Construct a solution with an initial situation to search.
      */
@@ -71,7 +87,7 @@ public:
      * print support
      */
     void rprint() const{printToStream(std::cout);};
-    //void print(std::ostream& os = std::cout) const{printToStream(os,false);};
+    //void print(std::ostream& os = std::cout) const{printToStream(os,true);};
     void print(std::ostream& os = std::cout) const{printToDot(os);};
     /**
      * print support for given outputstream

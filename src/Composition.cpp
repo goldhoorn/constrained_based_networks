@@ -11,6 +11,7 @@ Composition::Composition(std::string name)
     : Component(Pool::getInstance())
 {
     this->name = name;
+    cmp_id = pool->getItems<Composition*>().size()-1;
 }
 
 bool Composition::operator ==( const Composition &comp ) const
@@ -30,6 +31,10 @@ std::string Composition::toString() const
     ss << "]\n";
         
     return ss.str();
+}
+    
+size_t Composition::getCmpID() const{
+    return cmp_id;
 }
 
 int Composition::getType() const 

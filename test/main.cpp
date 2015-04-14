@@ -9,6 +9,11 @@
 using namespace constrained_based_networks;
 Pool *pool;
 
+struct Tests{
+    std::string (*v)();
+    std::string name;
+};
+
 void resolve(std::string name, bool res, bool debug = false){
     
     Component *c = pool->getComponent(name);
@@ -277,30 +282,35 @@ int main(int argc, char* argv[]) {
     }
     test_id = atoi(argv[optind]);
 
+    printf("Running test: %i\n",test_id);
+
     using namespace constrained_based_networks;
 
-    std::string (*v[])() = {
-        test_cmp_recursion,
-        test_cmp_recursion_w_unused_CS,
-        test_cmp_recursion_w_unused_DS,
-        test_cmp_recursion_w_unused_DS2,
-        test_cmp_recursion_w_used_DS,
-        test_ds,
-        test_ambigious_ds,
-        test_cmp_recursion_w_more_used,
-        test_cmp_recursion_child2_time,
-        test_cmp_recursion_child2_time_abstract,
-        test_possible_loop_unused,
-        test_possible_loop_unused2,
-        create_model
+    Tests tests[] = {
+        {test_cmp_recursion, ""},
+        {test_cmp_recursion_w_unused_CS,""},
+        {test_cmp_recursion_w_unused_DS,""},
+        {test_cmp_recursion_w_unused_DS2,""},
+        {test_cmp_recursion_w_used_DS,""},
+        {test_ds,""},
+        {test_ambigious_ds,""},
+        {test_cmp_recursion_w_more_used,""},
+        {test_cmp_recursion_child2_time,""},
+        {test_cmp_recursion_child2_time_abstract,""},
+        {test_possible_loop_unused,""},
+        {test_possible_loop_unused2,""},
+        {create_model,"AuvControl::DepthFusionCmp"},
+        {create_model,"Pipeline::Follower"}
     };
 
-
-    std::string name = v[test_id]();
-    if(name==""){
-        name = "AuvControl::DepthFusionCmp";
+    std::string name;
+    if(tests[test_id].name == ""){
+        name = tests[test_id].v();
+    }else{
+        tests[test_id].v();
+        name = tests[test_id].name;
     }
-    
+
     
     pool = Pool::getInstance();
     //std::string name("Base::WorldXYPositionControllerSrv");
