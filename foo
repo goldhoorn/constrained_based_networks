@@ -1,0 +1,283 @@
+Composition (cmp id:0, component id 1): A2 is childless
+- Forbidding: NIL-Task (0)
+- Forbidding: A2 (1)
+- Forbidding: A (2)
+- Forbidding: B (3)
+- Forbidding: B2 (4)
+- Forbidding: T (5)
+Composition (cmp id:3, component id 4): B2 is childless
+- Forbidding: NIL-Task (0)
+- Forbidding: A2 (1)
+- Forbidding: A (2)
+- Forbidding: B (3)
+- Forbidding: B2 (4)
+- Forbidding: T (5)
+A.b_child=B (3)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=A2 (1)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=A2 (1)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=A2 (1)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=A2 (1)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=A (2)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=A (2)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=A (2)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=A (2)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=B (3)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=B (3)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=B (3)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=B (3)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=B2 (4)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=B2 (4)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=B2 (4)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=B2 (4)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=T (5)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=T (5)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{1}
+- 1 A
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=T (5)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{2}
+- 2 B
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+A.b_child=B (3)
+B.t_child=T (5)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
++++++ Is solveable: A
+A.b_child=B (3)
+B.t_child=T (5)
+Object NIL-Task(0) is depending on:{}
+Object A2(1) is depending on:{}
+Object A(2) is depending on:{}
+Object B(3) is depending on:{}
+Object B2(4) is depending on:{}
+Object T(5) is depending on:{}

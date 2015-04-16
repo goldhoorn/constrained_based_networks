@@ -66,6 +66,27 @@ void Composition::addChild(Component *c,std::string name){
     if(isIgnored()) return;
     children[name] = c;
 }
+    
+void Composition::addConstraint(std::string child, std::string target){
+
+    if(children.find(child) == children.end()){
+        throw std::invalid_argument(child + " cannot be found on " + getName());
+    }
+    auto c = pool->getComponent(target);
+    if(!c){
+        throw std::invalid_argument(getName()+ " cannot redefine child " + name);
+    }
+    children.erase(child);
+                
+    //addChild(pool->getComponent("DepthReader::Task"),"z");
+    //addChild(pool->getComponent("DepthReader::Task"),"z");
+
+    //TODO better do this later on CSP level instead here...
+    addChild(c,child);
+ //   std::cout << child << "----" << children[child]->getName() <<std::endl;
+//    children[child] = pool->getComponent(name);
+    
+}
 
 std::vector<std::string> Composition::unsolveableChildren(){
     std::vector<std::string> res;

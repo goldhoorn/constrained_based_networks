@@ -300,7 +300,10 @@ int main(int argc, char* argv[]) {
         {test_possible_loop_unused,""},
         {test_possible_loop_unused2,""},
         {create_model,"AuvControl::DepthFusionCmp"},
-        {create_model,"Pipeline::Follower"}
+        {create_model,"Pipeline::Follower"},
+        {create_model,"Buoy::Follower"},
+        {create_model,"Wall::Follower"},
+        {0,""}
     };
 
     std::string name;

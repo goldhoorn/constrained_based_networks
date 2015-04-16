@@ -47,6 +47,9 @@ bool Component::isIgnored(){
 
 void Component::addFullfillment(std::string str){
     if(isIgnored())return;
+    for(auto s : fullfillments){
+        if(s == str) return;
+    }
     fullfillments.push_back(str);
 }
 
