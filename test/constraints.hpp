@@ -1,3 +1,4 @@
+#include "state_machines.hpp"
 void load_constraints(){
 using namespace constrained_based_networks;
 auto pool = Pool::getInstance();
@@ -91,4 +92,5 @@ auto pool = Pool::getInstance();
 		cmp->addConstraint("orientation_with_z","AuvControl::DepthFusionCmp");
 	}else{ std::cerr << "FATAL cannot cast to composition" << std::endl;}
 	}
+load_state_machines();
 }

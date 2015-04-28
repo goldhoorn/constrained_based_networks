@@ -3,6 +3,7 @@
 #include <list>
 #include <vector>
 #include "Component.hpp"
+#include "StateMachine.hpp"
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
@@ -55,6 +56,7 @@ class Pool{
         unsigned int getId(const Component*) const;
     private:
         std::vector<Component*> components;
+        std::vector<StateMachine*> state_machines;
         static Pool *pool;
         Pool();
         friend class boost::serialization::access;

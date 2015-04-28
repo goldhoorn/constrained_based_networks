@@ -344,14 +344,16 @@ void Solution::removeAllUnsedCmps(std::vector<size_t> ids){
 
 
 void Solution::postBranching2(Space &space){
+//    std::cout << __FUNCTION__ << std::endl;
     Solution& home = static_cast<Solution&>(space);
-    std::vector<size_t> ids;
+//    std::vector<size_t> ids;
     if(home.findNextBrancher(ID_ROOT_KNOT)){
 //        Solution::postBranching(space);
         home.doMissingBranching();
     }else{
         branch(home, &Solution::postBranching2);
     }
+//    std::cout << "end " << __FUNCTION__ << std::endl;
 }
    
 void Solution::doMissingBranching(){
@@ -816,9 +818,9 @@ Solution* Solution::babSearch(Pool *pool)
             best=0;
         }
         // Save current solution as best
-        s->rprint();
-        std::cout << "------------------------------------------------------------------------------------------" << std::endl;
-        std::cout << "------------------------------------------------------------------------------------------" << std::endl;
+        //s->rprint();
+        //std::cout << "------------------------------------------------------------------------------------------" << std::endl;
+        //std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         best = s;
 
     } 

@@ -61,6 +61,11 @@ public:
      * Construct component with type and name.
      */
     Composition(std::string name) ;
+    
+    Component* getSpecialized()
+    {
+        return new SpecializedComponent<Composition>(this, pool);
+    }
    
     Gecode::IntVarArray getPossibleTaskAssignments(Gecode::Space *space);
     

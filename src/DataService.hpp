@@ -52,7 +52,11 @@ public:
      * Construct component with type and name.
      */
     DataService(std::string name) ;
-   
+        
+    Component* getSpecialized()
+    {
+        return new SpecializedComponent<DataService>(this, pool);
+    }
 
     /**
      * Components are equal if their name and type equal.

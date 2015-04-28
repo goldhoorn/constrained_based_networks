@@ -55,6 +55,12 @@ public:
      * Construct component with type and name.
      */
     Task(std::string name) ;
+    
+    Component* getSpecialized()
+    {
+        return new SpecializedComponent<Task>(this, pool);
+    }
+   
    
 
     /**

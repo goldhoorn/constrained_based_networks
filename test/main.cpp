@@ -14,10 +14,23 @@ struct Tests{
     std::string name;
 };
 
-void resolve(std::string name, bool res, bool debug = false){
+
+
+
+
+
+//void resolve(std::string name, bool res, bool debug = false){
+void resolve(Component *c, bool res, bool debug = false){
+   
+    if(auto sm =  dynamic_cast<StateMachine*>(c)){
+        for(auto state : sm->getStates()){
+            printf("??????????????      Solution for statemachien %s, for task %s ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
+            resolve(state,res,debug);   
+            printf("??????????????      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
+        }
+        return;
+    }
     
-    Component *c = pool->getComponent(name);
-    pool->getComponent(name);
     c->setActive(true);
     try{
         Solution* s=0;
@@ -27,27 +40,28 @@ void resolve(std::string name, bool res, bool debug = false){
             s = Solution::babSearch(pool);
         }
 
-        std::cout << "+++++ Is solveable: " << name << std::endl;
+        std::cout << "+++++ Is solveable: " << c->getName() << std::endl;
         s->rprint();
-        std::cout << "End Solution " << name << std::endl;
+        std::cout << "End Solution " << c->getName() << std::endl;
     }catch(std::runtime_error e){
-        std::cout << "!!!!! UN-Solveable: " << name << " " << e.what() << " " << std::endl;
+        std::cout << "!!!!! UN-Solveable: " << c->getName() << " " << e.what() << " " << std::endl;
         if(res){ 
             c->setActive(false);
             Composition *comp = dynamic_cast<Composition*>(c);
             if(!comp){
-                std::cerr << name << " is No compositon FATAL" << std::endl;
+                std::cerr << c->getName() << " is No compositon FATAL" << std::endl;
                 return;
             }
             for(auto child : comp->getChildren()){
                 if(child.second->abstract()){
-                    if(name == (child.second->getName() + "_cmp")){
-                        std::cerr << "Cannot finally solve " <<  name << std::endl;
+                    if(c->getName() == (child.second->getName() + "_cmp")){
+                        std::cerr << "Cannot finally solve " <<  c->getName() << std::endl;
                         return;
                     }
-                    resolve(child.second->getName() + "_cmp",res,debug);
+                    //TODO fix here specializations got lost
+                    resolve(pool->getComponent(child.second->getName() + "_cmp"),res,debug);
                 }else{
-                    resolve(child.second->getName(),res, debug);
+                    resolve(child.second,res, debug);
                 }
             }
         }
@@ -301,8 +315,9 @@ int main(int argc, char* argv[]) {
         {test_possible_loop_unused2,""},
         {create_model,"AuvControl::DepthFusionCmp"},
         {create_model,"Pipeline::Follower"},
-        {create_model,"Buoy::Follower"},
+        {create_model,"Buoy::DetectorNewCmp"},
         {create_model,"Wall::Follower"},
+        {create_model,"Main::LawnMoverOverPipe"},
         {0,""}
     };
 
@@ -313,6 +328,9 @@ int main(int argc, char* argv[]) {
         tests[test_id].v();
         name = tests[test_id].name;
     }
+    
+    printf("Running test with name: %s\n",name.c_str());
+
 
     
     pool = Pool::getInstance();
@@ -339,7 +357,7 @@ int main(int argc, char* argv[]) {
     //pool->getComponent("AuvControl::DepthFusionCmp")->setActive(true);
     
     //try{ 
-    resolve(name,resolve_nonresolveable,debug);
+    resolve(pool->getComponent(name),resolve_nonresolveable,debug);
     //}catch(...){
     //    std::cerr << " Got maybe a out of mem error" << std::endl;
     //}

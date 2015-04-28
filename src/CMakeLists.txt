@@ -8,6 +8,7 @@ set(SOURCES
    DataService.cpp
    Solution.cpp
    PortHandler.cpp
+   StateMachine.cpp
 )
 set(HEADERS
    Pool.hpp
@@ -18,6 +19,7 @@ set(HEADERS
    Port.hpp
    Solution.hpp
    PortHandler.hpp
+   StateMachine.hpp
 )
 
 set(Gecode_LIBRARIES
