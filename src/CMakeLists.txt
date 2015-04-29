@@ -6,7 +6,7 @@ set(SOURCES
    Task.cpp
    Component.cpp
    DataService.cpp
-   Solution.cpp
+   ClassSolution.cpp
    PortHandler.cpp
    StateMachine.cpp
 )
@@ -17,7 +17,7 @@ set(HEADERS
    DataService.hpp
    Component.hpp
    Port.hpp
-   Solution.hpp
+   ClassSolution.hpp
    PortHandler.hpp
    StateMachine.hpp
 )
@@ -42,6 +42,6 @@ rock_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} ${Gecode_LIBRARIES})
 
 #rock_executable(${PROJECT_NAME}-test
-#        SOURCES Solution.cpp
+#        SOURCES ClassSolution.cpp
 #        DEPS ${PROJECT_NAME}
 #)

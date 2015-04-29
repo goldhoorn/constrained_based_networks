@@ -2,7 +2,7 @@
 #include <constrained_based_networks/Composition.hpp>
 #include <constrained_based_networks/Pool.hpp>
 #include <constrained_based_networks/DataService.hpp>
-#include <constrained_based_networks/Solution.hpp>
+#include <constrained_based_networks/ClassSolution.hpp>
 
 #include "dump.hpp"
 
@@ -18,13 +18,17 @@ struct Tests{
 
 
 
+void solve_final_network(ClassSolution s){
+    
+}
+
 
 //void resolve(std::string name, bool res, bool debug = false){
 void resolve(Component *c, bool res, bool debug = false){
    
     if(auto sm =  dynamic_cast<StateMachine*>(c)){
         for(auto state : sm->getStates()){
-            printf("??????????????      Solution for statemachien %s, for task %s ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
+            printf("??????????????      ClassSolution for statemachien %s, for task %s ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
             resolve(state,res,debug);   
             printf("??????????????      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
         }
@@ -33,16 +37,16 @@ void resolve(Component *c, bool res, bool debug = false){
     
     c->setActive(true);
     try{
-        Solution* s=0;
+        ClassSolution* s=0;
         if(debug){
-            s = Solution::gistBaBSeach();
+            s = ClassSolution::gistBaBSeach();
         }else{
-            s = Solution::babSearch(pool);
+            s = ClassSolution::babSearch(pool);
         }
 
         std::cout << "+++++ Is solveable: " << c->getName() << std::endl;
         s->rprint();
-        std::cout << "End Solution " << c->getName() << std::endl;
+        std::cout << "End ClassSolution " << c->getName() << std::endl;
     }catch(std::runtime_error e){
         std::cout << "!!!!! UN-Solveable: " << c->getName() << " " << e.what() << " " << std::endl;
         if(res){ 
@@ -361,7 +365,7 @@ int main(int argc, char* argv[]) {
     //}catch(...){
     //    std::cerr << " Got maybe a out of mem error" << std::endl;
     //}
-//    Solution* s = Solution::babSearch(pool);
+//    ClassSolution* s = ClassSolution::babSearch(pool);
 //    s->rprint();
     return 0;
 }

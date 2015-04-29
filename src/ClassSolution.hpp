@@ -14,9 +14,9 @@ namespace constrained_based_networks {
 #define CONSTRAIN 
 
 /**
- * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type Solution.
+ * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type ClassSolution.
  */
-class Solution : public Gecode::Space
+class ClassSolution : public Gecode::Space
 {
 protected:
     /**
@@ -62,7 +62,7 @@ public:
     /**
      * Construct a solution with an initial situation to search.
      */
-    Solution(Pool *pool = Pool::getInstance());
+    ClassSolution(Pool *pool = Pool::getInstance());
    
 #ifdef CONSTRAIN
     /*
@@ -77,7 +77,7 @@ public:
      * search support. There must be a copy constructor like this for the search engine.
      * Everything must be copied into the new Space
      */
-    Solution(bool share, Solution& s);
+    ClassSolution(bool share, ClassSolution& s);
     /**
      * This method is called be the search engine
      */
@@ -112,9 +112,9 @@ public:
      * 
      * \throw Exception if there is no solution.
      */
-    static Solution* babSearch2();
-    static Solution* babSearch(Pool *pool);
-    static Solution* gistBaBSeach();
+    static ClassSolution* babSearch2();
+    static ClassSolution* babSearch(Pool *pool);
+    static ClassSolution* gistBaBSeach();
 };
 
 } // end namespace constrained_based_networks
