@@ -9,7 +9,9 @@ set(SOURCES
    ClassSolution.cpp
    PortHandler.cpp
    StateMachine.cpp
+   InstanceSolution.cpp
 )
+
 set(HEADERS
    Pool.hpp
    Composition.hpp
@@ -20,6 +22,7 @@ set(HEADERS
    ClassSolution.hpp
    PortHandler.hpp
    StateMachine.hpp
+   InstanceSolution.hpp
 )
 
 set(Gecode_LIBRARIES

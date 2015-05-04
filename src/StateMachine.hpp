@@ -35,6 +35,14 @@ namespace constrained_based_networks {
             {
                 return new SpecializedComponent<StateMachine>(this, pool);
             }
+            
+            void addConfig(std::string name, std::string value){
+                if(auto c = dynamic_cast<StateMachine*>(this)){
+                    c->addConfig(name,value);
+                }else{
+                    throw std::runtime_error("Called addConfig on invalid class");
+                }
+            }
 
             std::vector<Component*> getStates();
 

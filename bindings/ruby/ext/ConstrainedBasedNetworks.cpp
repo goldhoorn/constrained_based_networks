@@ -13,7 +13,7 @@
 #include <constrained_based_networks/Task.hpp>
 #include <constrained_based_networks/DataService.hpp>
 #include <constrained_based_networks/Composition.hpp>
-#include <constrained_based_networks/Solution.hpp>
+#include <constrained_based_networks/ClassSolution.hpp>
 
 
 using namespace Rice;
@@ -34,7 +34,7 @@ Data_Type<OutputPort> rb_cOutputPort;
 Data_Type<Composition> rb_cComposition;
 Data_Type<Task> rb_cTask;
 Data_Type<DataService> rb_cDataService;
-Data_Type<Solution> rb_cSolution;
+Data_Type<ClassSolution> rb_cClassSolution;
 
 static Module rb_mGecodeCompMgmt;
 
@@ -304,9 +304,9 @@ void Init_constrained_based_networks_ruby()
 //        .define_method("getOutPorts", &wrap_ds_getOutPorts)
     ;
     
-    rb_cSolution = define_class_under<Solution>(rb_mGecodeCompMgmt, "Solution")
-        .define_singleton_method("bab_search", &Solution::babSearch2 ) // static method
-        .define_singleton_method("gist_search", &Solution::gistBaBSeach ) // static method
-        .define_method("print", &Solution::rprint)
+    rb_cClassSolution = define_class_under<ClassSolution>(rb_mGecodeCompMgmt, "ClassSolution")
+        .define_singleton_method("bab_search", &ClassSolution::babSearch2 ) // static method
+        .define_singleton_method("gist_search", &ClassSolution::gistBaBSeach ) // static method
+        .define_method("print", &ClassSolution::rprint)
     ;
 }

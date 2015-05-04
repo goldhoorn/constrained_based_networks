@@ -1,4 +1,4 @@
-#include "ClassSolution.hpp"
+#include "InstanceSolution.hpp"
 
 #include <gecode/gist.hh>
 #include <gecode/minimodel.hh>
@@ -21,11 +21,13 @@ using namespace Gecode;
 
 namespace constrained_based_networks {
 
-void ClassSolution::markInactiveAsInactive(){
+
+#if 0
+void InstanceSolution::markInactiveAsInactive(){
     //Remove all loops that are unneeded by a master requirement
     for(auto c: pool->getItems<Component*>()){
         size_t id_child= c->getID();
-        for(unsigned int id_parent=0;id_parent != pool->getItems<Composition*>().size();id_parent++){
+        for(int id_parent=0;id_parent != pool->getItems<Composition*>().size();id_parent++){
             Composition *cmp = pool->getItems<Composition*>()[id_parent];
             unsigned int id = cmp->getID();
         }
@@ -52,7 +54,7 @@ void ClassSolution::markInactiveAsInactive(){
     }
 }
 
-void ClassSolution::markAbstractAsInactive(){
+void InstanceSolution::markAbstractAsInactive(){
     rel(*this,active[0],IRT_EQ, 0);
     for(auto provider : pool->getItems<DataService*>()){
         if(provider->abstract()){
@@ -64,7 +66,7 @@ void ClassSolution::markAbstractAsInactive(){
     }
 }
 
-void ClassSolution::markActiveAsActive(){
+void InstanceSolution::markActiveAsActive(){
     for(auto c: pool->getItems<Component*>()){
         if(c->getID() == ID_ROOT_KNOT){
             //If a component is active it must depend on THIS
@@ -77,7 +79,7 @@ void ClassSolution::markActiveAsActive(){
     }
 }
 
-void ClassSolution::removeSelfCompositonsFromDepends(){
+void InstanceSolution::removeSelfCompositonsFromDepends(){
     for(auto child : pool->getItems<Component*>()){
         for(auto component : pool->getItems<Component*>()){
             if(!dynamic_cast<Composition*>(component)){
@@ -87,7 +89,7 @@ void ClassSolution::removeSelfCompositonsFromDepends(){
     }
 }
 
-void ClassSolution::depsOnlyOnCmp(){
+void InstanceSolution::depsOnlyOnCmp(){
     for(auto component: pool->getItems<Component*>()){
         //Nothing can depend on the dummy task
         dom(*this,depends[pool->getId(component)], SRT_DISJ, ID_NIL);
@@ -102,7 +104,7 @@ void ClassSolution::depsOnlyOnCmp(){
 #endif
 }
 
-bool ClassSolution::markCompositionAsChildless(Composition *composition, size_t composition_id){
+bool InstanceSolution::markCompositionAsChildless(Composition *composition, size_t composition_id){
     if(composition->getChildren().size() == 0){
         std::cout << "Composition (cmp id:" << composition->getID() << ", component id " << composition->getID() << "): " << composition->getName() << " is childless" << std::endl;
         for(auto provider : pool->getItems<Component*>()){
@@ -114,23 +116,65 @@ bool ClassSolution::markCompositionAsChildless(Composition *composition, size_t 
     return false;
 }
 
-int ClassSolution::print_count = 0;
+int InstanceSolution::print_count = 0;
 
-ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
+#endif
+
+InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
+    :pool(_pool)
+#if 0    
     , active(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
 #ifdef REMOVE_REC
     , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
 #endif
+#endif
 {
+   //Figure out how many Tasks we need to have as upper bound
+    std::vector<unsigned int> usage_count;
+    usage_count.resize(pool->size(), 0);
+    
+    for(auto cmp_assigment : cs->ir_assignments){
+        for(auto t : cmp_assigment){
+            usage_count[t.val()]++;
+        }
+    }
+    for(auto i: usage_count){
+        tasks.push_back(Gecode::IntVar(*this,0,i));
+    }
+    //TODO simplification for now only 'syskit known' attributes
+    //
+  
 /*
+    for(size_t i =0;i< cs->ir_assignments[cmp_id].size();i++){
+        if(cs->ir_assignments[cmp_id][i].assigned()){
+            unsigned int id = cs->ir_assignments[cmp_id][i].val();
+            auto c = (*pool)[id];
+            if(auto cmp = dynamic_cast<Composition*>(c)){
+                
+                task_assignments.
+            }
+        }
+    }
+    */
+
+
+    
+    
+
+    //TODO handle connection constraints
+
+   
+
+
+    /*
     std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
     std::cout << "Got " << pool->getItems<Composition*>().size() << "Compositions" << std::endl;
     std::cout << "Got " << pool->getItems<Task*>().size() << "Tasks" << std::endl;
 */
     //Defining inactive as the opposide to active 
 
-
+#if 0
     markAbstractAsInactive();
     markActiveAsActive();
     removeSelfCompositonsFromDepends();
@@ -234,18 +278,18 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     
     markInactiveAsInactive();
     branch(*this, active[ID_ROOT_KNOT], INT_VAL_MIN());
-    branch(*this, &ClassSolution::postBranching2);
+    branch(*this, &InstanceSolution::postBranching2);
     //active_brancher =  branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
     //active_brancher =  branch(*this, active, INT_VAR_ACTIVITY_MAX(0.8), INT_VAL_MIN());
-    //branch(*this, &ClassSolution::postBranching);
+    //branch(*this, &InstanceSolution::postBranching);
     for(size_t i = 0; i < ir_assignments.size();i++){
 //        ir_assignments_brancher.push_back(branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN()));
         //ir_assignments_brancher.push_back(branch(*this, ir_assignments[i], INT_VAR_ACTIVITY_MAX(0.8), INT_VAL_MIN()));
-        //branch(*this, &ClassSolution::postBranching);
+        //branch(*this, &InstanceSolution::postBranching);
 //        branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
         //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MAX_EXC());
     }
-    //branch(*this, &ClassSolution::postBranching);
+    //branch(*this, &InstanceSolution::postBranching);
     //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
 //    depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
     //depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
@@ -273,9 +317,11 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     printf("Finished creatingerHandleconstraints\n");
 //    branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
 
+#endif
 }
 
-bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &ids){
+#if 0
+bool InstanceSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &ids){
 //    std::cout << "checking root " << pool->getItems<Composition*>()[cmp_id]->getName() << std::endl;
     for(size_t i =0;i< ir_assignments[cmp_id].size();i++){
         if(ir_assignments[cmp_id][i].assigned()){
@@ -305,7 +351,7 @@ bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &id
     return true;
 }
 
-void ClassSolution::removeAllUnsedCmps(std::vector<size_t> ids){
+void InstanceSolution::removeAllUnsedCmps(std::vector<size_t> ids){
     /*
     std::cout << "Keep " << ids.size() << " components active #########################" << std::endl;
        for(auto id : ids){
@@ -343,20 +389,20 @@ void ClassSolution::removeAllUnsedCmps(std::vector<size_t> ids){
 
 
 
-void ClassSolution::postBranching2(Space &space){
+void InstanceSolution::postBranching2(Space &space){
 //    std::cout << __FUNCTION__ << std::endl;
-    ClassSolution& home = static_cast<ClassSolution&>(space);
+    InstanceSolution& home = static_cast<InstanceSolution&>(space);
 //    std::vector<size_t> ids;
     if(home.findNextBrancher(ID_ROOT_KNOT)){
-//        ClassSolution::postBranching(space);
+//        InstanceSolution::postBranching(space);
         home.doMissingBranching();
     }else{
-        branch(home, &ClassSolution::postBranching2);
+        branch(home, &InstanceSolution::postBranching2);
     }
 //    std::cout << "end " << __FUNCTION__ << std::endl;
 }
    
-void ClassSolution::doMissingBranching(){
+void InstanceSolution::doMissingBranching(){
     for(size_t i=0;i<active.size();i++){
         if(!active[i].assigned()){ //It seems this is not used
             rel(*this,active[i],IRT_EQ,0);
@@ -371,7 +417,7 @@ void ClassSolution::doMissingBranching(){
         
 }
 
-bool ClassSolution::findNextBrancher(unsigned int id){
+bool InstanceSolution::findNextBrancher(unsigned int id){
     bool finish = true;
     if(auto cmp = dynamic_cast<Composition*>((*pool)[id])){
         if(!depends[id].assigned()){
@@ -409,10 +455,10 @@ bool ClassSolution::findNextBrancher(unsigned int id){
     return finish;
 }
 
-void ClassSolution::postBranching(Space &space){
+void InstanceSolution::postBranching(Space &space){
 
-    //ClassSolution* home = static_cast<ClassSolution*>(&space);
-    ClassSolution& home = static_cast<ClassSolution&>(space);
+    //InstanceSolution* home = static_cast<InstanceSolution*>(&space);
+    InstanceSolution& home = static_cast<InstanceSolution&>(space);
     std::vector<size_t> ids;
     //ids.push_back((*pool)[ID_ROOT_KNOT]->getCmpID());
     ids.push_back(ID_ROOT_KNOT);
@@ -424,9 +470,10 @@ void ClassSolution::postBranching(Space &space){
 //        std::cout << "All Deps are NOT resolved" << std::endl;
     }
 }
+#endif
 
 #ifdef CONSTRAIN
-void ClassSolution::constrain(const Space& _b) 
+void InstanceSolution::constrain(const Space& _b) 
 {
     /*
     printf("In constrain block %i\n",print_count);
@@ -438,11 +485,11 @@ void ClassSolution::constrain(const Space& _b)
 //    this->brancher();
     //printf("Current Brancher: %i\n",this->brancher(2));
 
-    ClassSolution::postBranching(*this);
+    InstanceSolution::postBranching(*this);
     */
     return;
-
-    const ClassSolution& b = static_cast<const ClassSolution&>(_b);
+#if 0
+    const InstanceSolution& b = static_cast<const InstanceSolution&>(_b);
    
     // Number of used components
     // Determine number of used values in b
@@ -475,26 +522,18 @@ void ClassSolution::constrain(const Space& _b)
     std::cout << " must be better than so far best ";
     b.rprint();
     std::cerr << "##########################################################################" << std::endl;
+#endif
     
 }
 #endif
 
-ClassSolution::ClassSolution(bool share, ClassSolution& s) 
+InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) 
     : Space(share, s)
     //, query(s.query)
     //, componentPool(s.componentPool)
 {
-    /*
-    active_brancher = s.active_brancher;
-    depends_brancher = s.depends_brancher;
-    depends_recursive_brancher = s.depends_recursive_brancher;
-    for(auto i : s.ir_assignments_brancher){
-        ir_assignments_brancher.push_back(i);
-    }
-    */
-
-
     pool = s.pool;
+#if 0
     active.update(*this, share, s.active);
     depends.update(*this, share, s.depends);
 #ifdef REMOVE_REC
@@ -504,20 +543,18 @@ ClassSolution::ClassSolution(bool share, ClassSolution& s)
     for(size_t i = 0; i < s.ir_assignments.size();i++){
         ir_assignments[i].update(*this,share,s.ir_assignments[i]);
     }
+#endif
 }
 
-Space* ClassSolution::copy(bool share) 
+Space* InstanceSolution::copy(bool share) 
 {
-    return new ClassSolution(share,*this);
+    return new InstanceSolution(share,*this);
 }
 
-//void ClassSolution::print(std::ostream& os) const 
-//{
-//    printToStream(os);
-//}
     
-void ClassSolution::compare(const Space& _s, std::ostream& os) const{
-    auto s = static_cast<const ClassSolution&>(_s);
+void InstanceSolution::compare(const Space& _s, std::ostream& os) const{
+#if 0
+    auto s = static_cast<const InstanceSolution&>(_s);
     char buff[512];
     sprintf(buff,"/tmp/dep-%i.dot", print_count);
     std::ofstream file(buff);
@@ -568,12 +605,13 @@ void ClassSolution::compare(const Space& _s, std::ostream& os) const{
     system(buff);
     os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
     
-    const_cast<ClassSolution*>(this)->print_count++;
-
+    const_cast<InstanceSolution*>(this)->print_count++;
+#endif
 }
 
-void ClassSolution::printToDot(std::ostream& os) const 
+void InstanceSolution::printToDot(std::ostream& os) const 
 {
+#if 0
     Pool *pool = Pool::getInstance();
     /*
     os << "Count: " << active.size() << std::endl;
@@ -686,10 +724,14 @@ void ClassSolution::printToDot(std::ostream& os) const
 
 
     print_count++;
+
+#endif
+
 }
 
-void ClassSolution::printToStream(std::ostream& os, bool full) const 
+void InstanceSolution::printToStream(std::ostream& os, bool full) const 
 {
+#if 0
     os << "Count: " << active.size() << std::endl;
 
     os << "Running State: { " << std::endl;
@@ -777,41 +819,27 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
     }
     os << "}" <<std::endl;
 #endif
+
+#endif
 }
 
-void ClassSolution::print(const Space& home, const BrancherHandle& bh, unsigned int a, BoolVar x, int i, const int& n, std::ostream& o) {
-    //const ClassSolution& c = static_cast<const ClassSolution&>(home);
-    o << "foo" << a << " " << x << " " << i << " " << n << std::endl;
-}
-
-void ClassSolution::print(const Space& home, const BrancherHandle& bh, unsigned int a, IntVar x, int i, const int& n, std::ostream& o) {
-    //const ClassSolution& c = static_cast<const ClassSolution&>(home);
-    o << "foo" << a << " " << x << " " << i << " " << n << std::endl;
-    /*
-    int x = i % c.w, y = i / c.w;
-    o << "letters[" << x << "," << y << "] "
-        << ((a == 0) ? "=" : "!=") << " "
-        << static_cast<char>(n);
-    */
-}
-
-ClassSolution* ClassSolution::babSearch2()
+InstanceSolution* InstanceSolution::babSearch2(ClassSolution *cs, Pool *pool)
 {
-    return ClassSolution::babSearch(Pool::getInstance());
+    return InstanceSolution::babSearch(cs,pool);
 }
 
-ClassSolution* ClassSolution::babSearch(Pool *pool)
+InstanceSolution* InstanceSolution::babSearch(ClassSolution *cs, Pool *pool)
 {
     // Initial situation
-    ClassSolution* so = new ClassSolution(pool);
+    InstanceSolution* so = new InstanceSolution(cs, pool);
     // BAB search engine
-    //BAB<ClassSolution> e(so);
-    BAB<ClassSolution> e(so);
-    //DFS<ClassSolution> e(so);
+    //BAB<InstanceSolution> e(so);
+    BAB<InstanceSolution> e(so);
+    //DFS<InstanceSolution> e(so);
     // search
-    ClassSolution* best = NULL;
+    InstanceSolution* best = NULL;
     
-    while (ClassSolution* s = e.next()){
+    while (InstanceSolution* s = e.next()){
         if(best != NULL)
         {
             delete best;
@@ -829,21 +857,21 @@ ClassSolution* ClassSolution::babSearch(Pool *pool)
     if(best == NULL)
     {
         delete so;
-        throw std::runtime_error("ClassSolution babSearch: No solutions");
+        throw std::runtime_error("InstanceSolution babSearch: No solutions");
     }
     delete so;
     return best;
 }
 
-ClassSolution *ClassSolution::gistBaBSeach(){
-    ClassSolution* m = new ClassSolution(Pool::getInstance());
-    //ClassSolution* m = ClassSolution::babSearch(Pool::getInstance());
-    Gist::Print<ClassSolution> printer("Print solution");
-    Gist::VarComparator<ClassSolution> c("Compare nodes");
-   Gist::Options o;
-   o.c_d = 2;
-   o.a_d = 10;
-   o.threads = 4;
+InstanceSolution *InstanceSolution::gistBaBSeach(ClassSolution *cs, Pool *pool){
+    InstanceSolution* m = new InstanceSolution(cs,pool);
+    //InstanceSolution* m = InstanceSolution::babSearch(Pool::getInstance());
+    Gist::Print<InstanceSolution> printer("Print solution");
+    Gist::VarComparator<InstanceSolution> c("Compare nodes");
+    Gist::Options o;
+    o.c_d = 2;
+    o.a_d = 10;
+    o.threads = 4;
     o.inspect.click(&printer);
     o.inspect.compare(&c);
     Gist::bab(m,o);

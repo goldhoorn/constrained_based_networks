@@ -61,6 +61,13 @@ public:
         return new SpecializedComponent<Task>(this, pool);
     }
    
+    void addConfig(std::string name, std::string value){
+        if(auto c = dynamic_cast<Task*>(this)){
+            c->addConfig(name,value);
+        }else{
+            throw std::runtime_error("Called addConfig on invalid class");
+        }
+    }
    
 
     /**

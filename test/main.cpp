@@ -30,7 +30,7 @@ void resolve(Component *c, bool res, bool debug = false){
         for(auto state : sm->getStates()){
             printf("??????????????      ClassSolution for statemachien %s, for task %s ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
             resolve(state,res,debug);   
-            printf("??????????????      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
+            printf("??????????????      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ??????????????????????????\n");
         }
         return;
     }
@@ -83,7 +83,7 @@ std::string test_cmp_recursion_w_unused_CS(){
     //auto a2 = new Composition("A2");
     auto a = new Composition("A");
     auto b = new Composition("B");
-    auto b2 = new Composition("B2");
+    //auto b2 = new Composition("B2");
     a->addChild(b,"b_child");
     auto t = new Task("T");
     b->addChild(t,"t_child");
@@ -95,7 +95,7 @@ std::string test_ds(){
 
     auto a = new Composition("A");
     auto b = new Task("B");
-    auto ds = new DataService("DS");
+    //auto ds = new DataService("DS");
     b->addFullfillment("DS");
     a->addChild(b,"b_child_is_ds");
     return "A";
@@ -126,7 +126,7 @@ std::string test_cmp_recursion_w_more_used(){
     auto b = new Composition("B");
     auto b2 = new Composition("B2");
     auto ds = new DataService("DS");
-    auto ds2 = new DataService("DS2");
+    //auto ds2 = new DataService("DS2");
 
 
     b->addFullfillment("DS");
@@ -173,7 +173,7 @@ std::string test_cmp_recursion_w_unused_DS(){
     a->addChild(b,"b_child");
     auto t = new Task("T");
     b->addChild(t,"t_child");
-    auto ds = new DataService("DS");
+    //auto ds = new DataService("DS");
     return "A";
 }
 
@@ -181,7 +181,7 @@ std::string test_cmp_recursion_w_unused_DS2(){
     std::cout << "Testing " << __FUNCTION__ << std::endl;
     auto a = new Composition("A");
     auto b = new Composition("B");
-    auto ds = new DataService("DS");
+    //auto ds = new DataService("DS");
     a->addChild(b,"b_child");
     auto t = new Task("T");
     b->addChild(t,"t_child");
@@ -218,11 +218,11 @@ std::string test_cmp_recursion_child2_time_abstract(){
     a->addChild(ds2,"t_abstract_child");
     a->addChild(b,"b_child");
     b->addChild(ds2,"t_abstract_child");
-    auto a2 = new Composition("A2");
-    auto a3 = new Composition("A3");
+    //auto a2 = new Composition("A2");
+    //auto a3 = new Composition("A3");
     auto b3 = new Composition("B2");
     auto b2 = new Composition("B2");
-    auto ds = new DataService("DS");
+    //auto ds = new DataService("DS");
 
     b3->addChild(t,"task_child");
     b3->addFullfillment(ds2->getName());

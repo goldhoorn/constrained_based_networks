@@ -1,6 +1,7 @@
 #include "Component.hpp"
 #include "Pool.hpp"
 #include "Composition.hpp"
+#include "Task.hpp"
 
 using namespace constrained_based_networks;
 
@@ -29,14 +30,11 @@ void Component::setActive(bool a){
     }
 }
         
+        
 void Component::addEvent(const std::string &name){
     events.push_back(name);
 }
-        
-void Component::addConfig(std::string name, std::string value){
-    configuration.add(name,value);
-}
-        
+    
 unsigned int Component::getID() const{
     return id;
 };

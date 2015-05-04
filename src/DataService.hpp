@@ -52,6 +52,14 @@ public:
      * Construct component with type and name.
      */
     DataService(std::string name) ;
+    
+    void addConfig(std::string name, std::string value){
+        if(auto c = dynamic_cast<DataService*>(this)){
+            c->addConfig(name,value);
+        }else{
+            throw std::runtime_error("Called addConfig on invalid class");
+        }
+    }
         
     Component* getSpecialized()
     {

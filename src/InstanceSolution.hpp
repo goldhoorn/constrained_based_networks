@@ -1,6 +1,7 @@
-#ifndef GECODE_CLASS_SOLUTION_H
-#define GECODE_CLASS_SOLUTION_H
+#ifndef DECODE_INSTANCE_SOLUTION_H
+#define DECODE_INSTANCE_SOLUTION_H
 
+#include "ClassSolution.hpp"
 #include <gecode/set.hh>
 #include <gecode/int.hh>
 #include <gecode/search.hh>
@@ -14,9 +15,9 @@ namespace constrained_based_networks {
 #define CONSTRAIN 
 
 /**
- * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type ClassSolution.
+ * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type InstanceSolution.
  */
-class ClassSolution : public Gecode::Space
+class InstanceSolution : public Gecode::Space
 {
 protected:
     /**
@@ -31,6 +32,13 @@ protected:
      * Assignments of query components to pool components. This is what has to be solved.
      */
     Pool *pool;
+    std::vector<Gecode::IntVar> tasks;
+    std::vector<Gecode::IntVarArray> task_assignments;
+
+
+
+    /*
+    std::vector<Gecode::IntVarArray> ir_assignments;
     Gecode::BoolVarArray active;
     Gecode::SetVarArray depends;
     Gecode::SetVarArray depends_recursive;
@@ -52,10 +60,9 @@ protected:
     //pass all USED compotions, all other ones will be removed
     void removeAllUnsedCmps(std::vector<size_t> ids);
     void doMissingBranching();
+    */
 
 public:
-    std::vector<Gecode::IntVarArray> ir_assignments;
-
     void compare(const Space& s, std::ostream& os) const;
     static int print_count;
     static void postBranching(Space &space);
@@ -63,7 +70,7 @@ public:
     /**
      * Construct a solution with an initial situation to search.
      */
-    ClassSolution(Pool *pool = Pool::getInstance());
+    InstanceSolution(ClassSolution *cs, Pool *pool = Pool::getInstance());
    
 #ifdef CONSTRAIN
     /*
@@ -78,7 +85,7 @@ public:
      * search support. There must be a copy constructor like this for the search engine.
      * Everything must be copied into the new Space
      */
-    ClassSolution(bool share, ClassSolution& s);
+    InstanceSolution(bool share, InstanceSolution& s);
     /**
      * This method is called be the search engine
      */
@@ -113,11 +120,11 @@ public:
      * 
      * \throw Exception if there is no solution.
      */
-    static ClassSolution* babSearch2();
-    static ClassSolution* babSearch(Pool *pool);
-    static ClassSolution* gistBaBSeach();
+    static InstanceSolution* babSearch2(ClassSolution *cs, Pool *pool);
+    static InstanceSolution* babSearch(ClassSolution *cs, Pool *pool);
+    static InstanceSolution* gistBaBSeach(ClassSolution *cs, Pool *pool);
 };
 
 } // end namespace constrained_based_networks
 
-#endif // GECODE_CLASS_SOLUTION_H
+#endif // DECODE_INSTANCE_SOLUTION_H

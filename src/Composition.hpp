@@ -66,6 +66,14 @@ public:
     {
         return new SpecializedComponent<Composition>(this, pool);
     }
+    
+    void addConfig(std::string name, std::string value){
+        if(auto c = dynamic_cast<Composition*>(this)){
+            c->addConfig(name,value);
+        }else{
+            throw std::runtime_error("Called addConfig on invalid class");
+        }
+    }
    
     Gecode::IntVarArray getPossibleTaskAssignments(Gecode::Space *space);
     
