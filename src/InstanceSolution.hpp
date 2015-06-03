@@ -4,6 +4,7 @@
 #include "ClassSolution.hpp"
 #include <gecode/set.hh>
 #include <gecode/int.hh>
+#include <gecode/float.hh>
 #include <gecode/search.hh>
 #include "Pool.hpp"
 

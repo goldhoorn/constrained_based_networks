@@ -77,6 +77,9 @@ class Component{
         virtual void addConfig(std::string name, std::string value)=0;
         virtual Component* getSpecialized() =0;
 
+        const std::vector<ConfigurationModel> &getProperties() const{
+            return properties;
+        }
 
     protected:
         /*

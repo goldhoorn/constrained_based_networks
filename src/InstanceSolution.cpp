@@ -132,15 +132,67 @@ InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
 {
    //Figure out how many Tasks we need to have as upper bound
     std::vector<unsigned int> usage_count;
+    std::vector<BoolVar> active;
+
+    std::vector< std::vector< std::vector< FloatVal> > > float_config;
+    std::vector< std::vector< std::vector< IntVar> > >   int_config;
+    std::vector< std::vector< std::vector< BoolVar> > > bool_config;
+
+    float_config.resize(pool->size());
+    bool_config.resize(pool->size());
+    int_config.resize(pool->size());
+
     usage_count.resize(pool->size(), 0);
     
-    for(auto cmp_assigment : cs->ir_assignments){
-        for(auto t : cmp_assigment){
+
+    for(size_t p = 0; p < cs->ir_assignments.size();p++){
+        Composition *parent = pool->getItems<Composition*>()[p];
+
+        for(auto t : cs->ir_assignments[p]){
+            Component *child= pool->getItems<Composition*>()[t.val()];
             usage_count[t.val()]++;
         }
     }
-    for(auto i: usage_count){
-        tasks.push_back(Gecode::IntVar(*this,0,i));
+
+
+    for(size_t i=0;i<usage_count.size();i++){
+        auto usages = usage_count[i];
+        float_config[i].resize(usages);
+        bool_config[i].resize(usages);
+        int_config[i].resize(usages);
+
+        tasks.push_back(Gecode::IntVar(*this,0,usages));
+        active.push_back(BoolVar(*this,0,1));
+        
+        //First define all possible attributes of this component
+        //Later extend this by real configuration attributes
+        for(size_t j=0;j<usages;j++){//We need to set the limits for ALL components we introduce
+            for(auto prop : pool->operator[](i)->getProperties()){
+                switch(prop.t){
+                    case(ConfigurationModel::INT):
+                        {
+                            int_config[i][j].push_back(IntVar(*this,0,Int::Limits::max));
+                            break;
+                        }
+                    case(ConfigurationModel::DOUBLE):
+                        {
+                            int_config[i][j].push_back(IntVar(*this,0,Int::Limits::max));
+                            break;
+                        }
+                    case(ConfigurationModel::BOOL):
+                        {
+                            int_config[i][j].push_back(IntVar(*this,0,Int::Limits::max));
+                            break;
+                        }
+                    case(ConfigurationModel::STRING):
+                        {
+                            //TODO handle strings *BLAEH*
+                            //int_config[i][j].push_back(IntVar(*this,0,Int::Limits::max));
+                            break;
+                        }
+                };
+            }
+        }
     }
     //TODO simplification for now only 'syskit known' attributes
     //
