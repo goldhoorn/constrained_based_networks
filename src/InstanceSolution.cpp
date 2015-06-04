@@ -21,107 +21,26 @@ using namespace Gecode;
 
 namespace constrained_based_networks {
 
-
-#if 0
-void InstanceSolution::markInactiveAsInactive(){
-    //Remove all loops that are unneeded by a master requirement
-    for(auto c: pool->getItems<Component*>()){
-        size_t id_child= c->getID();
-        for(int id_parent=0;id_parent != pool->getItems<Composition*>().size();id_parent++){
-            Composition *cmp = pool->getItems<Composition*>()[id_parent];
-            unsigned int id = cmp->getID();
-        }
-    }
-
-    //Nothing can depend on the DUMMY node
-    for(auto c: pool->getItems<Component*>()){
-
-    }
-
-    //Remove all unneeded depends
-    for(auto c: pool->getItems<Component*>()){
-        unsigned int cmp_id = pool->getId(c);
-     
-        //Remove all recursive depends if a component is inactive
-#ifdef REMOVE_REC 
-        rel(*this,!active[c->getID()]  >> (depends_recursive[c->getID()] == IntSet::empty));
-#endif
-        
-        if(c->getID() != ID_ROOT_KNOT){
-            rel(*this,expr(*this,active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
-            rel(*this,expr(*this,active[cmp_id] == 1) << (depends[cmp_id] != IntSet::empty));
-        }
-    }
-}
-
-void InstanceSolution::markAbstractAsInactive(){
-    rel(*this,active[0],IRT_EQ, 0);
-    for(auto provider : pool->getItems<DataService*>()){
-        if(provider->abstract()){
-            rel(*this,active[pool->getId(provider)],IRT_EQ, 0);
-            rel(*this,depends[pool->getId(provider)] == IntSet::empty);
-        }else{
-            std::cout << "Got non abstract data-service?\n";
-        }
-    }
-}
-
-void InstanceSolution::markActiveAsActive(){
-    for(auto c: pool->getItems<Component*>()){
-        if(c->getID() == ID_ROOT_KNOT){
-            //If a component is active it must depend on THIS
-            rel(*this,active[c->getID()],IRT_EQ, 1);
-#ifdef REMOVE_REC 
-            //Itself has no other dependancies, so making sure not --anything-- is selected
-            dom(*this,depends_recursive[c->getID()], SRT_EQ, IntSet::empty);
-#endif
-        }
-    }
-}
-
-void InstanceSolution::removeSelfCompositonsFromDepends(){
-    for(auto child : pool->getItems<Component*>()){
-        for(auto component : pool->getItems<Component*>()){
-            if(!dynamic_cast<Composition*>(component)){
-                dom(*this,depends[child->getID()], SRT_DISJ, component->getID());
+void InstanceSolution::limitComponents(unsigned int cmp_id){
+    for(size_t i =0;i< cs->ir_assignments[cmp_id].size();i++){
+        if(cs->ir_assignments[cmp_id][i].assigned()){
+            unsigned int id = cs->ir_assignments[cmp_id][i].val();
+            auto c = (*pool)[id];
+            if(auto cmp = dynamic_cast<Composition*>(c)){
+                limitComponents(cmp->getCmpID());
+            }else{
+                //Setting limits for this we are in a leaf
             }
+        }else{
+            throw std::runtime_error("This shoult not happen");
         }
     }
 }
 
-void InstanceSolution::depsOnlyOnCmp(){
-    for(auto component: pool->getItems<Component*>()){
-        //Nothing can depend on the dummy task
-        dom(*this,depends[pool->getId(component)], SRT_DISJ, ID_NIL);
-#ifdef REMOVE_REC
-        dom(*this,depends_recursive[pool->getId(component)], SRT_DISJ, ID_NIL);
-#endif
-    }
-    //The NIL node cannot have deps
-    dom(*this, depends[ID_NIL], SRT_EQ, IntSet::empty);
-#ifdef REMOVE_REC
-    dom(*this, depends_recursive[ID_NIL], SRT_EQ, IntSet::empty);
-#endif
-}
-
-bool InstanceSolution::markCompositionAsChildless(Composition *composition, size_t composition_id){
-    if(composition->getChildren().size() == 0){
-        std::cout << "Composition (cmp id:" << composition->getID() << ", component id " << composition->getID() << "): " << composition->getName() << " is childless" << std::endl;
-        for(auto provider : pool->getItems<Component*>()){
-//            std::cout << "- Forbidding: " << provider->getName() << " (" << provider->getID() << ")" << std::endl;
-            dom(*this,depends[provider->getID()], SRT_DISJ, composition->getID());
-        }
-        return true;
-    }
-    return false;
-}
-
-int InstanceSolution::print_count = 0;
-
-#endif
 
 InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
-    :pool(_pool)
+    :pool(_pool),
+    cs(cs)
 #if 0    
     , active(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
@@ -144,12 +63,18 @@ InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
 
     usage_count.resize(pool->size(), 0);
     
+    //We need to run throught the tree of all nodes and figure out all needed configs, we create here 
 
     for(size_t p = 0; p < cs->ir_assignments.size();p++){
         Composition *parent = pool->getItems<Composition*>()[p];
 
         for(auto t : cs->ir_assignments[p]){
             Component *child= pool->getItems<Composition*>()[t.val()];
+            /* TODO fix this
+            if(auto spez = dynamic_cast<SpecializedComponent*>(child)){
+                std::cerr << "Jeha we have a specalized component" << std::endl;
+            }
+            */
             usage_count[t.val()]++;
         }
     }
@@ -194,6 +119,14 @@ InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
             }
         }
     }
+
+    //Now we have defined the upper limits time to limit the actual configurations while we running throught the tree of components
+    limitComponents(0);
+
+
+
+
+
     //TODO simplification for now only 'syskit known' attributes
     //
   
@@ -585,6 +518,7 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution& s)
     //, componentPool(s.componentPool)
 {
     pool = s.pool;
+    cs = s.cs;
 #if 0
     active.update(*this, share, s.active);
     depends.update(*this, share, s.depends);

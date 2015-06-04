@@ -33,8 +33,11 @@ protected:
      * Assignments of query components to pool components. This is what has to be solved.
      */
     Pool *pool;
+    ClassSolution *cs;
     std::vector<Gecode::IntVar> tasks;
     std::vector<Gecode::IntVarArray> task_assignments;
+
+    void limitComponents(unsigned int cmp_id);
 
 
 
