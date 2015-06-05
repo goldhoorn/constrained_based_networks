@@ -3,6 +3,7 @@
 #include <constrained_based_networks/Pool.hpp>
 #include <constrained_based_networks/DataService.hpp>
 #include <constrained_based_networks/ClassSolution.hpp>
+#include <constrained_based_networks/InstanceSolution.hpp>
 
 #include "dump.hpp"
 
@@ -24,7 +25,7 @@ void solve_final_network(ClassSolution s){
 
 
 //void resolve(std::string name, bool res, bool debug = false){
-void resolve(Component *c, bool res, bool debug = false){
+ClassSolution* resolve(Component *c, bool res, bool debug = false){
    
     if(auto sm =  dynamic_cast<StateMachine*>(c)){
         for(auto state : sm->getStates()){
@@ -32,7 +33,7 @@ void resolve(Component *c, bool res, bool debug = false){
             resolve(state,res,debug);   
             printf("??????????????      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ??????????????????????????\n");
         }
-        return;
+        return 0;
     }
     
     c->setActive(true);
@@ -47,6 +48,8 @@ void resolve(Component *c, bool res, bool debug = false){
         std::cout << "+++++ Is solveable: " << c->getName() << std::endl;
         s->rprint();
         std::cout << "End ClassSolution " << c->getName() << std::endl;
+        return s;
+
     }catch(std::runtime_error e){
         std::cout << "!!!!! UN-Solveable: " << c->getName() << " " << e.what() << " " << std::endl;
         if(res){ 
@@ -54,13 +57,13 @@ void resolve(Component *c, bool res, bool debug = false){
             Composition *comp = dynamic_cast<Composition*>(c);
             if(!comp){
                 std::cerr << c->getName() << " is No compositon FATAL" << std::endl;
-                return;
+                return 0;
             }
             for(auto child : comp->getChildren()){
                 if(child.second->abstract()){
                     if(c->getName() == (child.second->getName() + "_cmp")){
                         std::cerr << "Cannot finally solve " <<  c->getName() << std::endl;
-                        return;
+                        return 0;
                     }
                     //TODO fix here specializations got lost
                     resolve(pool->getComponent(child.second->getName() + "_cmp"),res,debug);
@@ -69,6 +72,7 @@ void resolve(Component *c, bool res, bool debug = false){
                 }
             }
         }
+        return 0;
     }
 }
 
@@ -361,7 +365,14 @@ int main(int argc, char* argv[]) {
     //pool->getComponent("AuvControl::DepthFusionCmp")->setActive(true);
     
     //try{ 
-    resolve(pool->getComponent(name),resolve_nonresolveable,debug);
+    auto s = resolve(pool->getComponent(name),resolve_nonresolveable,debug);
+    if(s){        
+        auto is = InstanceSolution::babSearch(s, pool);
+    }else{
+        std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;
+    }
+
+    
     //}catch(...){
     //    std::cerr << " Got maybe a out of mem error" << std::endl;
     //}

@@ -15,6 +15,80 @@ namespace constrained_based_networks {
 
 #define CONSTRAIN 
 
+
+struct InstanceComponent{
+public:
+    InstanceComponent(){
+        usage_count=0;
+        finalized = false;
+    };
+    
+    void increse_usage(){
+        if(finalized) throw std::runtime_error("InstanceComponent is already finalized");
+        usage_count++;
+    };
+
+    void initialize(Component *c){
+        if(finalized) throw std::runtime_error("InstanceComponent is already finalized");
+        underlaying_component = c;
+    }
+
+    void finalize(Gecode::Space &space){
+        if(finalized) throw std::runtime_error("InstanceComponent is already finalized");
+            
+        float_config.resize(usage_count);       
+        bool_config.resize(usage_count);       
+        int_config.resize(usage_count);       
+        
+        for(size_t i = 0; i < usage_count; i++){
+            for(auto prop : underlaying_component->getProperties()){
+                switch(prop.t){
+                    case(ConfigurationModel::INT):
+                        {
+                            int_config[i].push_back(Gecode::IntVar(space,0,Gecode::Int::Limits::max));
+                            break;
+                        }
+                    case(ConfigurationModel::DOUBLE):
+                        {
+                            int_config[i].push_back(Gecode::IntVar(space,0,Gecode::Int::Limits::max));
+                            break;
+                        }
+                    case(ConfigurationModel::BOOL):
+                        {
+                            int_config[i].push_back(Gecode::IntVar(space,0,Gecode::Int::Limits::max));
+                            break;
+                        }
+                    case(ConfigurationModel::STRING):
+                        {
+                            //TODO handle strings *BLAEH*
+                            //int_config[i][j].push_back(IntVar(*this,0,Int::Limits::max));
+                            break;
+                        }
+                };
+            }
+
+            float_config[i]; 
+        }
+
+        finalized=true;
+    }
+
+    void add_flattend_use_id(unsigned int id){
+        used_ids_in_flattend_graph.push_back(id);
+    }
+
+
+protected:
+    std::vector< std::vector< Gecode::FloatVal> > float_config;
+    std::vector< std::vector< Gecode::BoolVar> > bool_config;
+    std::vector< std::vector< Gecode::IntVar> > int_config;
+    std::vector<unsigned int> used_ids_in_flattend_graph;
+    Component *underlaying_component;
+    size_t usage_count;
+    bool finalized;
+
+};
+
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type InstanceSolution.
  */
@@ -36,8 +110,9 @@ protected:
     ClassSolution *cs;
     std::vector<Gecode::IntVar> tasks;
     std::vector<Gecode::IntVarArray> task_assignments;
-
+    std::vector<InstanceComponent> instance_components;
     void limitComponents(unsigned int cmp_id);
+    void createFlattendIDs(Composition* cmp, unsigned int next_free_id);
 
 
 
