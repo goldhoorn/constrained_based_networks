@@ -17,9 +17,9 @@ namespace constrained_based_networks {
         std::string datatype;
         std::string name;
         
-        InputPort(const std::string& datatype, const std::string& name)
-            : datatype(datatype)
-            , name(name)
+        InputPort(const std::string& _datatype, const std::string& _name)
+            : datatype(_datatype)
+            , name(_name)
         { }
         
         // to use it as map key
@@ -58,9 +58,9 @@ namespace constrained_based_networks {
         std::string datatype;
         std::string name;
         
-        OutputPort(const std::string& datatype, const std::string& name)
-            : datatype(datatype)
-            , name(name)
+        OutputPort(const std::string& _datatype, const std::string& _name)
+            : datatype(_datatype)
+            , name(_name)
         { }
         
         // to use it as map key

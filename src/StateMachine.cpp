@@ -16,7 +16,7 @@ void StateMachine::setStart(std::string name){
     setStart(pool->getComponent(name));
 }
 
-void StateMachine::setStart(Component *c){
+void StateMachine::setStart(const Component *c){
     start = c;
 }
 
@@ -31,6 +31,7 @@ void StateMachine::addTransition(std::string s,  std::string t, std::string even
 void StateMachine::addTransition(Component *source,  Component *target, Component *event_source, std::string ev)
 {
    transitions.push_back(Transition(source,target,event_source,ev)); 
+   std::cout << "hmh--- " << target->getName() << std::endl;
 
 }
 

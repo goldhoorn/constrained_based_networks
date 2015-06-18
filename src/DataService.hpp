@@ -60,11 +60,15 @@ public:
             throw std::runtime_error("Called addConfig on invalid class");
         }
     }
-        
+    SpecializedComponentBase *getSpecialized(){
+        return new SpecializedComponent<DataService>(this, pool);
+    }
+       /* 
     Component* getSpecialized()
     {
         return new SpecializedComponent<DataService>(this, pool);
     }
+    */
 
     /**
      * Components are equal if their name and type equal.

@@ -25,13 +25,14 @@ std::string DataService::toString() const
 {
     std::ostringstream ss;
 //    ss << "DataService " << name << " of type " << type << ".\n";
+/*
     ss << "  Configuration: [";
     for(int i = 0; i < configurations.size(); i++)
     {
         ss << configurations[i] << " ";
     }
     ss << "]\n";
-        
+  */      
     return ss.str();
 }
 /*
@@ -50,16 +51,18 @@ void DataService::setName(const std::string& name)
 { 
     this->name = name;
 }
-
+/*
 const std::vector<std::string>& DataService::getConfiguration() const 
 {
     return configurations;
 }
-
+*/
+/*
 void DataService::setConfiguration(const std::vector<std::string>& configurations)
 {
     this->configurations = configurations;
 }
+*/
 
 
     

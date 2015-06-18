@@ -56,10 +56,11 @@ public:
      */
     Task(std::string name) ;
     
-    Component* getSpecialized()
+    SpecializedComponentBase* getSpecialized()
     {
         return new SpecializedComponent<Task>(this, pool);
     }
+    
    
     void addConfig(std::string name, std::string value){
         if(auto c = dynamic_cast<Task*>(this)){

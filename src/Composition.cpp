@@ -23,12 +23,14 @@ std::string Composition::toString() const
 {
     std::ostringstream ss;
     ss << "Composition " << name << ".\n";
+    /*
     ss << "  Configuration: [";
     for(int i = 0; i < configurations.size(); i++)
     {
         ss << configurations[i] << " ";
     }
     ss << "]\n";
+    */
         
     return ss.str();
 }
@@ -52,6 +54,7 @@ void Composition::setName(const std::string& name)
     this->name = name;
 }
 
+#if 0
 const std::vector<std::string>& Composition::getConfiguration() const 
 {
     return configurations;
@@ -61,6 +64,7 @@ void Composition::setConfiguration(const std::vector<std::string>& configuration
 {
     this->configurations = configurations;
 }
+#endif
 
 void Composition::addChild(Component *c,std::string name){
     if(isIgnored()) return;

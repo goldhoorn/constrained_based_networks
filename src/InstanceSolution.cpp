@@ -20,6 +20,24 @@ using namespace Gecode;
 #define REMOVE_REC
 
 namespace constrained_based_networks {
+    
+void InstanceComponent::addLimitation(Gecode::Space &space, std::string name, std::string value, size_t cnt)
+{
+    auto i = int_config[cnt].find(name);
+    auto b = bool_config[cnt].find(name);
+    auto d = float_config[cnt].find(name);
+    std::cout << "hallo" << std::endl;
+    if(i != int_config[cnt].end()){
+        rel(space,i->second, IRT_EQ, atoi(value.c_str()));
+    }else if(b != bool_config[cnt].end()){
+        rel(space,b->second, IRT_EQ, atoi(value.c_str()) != 0);
+    }else if(d != float_config[cnt].end()){
+        rel(space,b->second, IRT_EQ, atof(value.c_str()));
+    }else{
+        throw std::invalid_argument("Configuration attribute with " + name + " is unknown");
+    }
+
+}
 
     
 void InstanceSolution::createFlattendIDs(Composition* cmp, unsigned int next_free_id){
@@ -44,6 +62,45 @@ void InstanceSolution::createFlattendIDs(Composition* cmp, unsigned int next_fre
     }
 }
 
+
+void InstanceSolution::limitConfigs(Composition* cmp, unsigned int next_free_id){
+    printf("huhu\n");
+    auto cmp_id = cmp->getCmpID();
+    instance_components[cmp->getID()].add_flattend_use_id(next_free_id++);
+
+    if(auto sc = dynamic_cast<SpecializedComponentBase*>(cmp)){
+//        auto c = (Component*)sc;
+        for(size_t i=0; i < sc->configuration.name.size(); i++){
+            std::string name = sc->configuration.name[i];
+            std::string value = sc->configuration.value[i];
+            instance_components[cmp->getID()].addLimitation(*this, name,value,0);
+        }
+    }
+
+    
+    
+
+    for(size_t i =0;i< cs->ir_assignments[cmp_id].size();i++){
+        if(cs->ir_assignments[cmp_id][i].assigned()){
+            unsigned int id = cs->ir_assignments[cmp_id][i].val();
+            auto c = (*pool)[id];
+
+            if(auto child_cmp = dynamic_cast<Composition*>(c)){
+                
+
+
+                limitConfigs(child_cmp, next_free_id);
+                //Increase is down in recursion
+            }else{
+                //leaf
+                instance_components[c->getID()].add_flattend_use_id(next_free_id++);
+            }
+        }else{
+            throw std::runtime_error("This shoult not happen");
+        }
+    }
+}
+/*
 void InstanceSolution::limitComponents(unsigned int cmp_id){
     for(size_t i =0;i< cs->ir_assignments[cmp_id].size();i++){
         if(cs->ir_assignments[cmp_id][i].assigned()){
@@ -59,11 +116,12 @@ void InstanceSolution::limitComponents(unsigned int cmp_id){
         }
     }
 }
+*/
 
 
-InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
+InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
     :pool(_pool),
-    cs(cs)
+    cs(_cs)
 #if 0    
     , active(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
@@ -81,7 +139,7 @@ InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
 
     //We need to run throught the tree of all nodes and figure out all needed configs, we create here 
     for(size_t p = 0; p < cs->ir_assignments.size();p++){
-        Composition *parent = pool->getItems<Composition*>()[p];
+        //Composition *parent = pool->getItems<Composition*>()[p];
 
         for(auto t : cs->ir_assignments[p]){
             if(!t.assigned()) throw std::runtime_error("This shold never happen here that we have unassigned solutions");
@@ -95,6 +153,7 @@ InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
             }
             */
             //usage_count[t.val()]++;
+            continue;
         }
     }
     
@@ -107,6 +166,8 @@ InstanceSolution::InstanceSolution(ClassSolution *cs, Pool *_pool)
     createFlattendIDs(dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)), 0); //First if is the root compositon, and we start at number 0 
 
     //Now it is the time to put the component constraints from the previously generated graph to the components
+    //We need to run througth the graph and post the constraints onto the components itself
+    limitConfigs(dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)), 0); //First if is the root compositon, and we start at number 0 
     
 
 

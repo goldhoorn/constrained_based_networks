@@ -33,6 +33,9 @@ public:
         underlaying_component = c;
     }
 
+    void addLimitation(Gecode::Space &space, std::string name, std::string value, size_t cnt);
+
+
     void finalize(Gecode::Space &space){
         if(finalized) throw std::runtime_error("InstanceComponent is already finalized");
             
@@ -45,17 +48,17 @@ public:
                 switch(prop.t){
                     case(ConfigurationModel::INT):
                         {
-                            int_config[i].push_back(Gecode::IntVar(space,0,Gecode::Int::Limits::max));
+                            int_config[i][prop.name] = Gecode::IntVar(space,0,Gecode::Int::Limits::max);
                             break;
                         }
                     case(ConfigurationModel::DOUBLE):
                         {
-                            int_config[i].push_back(Gecode::IntVar(space,0,Gecode::Int::Limits::max));
+                            float_config[i][prop.name] = Gecode::FloatVar(space,0,Gecode::Float::Limits::max);
                             break;
                         }
                     case(ConfigurationModel::BOOL):
                         {
-                            int_config[i].push_back(Gecode::IntVar(space,0,Gecode::Int::Limits::max));
+                            bool_config[i][prop.name] = Gecode::BoolVar(space,0,1);
                             break;
                         }
                     case(ConfigurationModel::STRING):
@@ -66,11 +69,12 @@ public:
                         }
                 };
             }
-
-            float_config[i]; 
         }
 
         finalized=true;
+    }
+
+    void addLimitation(Gecode::Space &space){
     }
 
     void add_flattend_use_id(unsigned int id){
@@ -79,9 +83,9 @@ public:
 
 
 protected:
-    std::vector< std::vector< Gecode::FloatVal> > float_config;
-    std::vector< std::vector< Gecode::BoolVar> > bool_config;
-    std::vector< std::vector< Gecode::IntVar> > int_config;
+    std::vector< std::map< std::string, Gecode::FloatVar> > float_config;
+    std::vector< std::map< std::string, Gecode::BoolVar> > bool_config;
+    std::vector< std::map< std::string, Gecode::IntVar> > int_config;
     std::vector<unsigned int> used_ids_in_flattend_graph;
     Component *underlaying_component;
     size_t usage_count;
@@ -111,8 +115,9 @@ protected:
     std::vector<Gecode::IntVar> tasks;
     std::vector<Gecode::IntVarArray> task_assignments;
     std::vector<InstanceComponent> instance_components;
-    void limitComponents(unsigned int cmp_id);
+//    void limitComponents(unsigned int cmp_id);
     void createFlattendIDs(Composition* cmp, unsigned int next_free_id);
+    void limitConfigs(Composition* cmp, unsigned int next_free_id);
 
 
 

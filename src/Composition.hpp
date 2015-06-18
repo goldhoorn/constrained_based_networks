@@ -36,7 +36,7 @@ protected:
      * 
      * empty means not configured / no constraint on configuration. 
      */
-    std::vector<std::string> configurations;
+//    std::vector<std::string> configurations;
         
     friend class boost::serialization::access;
     template<class Archive>
@@ -62,7 +62,7 @@ public:
      */
     Composition(std::string name) ;
     
-    Component* getSpecialized()
+    SpecializedComponentBase* getSpecialized()
     {
         return new SpecializedComponent<Composition>(this, pool);
     }
@@ -112,7 +112,7 @@ public:
      * Set the name
      */
     void setName(const std::string& name);
-    
+#if 0 
     /**
      * Get the configuration
      */
@@ -122,7 +122,7 @@ public:
      * Push back a configuration value
      */
     void setConfiguration(const std::vector<std::string>& configuration);
-    
+#endif
     /**
      * Push back an incoming port
      */
