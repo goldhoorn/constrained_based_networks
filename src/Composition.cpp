@@ -2,6 +2,7 @@
 #include <sstream>
 #include <stdexcept>
 #include "Pool.hpp"
+#include "SpecializedComponent.hpp"
 
 namespace constrained_based_networks {
     
@@ -133,5 +134,12 @@ std::vector<std::pair<std::string, Component*> > Composition::getChildren(){
     }
     return erg;
 };
+
+    
+SpecializedComponentBase* Composition::getSpecialized()
+{
+    return new SpecializedComponent<Composition>(this, pool);
+}
+
 
 } // end namespace constrained_based_networks

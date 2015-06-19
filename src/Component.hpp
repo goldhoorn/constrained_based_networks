@@ -2,66 +2,16 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace constrained_based_networks {
 
 class Pool;
-
+class SpecializedComponentBase;
 class Component;
-
-struct Configuration{
-    std::vector<std::string> name;
-    std::vector<std::string> value;
-
-    void add(std::string _name, std::string _value){
-        this->name.push_back(_name);
-        this->value.push_back(_value);
-    }
-};
-
-class SpecializedComponentBase{
-    public:
-    SpecializedComponentBase(){
-    }
-    virtual ~SpecializedComponentBase(){
-    }
-
-    Configuration configuration;
-        
-    void addConfig(std::string name, std::string value){
-        configuration.add(name,value);
-    };
-//    virtual operator constrained_based_networks::Component*() = 0;
-    //virtual constrained_based_networks::Component* foo() = 0;
-    operator const Component*() const{
-        std::cerr << "FUSEL" << std::endl;
-        return 0;
-    };
-    
-    
-};
-
-template<class T>
-class SpecializedComponent : public T, public SpecializedComponentBase{
-    public:
-    SpecializedComponent(T *t, Pool *pool): T(*t){
-    }
-    
-    virtual constrained_based_networks::Component* foo(){
-        return this;
-    };
-    
-    //virtual operator constrained_based_networks::Component*(){
-    operator Component*() const{
-        printf("Hallo gaga let's dance\n");
-        return 0;
- //       return dynamic_cast<Component*>(this);
-//
-    }
-
-};
 
 
 
@@ -87,7 +37,7 @@ class Component{
     public:
         Component(Pool *pool);
         virtual ~Component();
-        unsigned int getID() const;
+        virtual unsigned int getID() const;
         virtual bool abstract() const=0;
 
         void addFullfillment(std::string name);

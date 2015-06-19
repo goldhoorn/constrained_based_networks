@@ -1,5 +1,6 @@
 #include "StateMachine.hpp"
 #include "Pool.hpp"
+#include "SpecializedComponent.hpp"
 
 using namespace constrained_based_networks;
 
@@ -31,8 +32,13 @@ void StateMachine::addTransition(std::string s,  std::string t, std::string even
 void StateMachine::addTransition(Component *source,  Component *target, Component *event_source, std::string ev)
 {
    transitions.push_back(Transition(source,target,event_source,ev)); 
-   std::cout << "hmh--- " << target->getName() << std::endl;
+//   std::cout << "hmh--- " << target->getName() << std::endl;
 
+}
+
+SpecializedComponentBase* StateMachine::getSpecialized()
+{
+    return new SpecializedComponent<StateMachine>(this, pool);
 }
 
 std::vector<Component*> StateMachine::getStates(){
@@ -52,4 +58,26 @@ std::vector<Component*> StateMachine::getStates(){
         }
     }
     return erg;
+}
+
+void StateMachine::addTransition(SpecializedComponentBase *source,  SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev){
+    addTransition(source->getComponent(), target->getComponent(), event_source->getComponent(), ev);
+}
+void StateMachine::addTransition(Component *source,  SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev){
+    addTransition(source, target->getComponent(), event_source->getComponent(), ev);
+}
+void StateMachine::addTransition(SpecializedComponentBase *source,  Component *target, SpecializedComponentBase *event_source, std::string ev){
+    addTransition(source->getComponent(), target, event_source->getComponent(), ev);
+}
+void StateMachine::addTransition(SpecializedComponentBase *source,  SpecializedComponentBase *target, Component *event_source, std::string ev){
+    addTransition(source->getComponent(), target->getComponent(), event_source, ev);
+}
+void StateMachine::addTransition(Component *source,  SpecializedComponentBase *target, Component *event_source, std::string ev){
+    addTransition(source, target->getComponent(), event_source, ev);
+}
+void StateMachine::addTransition(SpecializedComponentBase *source,  Component *target, Component *event_source, std::string ev){
+    addTransition(source->getComponent(), target, event_source, ev);
+}
+void StateMachine::setStart(SpecializedComponentBase *c){
+    setStart(c->getComponent());
 }

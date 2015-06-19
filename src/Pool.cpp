@@ -4,6 +4,7 @@
 #include "DataService.hpp"
 #include "Task.hpp"
 #include <fstream>
+#include "SpecializedComponent.hpp"
 
 namespace constrained_based_networks{
 
@@ -35,7 +36,12 @@ Component* Pool::getComponent(std::string name){
 }
 
 void Pool::addComponent(Component *c){
-    c->id = components.size();
+    auto b = dynamic_cast<SpecializedComponentBase*>(c);
+    if(b){
+        b->id = components.size();
+    }else{
+        c->id = components.size();
+    }
     components.push_back(c);
 }
 

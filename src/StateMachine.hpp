@@ -28,13 +28,18 @@ namespace constrained_based_networks {
             ~StateMachine();
             void addTransition(std::string s, std::string t, std::string event_s, std::string event_name);
             void addTransition(Component *source,  Component *target, Component *event_source, std::string ev); 
+            void addTransition(SpecializedComponentBase *source,  SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev);
+            void addTransition(Component *source,  SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev);
+            void addTransition(SpecializedComponentBase *source,  Component *target, SpecializedComponentBase *event_source, std::string ev);
+            void addTransition(SpecializedComponentBase *source,  SpecializedComponentBase *target, Component *event_source, std::string ev);
+            void addTransition(Component *source,  SpecializedComponentBase *target, Component *event_source, std::string ev);
+            void addTransition(SpecializedComponentBase *source,  Component *target, Component *event_source, std::string ev);
             void setStart(std::string name);
             void setStart(const Component *c);
+            void setStart(SpecializedComponentBase *c);
             bool abstract() const{return false;}
     
-            SpecializedComponentBase *getSpecialized(){
-                return new SpecializedComponent<StateMachine>(this, pool);
-            }
+            SpecializedComponentBase *getSpecialized();
 /*
             SpecializedComponent<StateMachine> *getSpecialized()
             {

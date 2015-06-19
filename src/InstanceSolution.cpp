@@ -10,6 +10,7 @@
 #include "Task.hpp"
 #include "Composition.hpp"
 #include "DataService.hpp"
+#include "SpecializedComponent.hpp"
 #include <stdlib.h>
 #include <fstream>
 
@@ -26,12 +27,14 @@ void InstanceComponent::addLimitation(Gecode::Space &space, std::string name, st
     auto i = int_config[cnt].find(name);
     auto b = bool_config[cnt].find(name);
     auto d = float_config[cnt].find(name);
-    std::cout << "hallo" << std::endl;
     if(i != int_config[cnt].end()){
+        std::cout << "hallo int" << std::endl;
         rel(space,i->second, IRT_EQ, atoi(value.c_str()));
     }else if(b != bool_config[cnt].end()){
+        std::cout << "hallo bool" << std::endl;
         rel(space,b->second, IRT_EQ, atoi(value.c_str()) != 0);
     }else if(d != float_config[cnt].end()){
+        std::cout << "hallo float" << std::endl;
         rel(space,b->second, IRT_EQ, atof(value.c_str()));
     }else{
         throw std::invalid_argument("Configuration attribute with " + name + " is unknown");
@@ -64,15 +67,24 @@ void InstanceSolution::createFlattendIDs(Composition* cmp, unsigned int next_fre
 
 
 void InstanceSolution::limitConfigs(Composition* cmp, unsigned int next_free_id){
-    printf("huhu\n");
+    if(cmp->isActive()){
+        std::cout << cmp->getName();
+        if(auto child_cmp = dynamic_cast<SpecializedComponentBase*>(cmp)){
+            std::cout << "Is specialized" << std::endl;
+        }else{
+            std::cout << "Is NOT specialized" << std::endl;
+        }
+    }
+
     auto cmp_id = cmp->getCmpID();
     instance_components[cmp->getID()].add_flattend_use_id(next_free_id++);
 
     if(auto sc = dynamic_cast<SpecializedComponentBase*>(cmp)){
+            printf("huhu\n");
 //        auto c = (Component*)sc;
-        for(size_t i=0; i < sc->configuration.name.size(); i++){
-            std::string name = sc->configuration.name[i];
-            std::string value = sc->configuration.value[i];
+        for(auto c : sc->configuration){
+            std::string name = c.first;
+            std::string value = c.second;
             instance_components[cmp->getID()].addLimitation(*this, name,value,0);
         }
     }
@@ -143,7 +155,7 @@ InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
 
         for(auto t : cs->ir_assignments[p]){
             if(!t.assigned()) throw std::runtime_error("This shold never happen here that we have unassigned solutions");
-            std::cout << "HAve val: " << t.val() << std::endl;
+            //std::cout << "HAve val: " << t.val() << std::endl;
             Component *child= pool->getItems<Component*>()[t.val()];
             instance_components[child->getID()].increse_usage();
 

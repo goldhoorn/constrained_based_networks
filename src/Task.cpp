@@ -2,6 +2,7 @@
 #include <sstream>
 #include <stdexcept>
 #include "Pool.hpp"
+#include "SpecializedComponent.hpp"
 
 namespace constrained_based_networks {
     
@@ -64,6 +65,11 @@ const std::vector<std::string>& Task::getConfiguration() const
 void Task::setConfiguration(const std::vector<std::string>& configurations)
 {
     this->configurations = configurations;
+}
+
+SpecializedComponentBase* Task::getSpecialized()
+{
+    return new SpecializedComponent<Task>(this, pool);
 }
 
 

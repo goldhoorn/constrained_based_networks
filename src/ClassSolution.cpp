@@ -9,6 +9,7 @@
 #include "Pool.hpp"
 #include "Task.hpp"
 #include "Composition.hpp"
+#include "SpecializedComponent.hpp"
 #include "DataService.hpp"
 #include <stdlib.h>
 #include <fstream>
@@ -22,6 +23,7 @@ using namespace Gecode;
 namespace constrained_based_networks {
 
 void ClassSolution::markInactiveAsInactive(){
+    /*
     //Remove all loops that are unneeded by a master requirement
     for(auto c: pool->getItems<Component*>()){
         size_t id_child= c->getID();
@@ -30,11 +32,13 @@ void ClassSolution::markInactiveAsInactive(){
             unsigned int id = cmp->getID();
         }
     }
-
+    */
+    /*
     //Nothing can depend on the DUMMY node
     for(auto c: pool->getItems<Component*>()){
 
     }
+    */
 
     //Remove all unneeded depends
     for(auto c: pool->getItems<Component*>()){
@@ -139,6 +143,30 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     auto compositions = pool->getItems<Composition*>();
     for(size_t cmp_counter = 0; cmp_counter != compositions.size();cmp_counter++){
         auto composition = compositions[cmp_counter];
+        /*
+                    //if(composition->getID() == 318){
+                        std::cout << "pointer in class solution: " << composition << std::endl;
+                        auto s = dynamic_cast<SpecializedComponentBase*>(composition);
+
+                        if(!s){
+                            std::cerr << "bla id: " << composition->getID() << std::endl;
+                            throw std::runtime_error("Das ist schlecht ");
+                        }else{
+                            throw std::runtime_error("Jeha das ist gut" );
+                        }
+
+                    //}
+        */
+        /*
+                    auto s = dynamic_cast<SpecializedComponentBase*>(composition);
+                    if(s){
+                        std::string str = composition->getName() + "(!)";
+                        for(auto c : s->configuration){
+                            str = str + "\n" + c.first + "=" + c.second;
+                        }
+                        std::cout << "Huch: " << str << std::endl;
+                    }
+                    */
 //        std::cout << "Processing composition " << composition->getName() << " (" << cmp_counter << ")" << std::endl;
         auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
 
@@ -574,7 +602,7 @@ void ClassSolution::compare(const Space& _s, std::ostream& os) const{
 
 void ClassSolution::printToDot(std::ostream& os) const 
 {
-    Pool *pool = Pool::getInstance();
+    //Pool *pool = Pool::getInstance();
     /*
     os << "Count: " << active.size() << std::endl;
 
@@ -611,7 +639,20 @@ void ClassSolution::printToDot(std::ostream& os) const
         for(auto child : composition->getChildren()){
             if(ir_assignments[cmp_id][child_id].assigned()){
                  if(ir_assignments[cmp_id][child_id].val() > ID_START){ //Only print assigned solutions
-                    file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[label=\"" << child.first << "\"];" << std::endl;
+                    auto s = dynamic_cast<SpecializedComponentBase*>(composition);
+                    if(s){
+                        std::string str = composition->getName() + "(!)";
+                        for(auto c : s->configuration){
+                            str = str + "\n" + c.first + "=" + c.second;
+                        }
+                        file << "\t\"" << str << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[label=\"" << child.first << "\"];" << std::endl;
+                    }else{
+                        std::string name = composition->getName();
+                        if(composition->isActive()){
+                            name = name + "(A)";
+                        }
+                        file << "\t\"" << name << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[label=\"" << child.first << "\"];" << std::endl;
+                    }
                     //os <<  " (" << ir_assignments[cmp_id][child_id] << ")" << std::endl;
                  }
             }else{
@@ -710,7 +751,7 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
     }
     os << "}" << std::endl;
    
-    Pool *pool = Pool::getInstance();
+//    Pool *pool = Pool::getInstance();
 
     os << "Child Selection: { " << std::endl;
     size_t cmp_id=0;

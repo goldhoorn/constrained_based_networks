@@ -23,6 +23,7 @@ set(HEADERS
    PortHandler.hpp
    StateMachine.hpp
    InstanceSolution.hpp
+   SpecializedComponent.hpp
 )
 
 set(Gecode_LIBRARIES

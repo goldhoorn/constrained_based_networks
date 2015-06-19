@@ -5,8 +5,8 @@
 
 using namespace constrained_based_networks;
 
-Component::Component(Pool *pool):
-    pool(pool)
+Component::Component(Pool *_pool):
+    pool(_pool)
 {
     pool->addComponent(this);
     active=false;
@@ -31,8 +31,8 @@ void Component::setActive(bool a){
 }
         
         
-void Component::addEvent(const std::string &name){
-    events.push_back(name);
+void Component::addEvent(const std::string &_name){
+    events.push_back(_name);
 }
     
 unsigned int Component::getID() const{
@@ -58,12 +58,12 @@ void Component::addFullfillment(std::string str){
     fullfillments.push_back(str);
 }
 
-bool Component::isFullfilling(std::string name){
+bool Component::isFullfilling(std::string _name){
 
-    if(name == getName()) return true; //Trivial check
+    if(_name == getName()) return true; //Trivial check
 
     for(auto v : fullfillments){
-        if( v == name){
+        if( v == _name){
             return true;
         }
     }

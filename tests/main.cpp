@@ -4,6 +4,7 @@
 #include <constrained_based_networks/DataService.hpp>
 #include <constrained_based_networks/ClassSolution.hpp>
 #include <constrained_based_networks/InstanceSolution.hpp>
+#include <constrained_based_networks/SpecializedComponent.hpp>
 
 #include "dump.hpp"
 
@@ -30,15 +31,32 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
     if(auto sm =  dynamic_cast<StateMachine*>(c)){
         for(auto state : sm->getStates()){
             printf("??????????????      ClassSolution for statemachien %s, for task %s ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
-            //resolve(state,res,debug);   
+            if(dynamic_cast<SpecializedComponentBase *>(state)){
+                std::cout << "Habe specialized component" << std::endl;
+            }
+            return resolve(state,res,debug);  
             printf("??????????????      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ??????????????????????????\n");
         }
-        return 0;
     }
    
-    return 0;
-
     c->setActive(true);
+    if(!dynamic_cast<SpecializedComponentBase *>(c)){
+        throw std::runtime_error("I currently want a specialized\n");
+    }else{
+        std::cout << "starte: \n";
+        std::cout << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getName() << ": " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getID() << std::endl;
+        std::cout << "pointer in main: " << c  << " | " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent() << std::endl;
+    }
+/*
+    for(auto c : pool->getItems<Component*>()){
+        auto d = dynamic_cast<SpecializedComponentBase*>(c);
+        if(d){
+            std::cout << "test 2: \n";
+            std::cout << d->getComponent()->getName() << ": " << d->getComponent()->getID() << std::endl;
+            std::cout << "pointer in main: " << d  << " | " << dynamic_cast<SpecializedComponentBase *>(d)->getComponent() << std::endl;
+        }
+    }
+*/
     try{
         ClassSolution* s=0;
         if(debug){
@@ -370,6 +388,7 @@ int main(int argc, char* argv[]) {
     auto s = resolve(pool->getComponent(name),resolve_nonresolveable,debug);
     if(s){        
         auto is = InstanceSolution::babSearch(s, pool);
+        (void)is;
     }else{
         std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;
     }

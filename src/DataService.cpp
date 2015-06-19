@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include "Pool.hpp"
 #include "Composition.hpp"
+#include "SpecializedComponent.hpp"
 
 namespace constrained_based_networks {
     
@@ -64,8 +65,8 @@ void DataService::setConfiguration(const std::vector<std::string>& configuration
 }
 */
 
-
-    
-
+SpecializedComponentBase *DataService::getSpecialized(){
+    return new SpecializedComponent<DataService>(this, pool);
+}
 
 } // end namespace constrained_based_networks
