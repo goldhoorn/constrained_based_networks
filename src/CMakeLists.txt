@@ -10,6 +10,7 @@ set(SOURCES
    PortHandler.cpp
    StateMachine.cpp
    InstanceSolution.cpp
+   Import.cpp
 )
 
 set(HEADERS
@@ -24,6 +25,7 @@ set(HEADERS
    StateMachine.hpp
    InstanceSolution.hpp
    SpecializedComponent.hpp
+   Import.hpp
 )
 
 set(Gecode_LIBRARIES
@@ -39,7 +41,7 @@ set(Gecode_LIBRARIES
 rock_library(${PROJECT_NAME} 
     SOURCES ${SOURCES}
     HEADERS ${HEADERS}
-    DEPS_PKGCONFIG base-lib
+    DEPS_PKGCONFIG base-lib owlapi
     LIBS ${Gecode_LIBRARIES} ${Boost_LIBRARIES}
 )
 

@@ -39,7 +39,6 @@ void InstanceComponent::addLimitation(Gecode::Space &space, std::string name, st
     }else{
         throw std::invalid_argument("Configuration attribute with " + name + " is unknown");
     }
-
 }
 
     
