@@ -12,7 +12,7 @@ StateMachine::StateMachine(std::string name, Pool *pool):
 
 StateMachine::~StateMachine(){
 }
-            
+
 void StateMachine::setStart(std::string name){
     setStart(pool->getComponent(name));
 }
@@ -28,10 +28,10 @@ void StateMachine::addTransition(std::string s,  std::string t, std::string even
     auto ev_s = pool->getComponent(event_s);
     addTransition(source,target,ev_s, event_name);
 }
-            
+
 void StateMachine::addTransition(Component *source,  Component *target, Component *event_source, std::string ev)
 {
-   transitions.push_back(Transition(source,target,event_source,ev)); 
+   transitions.push_back(Transition(source,target,event_source,ev));
 //   std::cout << "hmh--- " << target->getName() << std::endl;
 
 }

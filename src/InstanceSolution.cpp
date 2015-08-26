@@ -21,7 +21,7 @@ using namespace Gecode;
 #define REMOVE_REC
 
 namespace constrained_based_networks {
-    
+
 void InstanceComponent::addLimitation(Gecode::Space &space, std::string name, std::string value, size_t cnt)
 {
     auto i = int_config[cnt].find(name);
@@ -41,7 +41,7 @@ void InstanceComponent::addLimitation(Gecode::Space &space, std::string name, st
     }
 }
 
-    
+
 void InstanceSolution::createFlattendIDs(Composition* cmp, unsigned int next_free_id){
     auto cmp_id = cmp->getCmpID();
     instance_components[cmp->getID()].add_flattend_use_id(next_free_id++);
@@ -88,8 +88,8 @@ void InstanceSolution::limitConfigs(Composition* cmp, unsigned int next_free_id)
         }
     }
 
-    
-    
+
+
 
     for(size_t i =0;i< cs->ir_assignments[cmp_id].size();i++){
         if(cs->ir_assignments[cmp_id][i].assigned()){
@@ -97,7 +97,7 @@ void InstanceSolution::limitConfigs(Composition* cmp, unsigned int next_free_id)
             auto c = (*pool)[id];
 
             if(auto child_cmp = dynamic_cast<Composition*>(c)){
-                
+
 
 
                 limitConfigs(child_cmp, next_free_id);
@@ -133,7 +133,7 @@ void InstanceSolution::limitComponents(unsigned int cmp_id){
 InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
     :pool(_pool),
     cs(_cs)
-#if 0    
+#if 0
     , active(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
 #ifdef REMOVE_REC
@@ -145,10 +145,10 @@ InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
     instance_components.resize(pool->size());
     for(size_t i =0;i< pool->size();i++){
         auto c = pool->operator[](i);
-        instance_components[c->getID()].initialize(c);    
+        instance_components[c->getID()].initialize(c);
     };
 
-    //We need to run throught the tree of all nodes and figure out all needed configs, we create here 
+    //We need to run throught the tree of all nodes and figure out all needed configs, we create here
     for(size_t p = 0; p < cs->ir_assignments.size();p++){
         //Composition *parent = pool->getItems<Composition*>()[p];
 
@@ -167,19 +167,19 @@ InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
             continue;
         }
     }
-    
+
     for(auto c : instance_components){
         //Finalize components means create internal structures for the constraints
         c.finalize(*this);
     }
 
     //First we need to flatten the graph to have a unique it from our helper components back to the graph-components
-    createFlattendIDs(dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)), 0); //First if is the root compositon, and we start at number 0 
+    createFlattendIDs(dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)), 0); //First if is the root compositon, and we start at number 0
 
     //Now it is the time to put the component constraints from the previously generated graph to the components
     //We need to run througth the graph and post the constraints onto the components itself
-    limitConfigs(dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)), 0); //First if is the root compositon, and we start at number 0 
-    
+    limitConfigs(dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)), 0); //First if is the root compositon, and we start at number 0
+
 
 
     //Now we have defined the upper limits time to limit the actual configurations while we running throught the tree of components
@@ -189,7 +189,7 @@ InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
 
 
 #ifdef CONSTRAIN
-void InstanceSolution::constrain(const Space& _b) 
+void InstanceSolution::constrain(const Space& _b)
 {
     /*
     printf("In constrain block %i\n",print_count);
@@ -204,11 +204,11 @@ void InstanceSolution::constrain(const Space& _b)
     InstanceSolution::postBranching(*this);
     */
     return;
-    
+
 }
 #endif
 
-InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) 
+InstanceSolution::InstanceSolution(bool share, InstanceSolution& s)
     : Space(share, s)
     //, query(s.query)
     //, componentPool(s.componentPool)
@@ -228,12 +228,12 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution& s)
 #endif
 }
 
-Space* InstanceSolution::copy(bool share) 
+Space* InstanceSolution::copy(bool share)
 {
     return new InstanceSolution(share,*this);
 }
 
-    
+
 void InstanceSolution::compare(const Space& _s, std::ostream& os) const{
 #if 0
     auto s = static_cast<const InstanceSolution&>(_s);
@@ -281,17 +281,17 @@ void InstanceSolution::compare(const Space& _s, std::ostream& os) const{
         cmp_id++;
     }
 
-    
+
     file << "}" << std::endl;
     sprintf(buff,"dot -Tsvg /tmp/dep-%i.dot -o /tmp/dep-%i.svg",print_count,print_count);
     system(buff);
     os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
-    
+
     const_cast<InstanceSolution*>(this)->print_count++;
 #endif
 }
 
-void InstanceSolution::printToDot(std::ostream& os) const 
+void InstanceSolution::printToDot(std::ostream& os) const
 {
 #if 0
     Pool *pool = Pool::getInstance();
@@ -315,11 +315,11 @@ void InstanceSolution::printToDot(std::ostream& os) const
 //        os << ", "<< std::endl;
     }
     os << "}" << std::endl;
-   
+
 
     os << "Child Selection: { " << std::endl;
     */
-    
+
     //TODO ugly
     char buff[512];
     sprintf(buff,"/tmp/dep-%i.dot", print_count);
@@ -362,7 +362,7 @@ void InstanceSolution::printToDot(std::ostream& os) const
     system(buff);
     os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
 
-#if 1 
+#if 1
     sprintf(buff,"/tmp/dep-graph-%i.dot", print_count);
     std::ofstream file2(buff);
     file2 << "digraph G {" << std::endl;
@@ -383,7 +383,7 @@ void InstanceSolution::printToDot(std::ostream& os) const
     system(buff);
     os << "<h1> Dependancy Selection: </h1><br/><img src=\"/tmp/dep-graph-" << print_count << ".svg\"\\>" << std::endl;
 #endif
-#if 1 
+#if 1
     sprintf(buff,"/tmp/dep-rgraph-%i.dot", print_count);
     std::ofstream file3(buff);
     file3 << "digraph G {" << std::endl;
@@ -411,7 +411,7 @@ void InstanceSolution::printToDot(std::ostream& os) const
 
 }
 
-void InstanceSolution::printToStream(std::ostream& os, bool full) const 
+void InstanceSolution::printToStream(std::ostream& os, bool full) const
 {
 #if 0
     os << "Count: " << active.size() << std::endl;
@@ -433,7 +433,7 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
 //        os << ", "<< std::endl;
     }
     os << "}" << std::endl;
-   
+
     Pool *pool = Pool::getInstance();
 
     os << "Child Selection: { " << std::endl;
@@ -470,7 +470,7 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
             break;
         }
         if(!empty){
-            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends[i] << std::endl; 
+            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends[i] << std::endl;
             for (SetVarGlbValues j(depends[i]); j(); ++j){
                 if(j.val() < ID_START && !full) continue;
                 os  << "\t" << "- " << j.val() << " " <<  (*pool)[j.val()]->getName() << std::endl;
@@ -479,7 +479,7 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
     }
     os << "}" <<std::endl;
 #endif
-#if 0 
+#if 0
     os << "Recursive Dependencies { " << std::endl;
     for(size_t i = full?0:ID_START; i< depends_recursive.size();i++){
         auto o = (*pool)[i];
@@ -492,7 +492,7 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
             break;
         }
         if(!empty){
-            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends_recursive[i] << std::endl; 
+            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends_recursive[i] << std::endl;
             for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
                 if(j.val() < ID_START && !full) continue;
                 os  << "\t" << "- " << j.val() << " " <<  (*pool)[j.val()]->getName() << std::endl;
@@ -520,7 +520,7 @@ InstanceSolution* InstanceSolution::babSearch(ClassSolution *cs, Pool *pool)
     //DFS<InstanceSolution> e(so);
     // search
     InstanceSolution* best = NULL;
-    
+
     while (InstanceSolution* s = e.next()){
         if(best != NULL)
         {
@@ -533,8 +533,8 @@ InstanceSolution* InstanceSolution::babSearch(ClassSolution *cs, Pool *pool)
         //std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         best = s;
 
-    } 
-    
+    }
+
     // throw exception if there is no solution
     if(best == NULL)
     {

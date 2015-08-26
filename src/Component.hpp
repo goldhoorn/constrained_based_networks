@@ -45,7 +45,7 @@ class Component{
         virtual bool isActive();
         virtual void setActive(bool active=true);
         std::string getName();
-       
+
         //Made for testing purposes
         bool isIgnored();
 

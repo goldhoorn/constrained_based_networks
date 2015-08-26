@@ -13,7 +13,7 @@ namespace constrained_based_networks {
 
     class Composition;
 
-#define CONSTRAIN 
+#define CONSTRAIN
 
 
 struct InstanceComponent{
@@ -22,7 +22,7 @@ public:
         usage_count=0;
         finalized = false;
     };
-    
+
     void increse_usage(){
         if(finalized) throw std::runtime_error("InstanceComponent is already finalized");
         usage_count++;
@@ -38,11 +38,11 @@ public:
 
     void finalize(Gecode::Space &space){
         if(finalized) throw std::runtime_error("InstanceComponent is already finalized");
-            
-        float_config.resize(usage_count);       
-        bool_config.resize(usage_count);       
-        int_config.resize(usage_count);       
-        
+
+        float_config.resize(usage_count);
+        bool_config.resize(usage_count);
+        int_config.resize(usage_count);
+
         for(size_t i = 0; i < usage_count; i++){
             for(auto prop : underlaying_component->getProperties()){
                 switch(prop.t){
@@ -155,7 +155,7 @@ public:
      * Construct a solution with an initial situation to search.
      */
     InstanceSolution(ClassSolution *cs, Pool *pool = Pool::getInstance());
-   
+
 #ifdef CONSTRAIN
     /*
      * constrain function for best solution search. the
@@ -164,7 +164,7 @@ public:
      */
     virtual void constrain(const Gecode::Space& _b);
 #endif
-    
+
     /**
      * search support. There must be a copy constructor like this for the search engine.
      * Everything must be copied into the new Space
@@ -174,7 +174,7 @@ public:
      * This method is called be the search engine
      */
     virtual Gecode::Space* copy(bool share);
-    
+
     /**
      * print support
      */
@@ -192,7 +192,7 @@ public:
            unsigned int a,
            Gecode::IntVar x, int i, const int& n,
            std::ostream& o);
-    
+
     static void print(const Space& home,
            const Gecode::BrancherHandle& bh,
            unsigned int a,
@@ -201,7 +201,7 @@ public:
 
     /**
      * Static method to find a best solution with BAB search.
-     * 
+     *
      * \throw Exception if there is no solution.
      */
     static InstanceSolution* babSearch2(ClassSolution *cs, Pool *pool);

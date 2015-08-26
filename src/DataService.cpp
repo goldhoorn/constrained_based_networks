@@ -6,10 +6,10 @@
 #include "SpecializedComponent.hpp"
 
 namespace constrained_based_networks {
-    
+
 DataService::DataService(): Component(Pool::getInstance()) {}
 
-DataService::DataService(std::string name) 
+DataService::DataService(std::string name)
     : Component(Pool::getInstance())
 {
     this->name = name;
@@ -33,27 +33,27 @@ std::string DataService::toString() const
         ss << configurations[i] << " ";
     }
     ss << "]\n";
-  */      
+  */
     return ss.str();
 }
 /*
-int DataService::getType() const 
-{ 
+int DataService::getType() const
+{
     return type;
 }
 */
 
-const std::string& DataService::getName() const 
-{ 
+const std::string& DataService::getName() const
+{
     return name;
 }
 
-void DataService::setName(const std::string& name) 
-{ 
+void DataService::setName(const std::string& name)
+{
     this->name = name;
 }
 /*
-const std::vector<std::string>& DataService::getConfiguration() const 
+const std::vector<std::string>& DataService::getConfiguration() const
 {
     return configurations;
 }

@@ -30,25 +30,25 @@ class SpecializedComponentBase : private boost::noncopyable{
     }
 
     Configuration configuration;
-        
+
     void addConfig(std::string name, std::string value){
         configuration.add(name,value);
     };
-    
+
     virtual constrained_based_networks::Component* getComponent() = 0;
     virtual unsigned int getID() const = 0;
-    
+
     unsigned int id;
-        
+
     /*
     operator const Component*() const{
         std::cerr << "FUSEL" << std::endl;
         return 0;
     };
     */
-    
+
     friend class Pool;
-    
+
 };
 
 template<class T>
@@ -58,7 +58,7 @@ class SpecializedComponent : public T, public SpecializedComponentBase{
         classScope=true;
         pool->addComponent(this);
     }
-   
+
 
     virtual ~SpecializedComponent(){
     };
@@ -66,17 +66,17 @@ class SpecializedComponent : public T, public SpecializedComponentBase{
     virtual constrained_based_networks::Component* getComponent(){
         return this;
     };
-    
+
     virtual unsigned int getID() const{
         if(classScope){
             return T::getID();
         }else{
-            return SpecializedComponentBase::id; 
+            return SpecializedComponentBase::id;
         }
     };
 
-    bool classScope; 
-    
+    bool classScope;
+
 
 };
 

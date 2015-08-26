@@ -8,7 +8,7 @@
 #include <boost/archive/text_iarchive.hpp>
 
 namespace constrained_based_networks {
-    
+
     /**
      * An incoming port defined by datatype and name.
      */
@@ -16,12 +16,12 @@ namespace constrained_based_networks {
     {
         std::string datatype;
         std::string name;
-        
+
         InputPort(const std::string& _datatype, const std::string& _name)
             : datatype(_datatype)
             , name(_name)
         { }
-        
+
         // to use it as map key
         bool operator <( const InputPort &port ) const
         {
@@ -31,7 +31,7 @@ namespace constrained_based_networks {
             }
             return datatype < port.datatype;
         }
-        
+
         std::string toString() const
         {
             std::ostringstream ss;
@@ -49,7 +49,7 @@ namespace constrained_based_networks {
             */
         };
     };
-    
+
     /**
      * An outgoing port defined by datatype and name.
      */
@@ -57,12 +57,12 @@ namespace constrained_based_networks {
     {
         std::string datatype;
         std::string name;
-        
+
         OutputPort(const std::string& _datatype, const std::string& _name)
             : datatype(_datatype)
             , name(_name)
         { }
-        
+
         // to use it as map key
         bool operator <( const OutputPort &port ) const
         {
@@ -72,7 +72,7 @@ namespace constrained_based_networks {
             }
             return datatype < port.datatype;
         }
-        
+
         std::string toString() const
         {
             std::ostringstream ss;
@@ -90,7 +90,7 @@ namespace constrained_based_networks {
             */
         };
     };
-    
+
 } // end namespace constrained_based_networks
 
 

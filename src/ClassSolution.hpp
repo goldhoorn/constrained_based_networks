@@ -11,7 +11,7 @@ namespace constrained_based_networks {
 
     class Composition;
 
-#define CONSTRAIN 
+#define CONSTRAIN
 
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real solutions are of type ClassSolution.
@@ -64,7 +64,7 @@ public:
      * Construct a solution with an initial situation to search.
      */
     ClassSolution(Pool *pool = Pool::getInstance());
-   
+
 #ifdef CONSTRAIN
     /*
      * constrain function for best solution search. the
@@ -73,7 +73,7 @@ public:
      */
     virtual void constrain(const Gecode::Space& _b);
 #endif
-    
+
     /**
      * search support. There must be a copy constructor like this for the search engine.
      * Everything must be copied into the new Space
@@ -83,7 +83,7 @@ public:
      * This method is called be the search engine
      */
     virtual Gecode::Space* copy(bool share);
-    
+
     /**
      * print support
      */
@@ -101,7 +101,7 @@ public:
            unsigned int a,
            Gecode::IntVar x, int i, const int& n,
            std::ostream& o);
-    
+
     static void print(const Space& home,
            const Gecode::BrancherHandle& bh,
            unsigned int a,
@@ -110,7 +110,7 @@ public:
 
     /**
      * Static method to find a best solution with BAB search.
-     * 
+     *
      * \throw Exception if there is no solution.
      */
     static ClassSolution* babSearch2();

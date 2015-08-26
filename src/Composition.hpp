@@ -15,7 +15,7 @@
 #include <boost/archive/text_iarchive.hpp>
 
 namespace constrained_based_networks {
-    
+
 /**
  * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,
  * on which it can be connected to other components.
@@ -26,18 +26,18 @@ protected:
      * The type as an int.
      */
     int type;
-    
+
     std::map<std::string, Component*> children;
 
     size_t cmp_id;
 
     /**
      * The configuration consists of a variable sized vector of strings, naming one configuration profile.
-     * 
-     * empty means not configured / no constraint on configuration. 
+     *
+     * empty means not configured / no constraint on configuration.
      */
 //    std::vector<std::string> configurations;
-        
+
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version){
@@ -50,20 +50,20 @@ protected:
             ar & configurations;
             */
     }
-    
+
 public:
     /**
      *Default constructor to be able to use components as map value type.
      */
     Composition();
-   
+
     /**
      * Construct component with type and name.
      */
     Composition(std::string name) ;
-    
+
     SpecializedComponentBase* getSpecialized();
-    
+
     void addConfig(std::string name, std::string value){
         if(auto c = dynamic_cast<Composition*>(this)){
             c->addConfig(name,value);
@@ -71,9 +71,9 @@ public:
             throw std::runtime_error("Called addConfig on invalid class");
         }
     }
-   
+
     Gecode::IntVarArray getPossibleTaskAssignments(Gecode::Space *space);
-    
+
     std::vector<std::pair<std::string, Component*> > getChildren();
     //std::list<Component*> getChildren();
 
@@ -83,7 +83,7 @@ public:
     bool operator ==( const Composition &comp ) const;
 
     std::vector<std::string> unsolveableChildren();
-   
+
     /* Limit a child usage to a specific component */
     void addConstraint(std::string child, std::string target);
 
@@ -94,27 +94,27 @@ public:
      * String representation of a component
      */
     std::string toString() const;
-    
+
     /**
      * Get the type
      */
     int getType() const;
-    
+
     /**
      * Get the name
      */
     const std::string& getName() const;
-    
+
     /**
      * Set the name
      */
     void setName(const std::string& name);
-#if 0 
+#if 0
     /**
      * Get the configuration
      */
     const std::vector<std::string>& getConfiguration() const;
-    
+
     /**
      * Push back a configuration value
      */

@@ -5,17 +5,17 @@
 #include "SpecializedComponent.hpp"
 
 namespace constrained_based_networks {
-    
+
 Task::Task(): Component(Pool::getInstance()) {}
 
-Task::Task(Pool *pool, std::string name) 
+Task::Task(Pool *pool, std::string name)
     : Component(pool)
 {
     this->name = name;
     addFullfillment(name);
 }
 
-Task::Task(std::string name) 
+Task::Task(std::string name)
     : Component(Pool::getInstance())
 {
     this->name = name;
@@ -37,27 +37,27 @@ std::string Task::toString() const
         ss << configurations[i] << " ";
     }
     ss << "]\n";
-        
+
     return ss.str();
 }
 /*
-int Task::getType() const 
-{ 
+int Task::getType() const
+{
     return type;
 }
 */
 
-const std::string& Task::getName() const 
-{ 
+const std::string& Task::getName() const
+{
     return name;
 }
 
-void Task::setName(const std::string& name) 
-{ 
+void Task::setName(const std::string& name)
+{
     this->name = name;
 }
 
-const std::vector<std::string>& Task::getConfiguration() const 
+const std::vector<std::string>& Task::getConfiguration() const
 {
     return configurations;
 }

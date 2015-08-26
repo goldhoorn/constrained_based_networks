@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 namespace constrained_based_networks {
-   
+
 
 PortHandler::~PortHandler(){
     for(auto p : inPorts){
@@ -47,15 +47,15 @@ std::string PortHandler::toString() const
         ss  << it->first.toString() << it->second << " ";
     }
     ss << "]\n";
-        
+
     return ss.str();
 }
 
-const std::vector<InputPort*>& PortHandler::getInPorts() const 
+const std::vector<InputPort*>& PortHandler::getInPorts() const
 {
     return inPorts;
 }
-    
+
 void PortHandler::createInput(const std::string name, const std::string type){
     inPorts.push_back(new InputPort(type,name));
 }
@@ -65,7 +65,7 @@ void PortHandler::createOutput(const std::string name, const std::string type){
 }
 
 const std::vector<OutputPort*>& PortHandler::getOutPorts() const
-{ 
+{
     return outPorts;
 }
 
@@ -94,8 +94,8 @@ const OutputPort& PortHandler::getOutputPortByName(const std::string& name) cons
     throw std::runtime_error("PortHandler getOutputPortByName: no port named " + name);
 }
 
-const std::map<InputPort, std::string>& PortHandler::getIncomingConnections() const 
-{ 
+const std::map<InputPort, std::string>& PortHandler::getIncomingConnections() const
+{
     return incomingConnections;
 }
 
@@ -104,8 +104,8 @@ void PortHandler::putIncomingConnection(const InputPort& inPort, const std::stri
     incomingConnections[inPort] = componentName;
 }
 
-const std::multimap<OutputPort,std::string>& PortHandler::getOutgoingConnections() const 
-{ 
+const std::multimap<OutputPort,std::string>& PortHandler::getOutgoingConnections() const
+{
     return outgoingConnections;
 }
 

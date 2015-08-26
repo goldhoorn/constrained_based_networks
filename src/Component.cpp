@@ -29,12 +29,12 @@ void Component::setActive(bool a){
         dynamic_cast<Composition*>((*pool)[1])->addChild(this,"child_" + getName());
     }
 }
-        
-        
+
+
 void Component::addEvent(const std::string &_name){
     events.push_back(_name);
 }
-    
+
 unsigned int Component::getID() const{
     return id;
 };
@@ -44,7 +44,7 @@ bool Component::isIgnored(){
         (getName().find("Syskit::Component") != std::string::npos) ||
         (getName().find("Syskit::Composition") != std::string::npos) ||
         (getName().find("Roby::Task") != std::string::npos) ||
-        (getName().find("Syskit::DataService") != std::string::npos) || 
+        (getName().find("Syskit::DataService") != std::string::npos) ||
 //        (getName().find("Control") != std::string::npos) ||
 //        (getName().find("Particle") != std::string::npos) ||
         (false);

@@ -102,7 +102,7 @@ Object wrap_task_setConfiguration(Object self, Array configuration)
     Data_Object<Task> component(self, rb_cTask);
     StringVector conf = from_ruby_string_vector(configuration);
     component->setConfiguration(conf);
-    
+
     return self;
 }
 
@@ -128,7 +128,7 @@ Object wrap_task_copy(Object self)
     return Data_Object<Task>(copy);
 }
 
-// Wrappers DataService 
+// Wrappers DataService
 Array wrap_ds_getConfiguration(Object self)
 {
     Data_Object<DataService> component(self, rb_cDataService);
@@ -141,7 +141,7 @@ Object wrap_ds_setConfiguration(Object self, Array configuration)
     Data_Object<DataService> component(self, rb_cDataService);
     StringVector conf = from_ruby_string_vector(configuration);
     component->setConfiguration(conf);
-    
+
     return self;
 }
 /*
@@ -181,7 +181,7 @@ Object wrap_composition_setConfiguration(Object self, Array configuration)
     Data_Object<Composition> component(self, rb_cComposition);
     StringVector conf = from_ruby_string_vector(configuration);
     component->setConfiguration(conf);
-    
+
     return self;
 }
 
@@ -237,23 +237,23 @@ void Init_constrained_based_networks_ruby()
 
     // Define module FIPA
     rb_mGecodeCompMgmt = define_module("CONSTRAINED_BASED_NETWORKS");
-    
+
     rb_cInputPort = define_class_under<InputPort>(rb_mGecodeCompMgmt, "InputPort")
         .define_constructor(Constructor<InputPort, const std::string&, const std::string&>(), (Arg("datatype"), Arg("name")))
         .define_method("toString", &InputPort::toString)
     ;
-    
+
     rb_cPool = define_class_under<Pool>(rb_mGecodeCompMgmt, "Pool")
         .define_constructor(Constructor<Pool, std::string>(), Arg("file-to-load"))
         .define_singleton_method("instance", &Pool::getInstance) // static method
         .define_method("save", &Pool::save, Arg("filename"))
     ;
-    
+
     rb_cOutputPort = define_class_under<OutputPort>(rb_mGecodeCompMgmt, "OutputPort")
         .define_constructor(Constructor<OutputPort, const std::string&, const std::string&>(), (Arg("datatype"), Arg("name")))
         .define_method("toString", &OutputPort::toString)
     ;
-   
+
     rb_cComponent = define_class_under<Component>(rb_mGecodeCompMgmt,"Component")
         .define_method("active", &Composition::setActive, Arg("active"))
         .define_method("add_fullfillment", &wrap_component_add_fullfillment, Arg("name"))
@@ -277,7 +277,7 @@ void Init_constrained_based_networks_ruby()
         //.define_method("getInPorts", &wrap_composition_getInPorts)
         //.define_method("getOutPorts", &wrap_composition_getOutPorts)
     ;
-    
+
     rb_cTask= define_class_under<Task, Component>(rb_mGecodeCompMgmt, "Task")
         .define_constructor(Constructor<Task, const std::string&>(), (Arg("name")))
         .define_method("copy", &wrap_task_copy)
@@ -290,7 +290,7 @@ void Init_constrained_based_networks_ruby()
         .define_method("getInPorts", &wrap_task_getInPorts)
         .define_method("getOutPorts", &wrap_task_getOutPorts)
     ;
-    
+
     rb_cDataService = define_class_under<DataService, Component>(rb_mGecodeCompMgmt, "DataService")
         .define_constructor(Constructor<DataService, const std::string&>(), (Arg("name")))
         .define_method("copy", &wrap_ds_copy)
@@ -303,7 +303,7 @@ void Init_constrained_based_networks_ruby()
 //        .define_method("getInPorts", &wrap_ds_getInPorts)
 //        .define_method("getOutPorts", &wrap_ds_getOutPorts)
     ;
-    
+
     rb_cClassSolution = define_class_under<ClassSolution>(rb_mGecodeCompMgmt, "ClassSolution")
         .define_singleton_method("bab_search", &ClassSolution::babSearch2 ) // static method
         .define_singleton_method("gist_search", &ClassSolution::gistBaBSeach ) // static method

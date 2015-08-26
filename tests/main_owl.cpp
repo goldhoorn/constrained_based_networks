@@ -24,7 +24,7 @@ struct Tests{
 
 
 void solve_final_network(ClassSolution s){
-    
+
 }
 
 using namespace owlapi::model;
@@ -32,18 +32,18 @@ using namespace owlapi::model;
 
 //void resolve(std::string name, bool res, bool debug = false){
 ClassSolution* resolve(Component *c, bool res, bool debug = false){
-   
+
     if(auto sm =  dynamic_cast<StateMachine*>(c)){
         for(auto state : sm->getStates()){
             printf("??????????????      ClassSolution for statemachien %s, for task %s ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
             if(dynamic_cast<SpecializedComponentBase *>(state)){
                 std::cout << "Habe specialized component" << std::endl;
             }
-            return resolve(state,res,debug);  
+            return resolve(state,res,debug);
             printf("??????????????      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ??????????????????????????\n");
         }
     }
-   
+
     c->setActive(true);
     if(!dynamic_cast<SpecializedComponentBase *>(c)){
         throw std::runtime_error("I currently want a specialized\n");
@@ -92,7 +92,7 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
 
     }catch(std::runtime_error e){
         std::cout << "!!!!! UN-Solveable: " << c->getName() << " " << e.what() << " " << std::endl;
-        if(res){ 
+        if(res){
             c->setActive(false);
             Composition *comp = dynamic_cast<Composition*>(c);
             if(!comp){
@@ -164,7 +164,7 @@ std::string test_ambigious_ds(){
 
 std::string test_cmp_recursion_w_more_used(){
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    
+
     auto a2 = new Composition("A2");
     auto a = new Composition("A");
     auto b = new Composition("B");
@@ -288,10 +288,10 @@ std::string test_possible_loop_unused(){
     auto c = new Composition("C");
     auto t = new Task("T-not");
     auto t2 = new Task("T-yes");
-    
+
     a->addChild(a2,"a2_child");
     a2->addChild(t2,"t_child");
-    
+
     b->addChild(c,"c_child");
     c->addChild(t,"task_child");
     c->addChild(b,"b_child");
@@ -307,9 +307,9 @@ std::string test_possible_loop_unused2(){
     auto c = new Composition("C");
     auto d = new Composition("D");
     auto t = new Task("T");
-    
+
     a->addChild(a2,"a2_child");
-    
+
     b->addChild(c,"c_child");
     c->addChild(t,"task_child");
     c->addChild(d,"d_child");
@@ -337,10 +337,10 @@ int main(int argc, char* argv[]) {
                 printf("On default block\n");
         }
     }
-               
+
     if(optind == argc){
         std::cerr << "please pass testname" << std::endl;
-        exit(-1); 
+        exit(-1);
     }
     test_id = atoi(argv[optind]);
 
@@ -376,11 +376,11 @@ int main(int argc, char* argv[]) {
         tests[test_id].v();
         name = tests[test_id].name;
     }
-    
+
     printf("Running test with name: %s\n",name.c_str());
 
 
-    
+
     pool = Pool::getInstance();
     //std::string name("Base::WorldXYPositionControllerSrv");
     //std::string name("AuvCont::WorldXYPositionCmp");
@@ -393,7 +393,7 @@ int main(int argc, char* argv[]) {
     //std::string name("Wall::DetectorNew"); //NICHT ok //Velocity Service
     //std::string name("Localization::ParticleDetector"); //NICHT ok //Hough service
     //std::string name("Localization::HoughDetector"); //NICHT ok //Hough service
-    
+
     //std::string name("A"); //NICHT ok //Hough service
 
 //    auto a = new Composition("A");
@@ -403,17 +403,17 @@ int main(int argc, char* argv[]) {
     //pool->getComponent("Pipeline::Detector_new")->setActive(true);
     //pool->getComponent("Pipeline::Follower")->setActive(true);
     //pool->getComponent("AuvControl::DepthFusionCmp")->setActive(true);
-    
-    //try{ 
+
+    //try{
     auto s = resolve(pool->getComponent(name),resolve_nonresolveable,debug);
-    if(s){        
+    if(s){
         auto is = InstanceSolution::babSearch(s, pool);
         (void)is;
     }else{
         std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;
     }
 
-    
+
     //}catch(...){
     //    std::cerr << " Got maybe a out of mem error" << std::endl;
     //}

@@ -13,7 +13,7 @@ namespace constrained_based_networks {
 
 #define ID_NIL 0
 #define ID_ROOT_KNOT 1
-#define ID_START 0 
+#define ID_START 0
 
 class Pool{
     public:
@@ -72,7 +72,7 @@ class Pool{
             }
         }
 };
-        
+
 
 
 };

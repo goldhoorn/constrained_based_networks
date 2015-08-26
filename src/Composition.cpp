@@ -5,10 +5,10 @@
 #include "SpecializedComponent.hpp"
 
 namespace constrained_based_networks {
-    
+
 Composition::Composition(): Component(Pool::getInstance()) {}
 
-Composition::Composition(std::string name) 
+Composition::Composition(std::string name)
     : Component(Pool::getInstance())
 {
     this->name = name;
@@ -32,31 +32,31 @@ std::string Composition::toString() const
     }
     ss << "]\n";
     */
-        
+
     return ss.str();
 }
-    
+
 size_t Composition::getCmpID() const{
     return cmp_id;
 }
 
-int Composition::getType() const 
-{ 
+int Composition::getType() const
+{
     return 0;
 }
 
-const std::string& Composition::getName() const 
-{ 
+const std::string& Composition::getName() const
+{
     return name;
 }
 
-void Composition::setName(const std::string& name) 
-{ 
+void Composition::setName(const std::string& name)
+{
     this->name = name;
 }
 
 #if 0
-const std::vector<std::string>& Composition::getConfiguration() const 
+const std::vector<std::string>& Composition::getConfiguration() const
 {
     return configurations;
 }
@@ -71,7 +71,7 @@ void Composition::addChild(Component *c,std::string name){
     if(isIgnored()) return;
     children[name] = c;
 }
-    
+
 void Composition::addConstraint(std::string child, std::string target){
 
     if(children.find(child) == children.end()){
@@ -82,7 +82,7 @@ void Composition::addConstraint(std::string child, std::string target){
         throw std::invalid_argument(getName()+ " cannot redefine child " + name);
     }
     children.erase(child);
-                
+
     //addChild(pool->getComponent("DepthReader::Task"),"z");
     //addChild(pool->getComponent("DepthReader::Task"),"z");
 
@@ -90,7 +90,7 @@ void Composition::addConstraint(std::string child, std::string target){
     addChild(c,child);
  //   std::cout << child << "----" << children[child]->getName() <<std::endl;
 //    children[child] = pool->getComponent(name);
-    
+
 }
 
 std::vector<std::string> Composition::unsolveableChildren(){
@@ -135,7 +135,7 @@ std::vector<std::pair<std::string, Component*> > Composition::getChildren(){
     return erg;
 };
 
-    
+
 SpecializedComponentBase* Composition::getSpecialized()
 {
     return new SpecializedComponent<Composition>(this, pool);

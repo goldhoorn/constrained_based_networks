@@ -43,12 +43,12 @@ void ClassSolution::markInactiveAsInactive(){
     //Remove all unneeded depends
     for(auto c: pool->getItems<Component*>()){
         unsigned int cmp_id = pool->getId(c);
-     
+
         //Remove all recursive depends if a component is inactive
-#ifdef REMOVE_REC 
+#ifdef REMOVE_REC
         rel(*this,!active[c->getID()]  >> (depends_recursive[c->getID()] == IntSet::empty));
 #endif
-        
+
         if(c->getID() != ID_ROOT_KNOT){
             rel(*this,expr(*this,active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
             rel(*this,expr(*this,active[cmp_id] == 1) << (depends[cmp_id] != IntSet::empty));
@@ -73,7 +73,7 @@ void ClassSolution::markActiveAsActive(){
         if(c->getID() == ID_ROOT_KNOT){
             //If a component is active it must depend on THIS
             rel(*this,active[c->getID()],IRT_EQ, 1);
-#ifdef REMOVE_REC 
+#ifdef REMOVE_REC
             //Itself has no other dependancies, so making sure not --anything-- is selected
             dom(*this,depends_recursive[c->getID()], SRT_EQ, IntSet::empty);
 #endif
@@ -132,7 +132,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     std::cout << "Got " << pool->getItems<Composition*>().size() << "Compositions" << std::endl;
     std::cout << "Got " << pool->getItems<Task*>().size() << "Tasks" << std::endl;
 */
-    //Defining inactive as the opposide to active 
+    //Defining inactive as the opposide to active
 
 
     markAbstractAsInactive();
@@ -198,12 +198,12 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
                 member(*this, composition_child_constraints, expr(*this,provider->getID()), is_member);
                 dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), imp(expr(*this,!is_member)));
 #ifdef REMOVE_REC
-                //A component cannot (anyhow) depend on itself (testcase #10) 
+                //A component cannot (anyhow) depend on itself (testcase #10)
                 dom(*this, depends_recursive[provider->getID()], SRT_DISJ, provider->getID() );// <= composition_child_constraints[child_id]));
-                    
+
                 //Bulding recusrive dependencies
                 rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends_recursive[composition->getID()] | depends[provider->getID()]), imp(is_member)) ;// <= composition_child_constraints[child_id]));
-#endif 
+#endif
                 //Prevent selection of data-services for children
                 if(provider->abstract()){
                     rel(*this,composition_child_constraints[child_id],IRT_NQ, pool->getId(provider));
@@ -211,12 +211,12 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
                     rel(*this,is_member,IRT_EQ,0);
                     continue;
                 }
-                
+
                 //Check if this provider is fullfilling the requested DataService
                 if(provider->isFullfilling(child.second->getName())){
                 //std::cout << "+++++++ allowing for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
-                    
-                    //If something is used then it depends 
+
+                    //If something is used then it depends
                     BoolVar is_used = expr(*this, composition_child_constraints[child_id] == provider->getID());
                     rel(*this, depends[provider->getID()], SRT_SUP, expr(*this,composition->getID()), imp(is_used) );// <= composition_child_constraints[child_id]));
 
@@ -231,13 +231,13 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
                 }
             }
         }
-    
+
 
 //        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
         ir_assignments.push_back(composition_child_constraints);
     }
 
-#if 1 
+#if 1
     //No composition can directly be assigned as parent to another one becasue this would create a loop in the dependancy graph
     //TODO re-think if this is always valid
     for(size_t p = 0; p < ir_assignments.size();p++){
@@ -247,8 +247,8 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
             if(c==p)continue;
 
             //Walk throught childs of first
-            for(size_t idxp=0; idxp < ir_assignments[p].size(); idxp++){ 
-                for(size_t idxc=0; idxc < ir_assignments[c].size(); idxc++){ 
+            for(size_t idxp=0; idxp < ir_assignments[p].size(); idxp++){
+                for(size_t idxc=0; idxc < ir_assignments[c].size(); idxc++){
                     rel(*this,(parent->getID() == ir_assignments[c][idxc]) >> (ir_assignments[p][idxp] != child->getID()));
                     rel(*this,(child->getID() == ir_assignments[p][idxp]) >> (ir_assignments[c][idxc] != parent->getID()));
                 }
@@ -257,9 +257,9 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
 
     }
 #endif
-    
 
-    
+
+
     markInactiveAsInactive();
     branch(*this, active[ID_ROOT_KNOT], INT_VAL_MIN());
     branch(*this, &ClassSolution::postBranching2);
@@ -277,7 +277,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
 //    depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
     //depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
-    
+
     /*
     branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
     for(size_t i = 0; i < ir_assignments.size();i++){
@@ -290,14 +290,14 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     //branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
     //branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
     //branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
-  /*  
+  /*
     for(size_t i = 0; i < ir_assignments.size();i++){
         branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
     }
     */
 //    branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
 //    branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
-   
+
     printf("Finished creatingerHandleconstraints\n");
 //    branch(*this, depends_recursive, SET_VAR_NONE(), SET_VAL_MIN_INC());
 
@@ -319,7 +319,7 @@ bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &id
                     rel(*this, active[1],IRT_EQ, 0);
                     return false; //TODO forbit this solution
                 }
-                ids.push_back(id);            
+                ids.push_back(id);
                 if(!allDepsResolved(cmp->getCmpID(), ids)){
                     return false;
                 }else{
@@ -383,7 +383,7 @@ void ClassSolution::postBranching2(Space &space){
     }
 //    std::cout << "end " << __FUNCTION__ << std::endl;
 }
-   
+
 void ClassSolution::doMissingBranching(){
     for(size_t i=0;i<active.size();i++){
         if(!active[i].assigned()){ //It seems this is not used
@@ -396,18 +396,18 @@ void ClassSolution::doMissingBranching(){
     std::cout << "BUJAAACHACKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
     branch(*this, depends, SET_VAR_SIZE_MIN(), SET_VAL_MIN_EXC());
     branch(*this, depends_recursive, SET_VAR_SIZE_MIN(), SET_VAL_MIN_EXC());
-        
+
 }
 
 bool ClassSolution::findNextBrancher(unsigned int id){
     bool finish = true;
     if(auto cmp = dynamic_cast<Composition*>((*pool)[id])){
         if(!depends[id].assigned()){
-            finish=false; 
+            finish=false;
             branch(*this, depends[id], SET_VAL_MIN_INC());
         }
         if(!depends_recursive[id].assigned()){
-            finish=false; 
+            finish=false;
             branch(*this, depends_recursive[id], SET_VAL_MIN_INC());
         }
 
@@ -454,7 +454,7 @@ void ClassSolution::postBranching(Space &space){
 }
 
 #ifdef CONSTRAIN
-void ClassSolution::constrain(const Space& _b) 
+void ClassSolution::constrain(const Space& _b)
 {
     /*
     printf("In constrain block %i\n",print_count);
@@ -471,7 +471,7 @@ void ClassSolution::constrain(const Space& _b)
     return;
 
     const ClassSolution& b = static_cast<const ClassSolution&>(_b);
-   
+
     // Number of used components
     // Determine number of used values in b
     int valuesCount = 0;
@@ -485,29 +485,29 @@ void ClassSolution::constrain(const Space& _b)
             valuesCount++;
         }
     }
-    
+
     // We must have at most that many components used as the so far best solution
     // FIXME LQ, and stuff below
     //nvalues(*this, active, IRT_LE, valuesCount);
     //nvalues(*this, active, IRT_GE, valuesCount);
-    
+
     // If we have an equal amount of values used, the number of reconfigured components must be less
     BoolVar equalAmountOfValues;
     //nvalues(*this, assignments_int, IRT_LQ, valuesCount, equalAmountOfValues);
-    
+
     //std::cout << " Adding best search constraint. This ";
-    
+
     std::cerr << "##########################################################################" << std::endl;
     rprint();
     std::cerr << "##########################################################################" << std::endl;
     std::cout << " must be better than so far best ";
     b.rprint();
     std::cerr << "##########################################################################" << std::endl;
-    
+
 }
 #endif
 
-ClassSolution::ClassSolution(bool share, ClassSolution& s) 
+ClassSolution::ClassSolution(bool share, ClassSolution& s)
     : Space(share, s)
     //, query(s.query)
     //, componentPool(s.componentPool)
@@ -534,16 +534,16 @@ ClassSolution::ClassSolution(bool share, ClassSolution& s)
     }
 }
 
-Space* ClassSolution::copy(bool share) 
+Space* ClassSolution::copy(bool share)
 {
     return new ClassSolution(share,*this);
 }
 
-//void ClassSolution::print(std::ostream& os) const 
+//void ClassSolution::print(std::ostream& os) const
 //{
 //    printToStream(os);
 //}
-    
+
 void ClassSolution::compare(const Space& _s, std::ostream& os) const{
     auto s = static_cast<const ClassSolution&>(_s);
     char buff[512];
@@ -590,17 +590,17 @@ void ClassSolution::compare(const Space& _s, std::ostream& os) const{
         cmp_id++;
     }
 
-    
+
     file << "}" << std::endl;
     sprintf(buff,"dot -Tsvg /tmp/dep-%i.dot -o /tmp/dep-%i.svg",print_count,print_count);
     system(buff);
     os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
-    
+
     const_cast<ClassSolution*>(this)->print_count++;
 
 }
 
-void ClassSolution::printToDot(std::ostream& os) const 
+void ClassSolution::printToDot(std::ostream& os) const
 {
     //Pool *pool = Pool::getInstance();
     /*
@@ -623,11 +623,11 @@ void ClassSolution::printToDot(std::ostream& os) const
 //        os << ", "<< std::endl;
     }
     os << "}" << std::endl;
-   
+
 
     os << "Child Selection: { " << std::endl;
     */
-    
+
     //TODO ugly
     char buff[512];
     sprintf(buff,"/tmp/dep-%i.dot", print_count);
@@ -683,7 +683,7 @@ void ClassSolution::printToDot(std::ostream& os) const
     system(buff);
     os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
 
-#if 1 
+#if 1
     sprintf(buff,"/tmp/dep-graph-%i.dot", print_count);
     std::ofstream file2(buff);
     file2 << "digraph G {" << std::endl;
@@ -704,7 +704,7 @@ void ClassSolution::printToDot(std::ostream& os) const
     system(buff);
     os << "<h1> Dependancy Selection: </h1><br/><img src=\"/tmp/dep-graph-" << print_count << ".svg\"\\>" << std::endl;
 #endif
-#if 1 
+#if 1
     sprintf(buff,"/tmp/dep-rgraph-%i.dot", print_count);
     std::ofstream file3(buff);
     file3 << "digraph G {" << std::endl;
@@ -729,7 +729,7 @@ void ClassSolution::printToDot(std::ostream& os) const
     print_count++;
 }
 
-void ClassSolution::printToStream(std::ostream& os, bool full) const 
+void ClassSolution::printToStream(std::ostream& os, bool full) const
 {
     os << "Count: " << active.size() << std::endl;
 
@@ -750,7 +750,7 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
 //        os << ", "<< std::endl;
     }
     os << "}" << std::endl;
-   
+
 //    Pool *pool = Pool::getInstance();
 
     os << "Child Selection: { " << std::endl;
@@ -787,7 +787,7 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
             break;
         }
         if(!empty){
-            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends[i] << std::endl; 
+            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends[i] << std::endl;
             for (SetVarGlbValues j(depends[i]); j(); ++j){
                 if(j.val() < ID_START && !full) continue;
                 os  << "\t" << "- " << j.val() << " " <<  (*pool)[j.val()]->getName() << std::endl;
@@ -796,7 +796,7 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
     }
     os << "}" <<std::endl;
 #endif
-#if 0 
+#if 0
     os << "Recursive Dependencies { " << std::endl;
     for(size_t i = full?0:ID_START; i< depends_recursive.size();i++){
         auto o = (*pool)[i];
@@ -809,7 +809,7 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
             break;
         }
         if(!empty){
-            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends_recursive[i] << std::endl; 
+            os << "\t" << "Object " << o->getName() << "(" << o->getID() << ") is depending on:"  << depends_recursive[i] << std::endl;
             for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
                 if(j.val() < ID_START && !full) continue;
                 os  << "\t" << "- " << j.val() << " " <<  (*pool)[j.val()]->getName() << std::endl;
@@ -851,7 +851,7 @@ ClassSolution* ClassSolution::babSearch(Pool *pool)
     //DFS<ClassSolution> e(so);
     // search
     ClassSolution* best = NULL;
-    
+
     while (ClassSolution* s = e.next()){
         if(best != NULL)
         {
@@ -864,8 +864,8 @@ ClassSolution* ClassSolution::babSearch(Pool *pool)
         //std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         best = s;
 
-    } 
-    
+    }
+
     // throw exception if there is no solution
     if(best == NULL)
     {
