@@ -7,10 +7,6 @@
 #include "Component.hpp"
 #include "PortHandler.hpp"
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-
-//BOOST_CLASS_EXPORT(constrained_based_networks::Component)
 
 
 #include <gecode/int.hh>
@@ -30,19 +26,8 @@ protected:
      *
      * empty means not configured / no constraint on configuration.
      */
-    std::vector<std::string> configurations;
+    //std::vector<std::string> configurations;
 
-private:
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version){
-            for(auto f : fullfillments)
-                ar & f;
-            ar & active;
-            ar & name;
-            for(auto c : configurations)
-                ar & c;
-    }
 
 public:
     /**
@@ -57,7 +42,7 @@ public:
     Task(std::string name) ;
 
     SpecializedComponentBase* getSpecialized();
-
+/*
     void addConfig(std::string name, std::string value){
         if(auto c = dynamic_cast<Task*>(this)){
             c->addConfig(name,value);
@@ -65,6 +50,7 @@ public:
             throw std::runtime_error("Called addConfig on invalid class");
         }
     }
+    */
 
 
     /**
@@ -86,7 +72,7 @@ public:
      * Set the name
      */
     void setName(const std::string& name);
-
+#if 0
     /**
      * Get the configuration
      */
@@ -96,7 +82,7 @@ public:
      * Push back a configuration value
      */
     void setConfiguration(const std::vector<std::string>& configuration);
-
+#endif
     bool abstract() const{return false;};
 
 };

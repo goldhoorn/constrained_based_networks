@@ -364,6 +364,7 @@ int main(int argc, char* argv[]) {
 
 
     pool = Pool::getInstance();
+    pool->mergeDoubles();
     /*
     std::cout << "Have compositions: " << pool->getItems<Composition*>().size() << std::endl;
     for(auto c :  pool->getItems<Composition*>()){

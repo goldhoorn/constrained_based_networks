@@ -22,6 +22,15 @@ Pool* Pool::getInstance()
     return pool;
 }
 
+/*
+void Pool::updateLookups(){
+    getItems<Composition*>();
+    getItems<Component*>();
+    getItems<Task*>();
+    getItems<SpecializedComponentBase*>();
+}
+*/
+
 
 Pool::Pool(){
 }
@@ -35,6 +44,44 @@ Component* Pool::getComponent(std::string name){
     throw std::invalid_argument(name + " is unknown as component");
 }
 
+void Pool::mergeDoubles(){
+    std::vector<Component*> new_components;
+    for(size_t i =0; i< components.size();i++){
+        auto c = components[i];
+        auto spec = dynamic_cast<SpecializedComponentBase*>(c);
+        if(spec){
+            bool valid = true;
+            for(auto existing : new_components){
+                if(spec->getComponent()->getName() == existing->getName()){
+                    auto cmp = dynamic_cast< SpecializedComponent<Composition> *>(existing);
+                    if(!cmp){
+                        //We found the base-class of this specialized one
+                    }else{
+                        if(cmp->configuration == spec->configuration){
+                            //Skip this it already is part of the database, we can stop heres
+                            valid = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            if(valid){
+                new_components.push_back(c);
+            }
+        }else{
+            new_components.push_back(c);
+        }
+    }
+    for(size_t i=0; i<new_components.size(); i++){
+        auto &c = new_components[i];
+        printf("Component: %s, %u, %lu\n",c->getName().c_str(),c->id, i);
+        c->id = i;
+    }
+    components = new_components;
+    component_helper.clear();
+    component_names.clear();
+}
+
 void Pool::addComponent(Component *c){
     auto b = dynamic_cast<SpecializedComponentBase*>(c);
     if(b){
@@ -43,9 +90,13 @@ void Pool::addComponent(Component *c){
         c->id = components.size();
     }
     components.push_back(c);
+    component_helper.clear();
+    component_names.clear();
 }
 
 unsigned int Pool::getId(const Component* obj) const{
+    return obj->getID();
+/*
     unsigned int erg=0;
     for(auto c : components){
         if(c == obj){
@@ -54,6 +105,7 @@ unsigned int Pool::getId(const Component* obj) const{
         erg++;
     }
     throw std::invalid_argument("Cannot get index for requested object");
+*/
 }
 
 unsigned int Pool::getComponentCount()
