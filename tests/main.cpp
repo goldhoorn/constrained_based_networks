@@ -5,7 +5,7 @@
 #include <constrained_based_networks/ClassSolution.hpp>
 #include <constrained_based_networks/InstanceSolution.hpp>
 #include <constrained_based_networks/SpecializedComponent.hpp>
-
+#include <graph_analysis/GraphIO.hpp>
 #include "dump.hpp"
 
 using namespace constrained_based_networks;
@@ -40,6 +40,7 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
     }
 
     c->setActive(true);
+    /*
     if(!dynamic_cast<SpecializedComponentBase *>(c)){
         throw std::runtime_error("I currently want a specialized\n");
     }else{
@@ -47,6 +48,7 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
         std::cout << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getName() << ": " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getID() << std::endl;
         std::cout << "pointer in main: " << c  << " | " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent() << std::endl;
     }
+    */
 /*
     for(auto c : pool->getItems<Component*>()){
         auto d = dynamic_cast<SpecializedComponentBase*>(c);
@@ -362,6 +364,13 @@ int main(int argc, char* argv[]) {
 
 
     pool = Pool::getInstance();
+    /*
+    std::cout << "Have compositions: " << pool->getItems<Composition*>().size() << std::endl;
+    for(auto c :  pool->getItems<Composition*>()){
+        std::cout << c->getName() << std::endl;
+    }
+    return 0;
+    */
     //std::string name("Base::WorldXYPositionControllerSrv");
     //std::string name("AuvCont::WorldXYPositionCmp");
 //    std::string name("Pipeline::Detector_new"); //Nicht ok!!!
@@ -385,10 +394,13 @@ int main(int argc, char* argv[]) {
     //pool->getComponent("AuvControl::DepthFusionCmp")->setActive(true);
 
     //try{
+    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
     auto s = resolve(pool->getComponent(name),resolve_nonresolveable,debug);
     if(s){
-        auto is = InstanceSolution::babSearch(s, pool);
-        (void)is;
+        s->build_tree(graph, 0);
+        graph_analysis::io::GraphIO::write("output.dot",graph,graph_analysis::representation::GRAPHVIZ);
+//        auto is = InstanceSolution::babSearch(s, pool);
+//        (void)is;
     }else{
         std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;
     }

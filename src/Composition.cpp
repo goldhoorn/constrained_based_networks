@@ -13,6 +13,7 @@ Composition::Composition(std::string name)
 {
     this->name = name;
     cmp_id = pool->getItems<Composition*>().size()-1;
+    std::cout << "Creating composition: " << name << std::endl;
 }
 
 bool Composition::operator ==( const Composition &comp ) const
@@ -23,16 +24,17 @@ bool Composition::operator ==( const Composition &comp ) const
 std::string Composition::toString() const
 {
     std::ostringstream ss;
-    ss << "Composition " << name << ".\n";
+    ss << name;
     /*
-    ss << "  Configuration: [";
-    for(int i = 0; i < configurations.size(); i++)
-    {
-        ss << configurations[i] << " ";
+    if (configurations.size() != 0){
+        ss << "  Configuration: [";
+        for(int i = 0; i < configurations.size(); i++)
+        {
+            ss << configurations[i] << " ";
+        }
+        ss << "]" << std::endl;
     }
-    ss << "]\n";
     */
-
     return ss.str();
 }
 

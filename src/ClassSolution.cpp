@@ -15,7 +15,6 @@
 #include <fstream>
 
 #include <gecode/gist.hh>
-
 using namespace Gecode;
 
 #define REMOVE_REC
@@ -127,6 +126,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
 #endif
 {
+    std::cout << "Hallo" << __LINE__ << std::endl;
 /*
     std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
     std::cout << "Got " << pool->getItems<Composition*>().size() << "Compositions" << std::endl;
@@ -169,7 +169,8 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
                     */
 //        std::cout << "Processing composition " << composition->getName() << " (" << cmp_counter << ")" << std::endl;
         auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
-
+        std::cout << "Hallo" << __LINE__ << std::endl;
+        std::cout << "Counter vs max: " << cmp_counter << "/" << compositions.size() << std::endl;
         markCompositionAsChildless(composition, cmp_counter);
 
         for(size_t child_id = 0; child_id != composition->getChildren().size(); child_id++){
@@ -236,6 +237,8 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
 //        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
         ir_assignments.push_back(composition_child_constraints);
     }
+    
+    std::cout << "Hallo" << __LINE__ << std::endl;
 
 #if 1
     //No composition can directly be assigned as parent to another one becasue this would create a loop in the dependancy graph
@@ -259,6 +262,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
 #endif
 
 
+    std::cout << "Hallo" << __LINE__ << std::endl;
 
     markInactiveAsInactive();
     branch(*this, active[ID_ROOT_KNOT], INT_VAL_MIN());
@@ -328,6 +332,43 @@ bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &id
         }else{
 //            std::cout << "Unresolved: " << (*pool)[i]->getName() << std::endl;
             return false;
+        }
+    }
+    return true;
+}
+
+
+bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cmp_id){
+    for(size_t i =0;i< ir_assignments[cmp_id].size();i++){
+        if(ir_assignments[cmp_id][i].assigned()){
+            unsigned int id = ir_assignments[cmp_id][i].val();
+            auto c = (*pool)[id];
+
+            graph_analysis::Vertex::Ptr source(pool->getItems<Composition*>()[cmp_id]);
+            graph_analysis::Vertex::Ptr target(c);
+            graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+            e->setSourceVertex(source);
+            e->setTargetVertex(target);
+            g->addEdge(e);
+
+            if(auto cmp = dynamic_cast<Composition*>(c)){
+                /* //We don't need this check here was already done before
+                for(auto id2 : ids) if(id == id2){
+                    std::cout << "This cannot be we depend and outself?" << std::endl;
+                    //this is a failure posting invalid constrain
+                    rel(*this, active[0],IRT_EQ, 1);
+                    rel(*this, active[1],IRT_EQ, 0);
+                    return false; //TODO forbit this solution
+                }
+                */
+                //ids.push_back(id);
+                build_tree(g,cmp->getCmpID());
+            }else{
+                //Nothing to do, the child is a leaf, which got added by the block before this if
+                //
+            }
+        }else{
+            std::cout << "Unresolved: " << (*pool)[i]->getName() << std::endl;
         }
     }
     return true;

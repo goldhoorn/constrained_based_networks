@@ -31,12 +31,12 @@ std::string Task::toString() const
 {
     std::ostringstream ss;
 //    ss << "Task " << name << " of type " << type << ".\n";
-    ss << "  Configuration: [";
+    ss << name << "  Configuration: [";
     for(int i = 0; i < configurations.size(); i++)
     {
         ss << configurations[i] << " ";
     }
-    ss << "]\n";
+    ss << "]";
 
     return ss.str();
 }
@@ -47,7 +47,7 @@ int Task::getType() const
 }
 */
 
-const std::string& Task::getName() const
+std::string Task::getName() const
 {
     return name;
 }

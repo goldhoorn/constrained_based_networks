@@ -41,7 +41,7 @@ set(Gecode_LIBRARIES
 rock_library(${PROJECT_NAME} 
     SOURCES ${SOURCES}
     HEADERS ${HEADERS}
-    DEPS_PKGCONFIG base-lib owlapi
+    DEPS_PKGCONFIG base-lib owlapi graph_analysis
     LIBS ${Gecode_LIBRARIES} ${Boost_LIBRARIES}
 )
 

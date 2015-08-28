@@ -80,7 +80,7 @@ public:
     /**
      * Get the name
      */
-    const std::string& getName() const;
+    std::string getName() const;
 
     /**
      * Set the name

@@ -6,9 +6,7 @@
 #include <gecode/search.hh>
 #include "Pool.hpp"
 
-
 namespace constrained_based_networks {
-
     class Composition;
 
 #define CONSTRAIN
@@ -55,6 +53,7 @@ protected:
 
 public:
     std::vector<Gecode::IntVarArray> ir_assignments;
+    bool build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cmp_id);
 
     void compare(const Space& s, std::ostream& os) const;
     static int print_count;

@@ -8,4 +8,5 @@
   <depend package="base/cmake" />
   <depend package="base/types" />
   <depend package="knowledge_reasoning/owlapi" />
+  <depend package="tools/graph_analysis" />
 </package>

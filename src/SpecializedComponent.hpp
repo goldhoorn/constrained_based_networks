@@ -16,6 +16,7 @@ struct Configuration : public std::map<std::string,std::string>{
 //    std::vector<std::string> name;
 //    std::vector<std::string> value;
 
+
     void add(std::string _name, std::string _value){
         operator[](_name) = _value;
     }

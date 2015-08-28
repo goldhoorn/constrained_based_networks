@@ -73,7 +73,7 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
         auto c = (*pool)[i];
     }
 
-    teller.
+//    teller.
 
 
 #if 0
