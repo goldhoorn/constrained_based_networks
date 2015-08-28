@@ -11,74 +11,63 @@
 
 namespace constrained_based_networks {
 
+struct Configuration : public std::map<std::string, std::string> {
+  //    std::vector<std::string> name;
+  //    std::vector<std::string> value;
 
-struct Configuration : public std::map<std::string,std::string>{
-//    std::vector<std::string> name;
-//    std::vector<std::string> value;
-
-
-    void add(std::string _name, std::string _value){
-        operator[](_name) = _value;
-    }
+  void add(std::string _name, std::string _value) {
+    operator[](_name) = _value;
+  }
 };
 
+class SpecializedComponentBase : private boost::noncopyable {
+ public:
+  SpecializedComponentBase() {}
+  virtual ~SpecializedComponentBase() {}
 
-class SpecializedComponentBase : private boost::noncopyable{
-    public:
-    SpecializedComponentBase(){
-    }
-    virtual ~SpecializedComponentBase(){
-    }
+  Configuration configuration;
 
-    Configuration configuration;
+  void addConfig(std::string name, std::string value) {
+    configuration.add(name, value);
+  };
 
-    void addConfig(std::string name, std::string value){
-        configuration.add(name,value);
-    };
+  virtual constrained_based_networks::Component* getComponent() = 0;
+  virtual unsigned int getID() const = 0;
 
-    virtual constrained_based_networks::Component* getComponent() = 0;
-    virtual unsigned int getID() const = 0;
+  unsigned int id;
 
-    unsigned int id;
+  /*
+  operator const Component*() const{
+      std::cerr << "FUSEL" << std::endl;
+      return 0;
+  };
+  */
 
-    /*
-    operator const Component*() const{
-        std::cerr << "FUSEL" << std::endl;
-        return 0;
-    };
-    */
-
-    friend class Pool;
-
+  friend class Pool;
 };
 
-template<class T>
-class SpecializedComponent : public T, public SpecializedComponentBase{
-    public:
-    SpecializedComponent(T *t, Pool *pool): T(*t){
-        classScope=true;
-        pool->addComponent(this);
+template <class T>
+class SpecializedComponent : public T, public SpecializedComponentBase {
+ public:
+  SpecializedComponent(T* t, Pool* pool) : T(*t) {
+    classScope = true;
+    pool->addComponent(this);
+  }
+
+  virtual ~SpecializedComponent() {};
+
+  virtual constrained_based_networks::Component* getComponent() {
+    return this;
+  };
+
+  virtual unsigned int getID() const {
+    if (classScope) {
+      return T::getID();
+    } else {
+      return SpecializedComponentBase::id;
     }
+  };
 
-
-    virtual ~SpecializedComponent(){
-    };
-
-    virtual constrained_based_networks::Component* getComponent(){
-        return this;
-    };
-
-    virtual unsigned int getID() const{
-        if(classScope){
-            return T::getID();
-        }else{
-            return SpecializedComponentBase::id;
-        }
-    };
-
-    bool classScope;
-
-
+  bool classScope;
 };
-
 };
