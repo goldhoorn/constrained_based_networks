@@ -344,11 +344,9 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             unsigned int id = ir_assignments[cmp_id][i].val();
             auto c = (*pool)[id];
 
-            graph_analysis::Vertex::Ptr source(pool->getItems<Composition*>()[cmp_id]);
-            graph_analysis::Vertex::Ptr target(c);
             graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
-            e->setSourceVertex(source);
-            e->setTargetVertex(target);
+            e->setSourceVertex((pool->getItems<Composition*>()[cmp_id]->getPtr()));
+            e->setTargetVertex(c->getPtr());
             g->addEdge(e);
 
             if(auto cmp = dynamic_cast<Composition*>(c)){
