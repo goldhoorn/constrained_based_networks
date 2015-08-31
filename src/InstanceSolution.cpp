@@ -141,6 +141,58 @@ InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
 #endif
 #endif
 {
+
+
+    unsigned int usage_count[_pool->getCount<Component*>()];
+    memset(usage_count,0,sizeof(usage_count));
+
+
+    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    _cs->build_tree(graph,0);
+
+    //Search for the root_knot first
+    graph_analysis::Vertex::Ptr root = 0;
+    for(auto node : graph->getAllVertices()){
+        auto component = dynamic_cast<Component*>(node.get());
+        if(component->getID() == 0){ //This is the root_know we need this later
+            root = node;
+        }
+    }
+
+    for(auto node : graph->getAllVertices()){
+        auto component = dynamic_cast<Component*>(node.get());
+        if(!component){
+            throw std::runtime_error("Cannot get component from graph");
+        }
+        auto cmp = dynamic_cast<Composition*>(component);
+        auto task = dynamic_cast<Task*>(component);
+        auto spec_cmp = dynamic_cast<SpecializedComponentBase*>(component);
+        if(cmp){
+            std::cout << "I'm having a composition here"  <<  cmp->getName() << std::endl;
+        }
+        if(spec_cmp){
+            std::cout << "I'm having a specialized here"  <<  spec_cmp->getComponent()->getName() << std::endl;
+        }
+        if(task){
+            std::cout << "I'm having a task here"  <<  task->getName() << " id: " << graph->getVertexId(node) << std::endl;
+            usage_count[task->getID()]++;
+        }
+    }
+
+    //Save all possible configurations a component can have
+    //We save all possible occurances of a component a different set of configurations
+    //The index refers to the index of the tree, furthermore we need a array to combine existing components into one component
+
+    // Wen need somthieng:
+    // a) to link two components (same config) based on tree-id's
+    // b) to save the configs of components (tree-id vs. config)
+    // b.1) needs to linked against one 'real' component (link against tree-id)
+    
+
+
+
+    return;
+
     //Initialize internal structure
     instance_components.resize(pool->size());
     for(size_t i =0;i< pool->size();i++){

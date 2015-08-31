@@ -18,8 +18,9 @@ namespace constrained_based_networks {
 
 struct InstanceComponent{
 public:
-    InstanceComponent(){
-        usage_count=0;
+    InstanceComponent(unsigned int tree_id):
+        tree_id(tree_id)
+    {
         finalized = false;
     };
 
@@ -90,7 +91,7 @@ protected:
     Component *underlaying_component;
     size_t usage_count;
     bool finalized;
-
+    unsigned int tree_id;
 };
 
 /**

@@ -50,21 +50,10 @@ class Pool {
 
     template <typename T>
     std::vector<T> getItems(bool first = true) {
-        int id = -1;
         for (size_t i = 0; i < component_names.size(); i++) {
             if (component_names[i] == typeid(T).name()) {
-                id = i;
+                return *reinterpret_cast< std::vector<T>* >(&component_helper[i]);
             }
-        }
-        if (id != -1) {
-            /*
-            void* foo = &component_helper[id];
-            std::vector<T>* bla = (std::vector<T>*)foo;
-            return *bla;
-            */
-
-            //return *((std::vector<T>*)((void*)&component_helper[id]));
-            return *reinterpret_cast< std::vector<T>* >(&component_helper[id]);
         }
 
         std::vector<Component*> erg;
