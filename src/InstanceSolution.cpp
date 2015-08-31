@@ -22,55 +22,57 @@ using namespace Gecode;
 
 namespace constrained_based_networks {
 
-void InstanceComponent::addLimitation(Gecode::Space &space, std::string name, std::string value, size_t cnt)
-{
+void InstanceComponent::addLimitation(Gecode::Space& space, std::string name,
+                                      std::string value, size_t cnt) {
     auto i = int_config[cnt].find(name);
     auto b = bool_config[cnt].find(name);
     auto d = float_config[cnt].find(name);
-    if(i != int_config[cnt].end()){
+    if (i != int_config[cnt].end()) {
         std::cout << "hallo int" << std::endl;
-        rel(space,i->second, IRT_EQ, atoi(value.c_str()));
-    }else if(b != bool_config[cnt].end()){
+        rel(space, i->second, IRT_EQ, atoi(value.c_str()));
+    } else if (b != bool_config[cnt].end()) {
         std::cout << "hallo bool" << std::endl;
-        rel(space,b->second, IRT_EQ, atoi(value.c_str()) != 0);
-    }else if(d != float_config[cnt].end()){
+        rel(space, b->second, IRT_EQ, atoi(value.c_str()) != 0);
+    } else if (d != float_config[cnt].end()) {
         std::cout << "hallo float" << std::endl;
-        rel(space,b->second, IRT_EQ, atof(value.c_str()));
-    }else{
-        throw std::invalid_argument("Configuration attribute with " + name + " is unknown");
+        rel(space, b->second, IRT_EQ, atof(value.c_str()));
+    } else {
+        throw std::invalid_argument("Configuration attribute with " + name +
+                                    " is unknown");
     }
 }
 
-
-void InstanceSolution::createFlattendIDs(Composition* cmp, unsigned int next_free_id){
+void InstanceSolution::createFlattendIDs(Composition* cmp,
+                                         unsigned int next_free_id) {
     auto cmp_id = cmp->getCmpID();
     instance_components[cmp->getID()].add_flattend_use_id(next_free_id++);
 
-    for(size_t i =0;i< cs->ir_assignments[cmp_id].size();i++){
-        if(cs->ir_assignments[cmp_id][i].assigned()){
+    for (size_t i = 0; i < cs->ir_assignments[cmp_id].size(); i++) {
+        if (cs->ir_assignments[cmp_id][i].assigned()) {
             unsigned int id = cs->ir_assignments[cmp_id][i].val();
             auto c = (*pool)[id];
 
-            if(auto child_cmp = dynamic_cast<Composition*>(c)){
+            if (auto child_cmp = dynamic_cast<Composition*>(c)) {
                 createFlattendIDs(child_cmp, next_free_id);
-                //Increase is down in recursion
-            }else{
-                //leaf
-                instance_components[c->getID()].add_flattend_use_id(next_free_id++);
+                // Increase is down in recursion
+            } else {
+                // leaf
+                instance_components[c->getID()]
+                    .add_flattend_use_id(next_free_id++);
             }
-        }else{
+        } else {
             throw std::runtime_error("This shoult not happen");
         }
     }
 }
 
-
-void InstanceSolution::limitConfigs(Composition* cmp, unsigned int next_free_id){
-    if(cmp->isActive()){
+void InstanceSolution::limitConfigs(Composition* cmp,
+                                    unsigned int next_free_id) {
+    if (cmp->isActive()) {
         std::cout << cmp->getName();
-        if(auto child_cmp = dynamic_cast<SpecializedComponentBase*>(cmp)){
+        if (auto child_cmp = dynamic_cast<SpecializedComponentBase*>(cmp)) {
             std::cout << "Is specialized" << std::endl;
-        }else{
+        } else {
             std::cout << "Is NOT specialized" << std::endl;
         }
     }
@@ -78,35 +80,32 @@ void InstanceSolution::limitConfigs(Composition* cmp, unsigned int next_free_id)
     auto cmp_id = cmp->getCmpID();
     instance_components[cmp->getID()].add_flattend_use_id(next_free_id++);
 
-    if(auto sc = dynamic_cast<SpecializedComponentBase*>(cmp)){
-            printf("huhu\n");
-//        auto c = (Component*)sc;
-        for(auto c : sc->configuration){
+    if (auto sc = dynamic_cast<SpecializedComponentBase*>(cmp)) {
+        printf("huhu\n");
+        //        auto c = (Component*)sc;
+        for (auto c : sc->configuration) {
             std::string name = c.first;
             std::string value = c.second;
-            instance_components[cmp->getID()].addLimitation(*this, name,value,0);
+            instance_components[cmp->getID()]
+                .addLimitation(*this, name, value, 0);
         }
     }
 
-
-
-
-    for(size_t i =0;i< cs->ir_assignments[cmp_id].size();i++){
-        if(cs->ir_assignments[cmp_id][i].assigned()){
+    for (size_t i = 0; i < cs->ir_assignments[cmp_id].size(); i++) {
+        if (cs->ir_assignments[cmp_id][i].assigned()) {
             unsigned int id = cs->ir_assignments[cmp_id][i].val();
             auto c = (*pool)[id];
 
-            if(auto child_cmp = dynamic_cast<Composition*>(c)){
-
-
+            if (auto child_cmp = dynamic_cast<Composition*>(c)) {
 
                 limitConfigs(child_cmp, next_free_id);
-                //Increase is down in recursion
-            }else{
-                //leaf
-                instance_components[c->getID()].add_flattend_use_id(next_free_id++);
+                // Increase is down in recursion
+            } else {
+                // leaf
+                instance_components[c->getID()]
+                    .add_flattend_use_id(next_free_id++);
             }
-        }else{
+        } else {
             throw std::runtime_error("This shoult not happen");
         }
     }
@@ -129,10 +128,9 @@ void InstanceSolution::limitComponents(unsigned int cmp_id){
 }
 */
 
-
-InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
-    :pool(_pool),
-    cs(_cs)
+InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
+    : pool(_pool),
+      cs(_cs)
 #if 0
     , active(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
@@ -142,72 +140,79 @@ InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
 #endif
 {
 
-
     unsigned int usage_count[_pool->getCount<Component*>()];
-    memset(usage_count,0,sizeof(usage_count));
+    memset(usage_count, 0, sizeof(usage_count));
 
+    graph_analysis::BaseGraph::Ptr graph =
+        graph_analysis::BaseGraph::getInstance(
+            graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    _cs->build_tree(graph, 0);
 
-    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-    _cs->build_tree(graph,0);
-
-    //Search for the root_knot first
+    // Search for the root_knot first
     graph_analysis::Vertex::Ptr root = 0;
-    for(auto node : graph->getAllVertices()){
+    for (auto node : graph->getAllVertices()) {
         auto component = dynamic_cast<Component*>(node.get());
-        if(component->getID() == 0){ //This is the root_know we need this later
+        if (component->getID() ==
+            0) {  // This is the root_know we need this later
             root = node;
         }
     }
 
-    for(auto node : graph->getAllVertices()){
+    for (auto node : graph->getAllVertices()) {
         auto component = dynamic_cast<Component*>(node.get());
-        if(!component){
+        if (!component) {
             throw std::runtime_error("Cannot get component from graph");
         }
         auto cmp = dynamic_cast<Composition*>(component);
         auto task = dynamic_cast<Task*>(component);
         auto spec_cmp = dynamic_cast<SpecializedComponentBase*>(component);
-        if(cmp){
-            std::cout << "I'm having a composition here"  <<  cmp->getName() << std::endl;
+        if (cmp) {
+            std::cout << "I'm having a composition here" << cmp->getName()
+                      << std::endl;
         }
-        if(spec_cmp){
-            std::cout << "I'm having a specialized here"  <<  spec_cmp->getComponent()->getName() << std::endl;
+        if (spec_cmp) {
+            std::cout << "I'm having a specialized here"
+                      << spec_cmp->getComponent()->getName() << std::endl;
         }
-        if(task){
-            std::cout << "I'm having a task here"  <<  task->getName() << " id: " << graph->getVertexId(node) << std::endl;
+        if (task) {
+            std::cout << "I'm having a task here" << task->getName()
+                      << " id: " << graph->getVertexId(node) << std::endl;
             usage_count[task->getID()]++;
         }
     }
 
-    //Save all possible configurations a component can have
-    //We save all possible occurances of a component a different set of configurations
-    //The index refers to the index of the tree, furthermore we need a array to combine existing components into one component
+    // Save all possible configurations a component can have
+    // We save all possible occurances of a component a different set of
+    // configurations
+    // The index refers to the index of the tree, furthermore we need a array to
+    // combine existing components into one component
 
     // Wen need somthieng:
     // a) to link two components (same config) based on tree-id's
     // b) to save the configs of components (tree-id vs. config)
     // b.1) needs to linked against one 'real' component (link against tree-id)
-    
-
-
 
     return;
 
-    //Initialize internal structure
+    // Initialize internal structure
     instance_components.resize(pool->size());
-    for(size_t i =0;i< pool->size();i++){
+    for (size_t i = 0; i < pool->size(); i++) {
         auto c = pool->operator[](i);
         instance_components[c->getID()].initialize(c);
     };
 
-    //We need to run throught the tree of all nodes and figure out all needed configs, we create here
-    for(size_t p = 0; p < cs->ir_assignments.size();p++){
-        //Composition *parent = pool->getItems<Composition*>()[p];
+    // We need to run throught the tree of all nodes and figure out all needed
+    // configs, we create here
+    for (size_t p = 0; p < cs->ir_assignments.size(); p++) {
+        // Composition *parent = pool->getItems<Composition*>()[p];
 
-        for(auto t : cs->ir_assignments[p]){
-            if(!t.assigned()) throw std::runtime_error("This shold never happen here that we have unassigned solutions");
-            //std::cout << "HAve val: " << t.val() << std::endl;
-            Component *child= pool->getItems<Component*>()[t.val()];
+        for (auto t : cs->ir_assignments[p]) {
+            if (!t.assigned())
+                throw std::runtime_error(
+                    "This shold never happen here that we have unassigned "
+                    "solutions");
+            // std::cout << "HAve val: " << t.val() << std::endl;
+            Component* child = pool->getItems<Component*>()[t.val()];
             instance_components[child->getID()].increse_usage();
 
             /* TODO fix this
@@ -215,39 +220,44 @@ InstanceSolution::InstanceSolution(ClassSolution *_cs, Pool *_pool)
                 std::cerr << "Jeha we have a specalized component" << std::endl;
             }
             */
-            //usage_count[t.val()]++;
+            // usage_count[t.val()]++;
             continue;
         }
     }
 
-    for(auto c : instance_components){
-        //Finalize components means create internal structures for the constraints
+    for (auto c : instance_components) {
+        // Finalize components means create internal structures for the
+        // constraints
         c.finalize(*this);
     }
 
-    //First we need to flatten the graph to have a unique it from our helper components back to the graph-components
-    createFlattendIDs(dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)), 0); //First if is the root compositon, and we start at number 0
+    // First we need to flatten the graph to have a unique it from our helper
+    // components back to the graph-components
+    createFlattendIDs(
+        dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)),
+        0);  // First if is the root compositon, and we start at number 0
 
-    //Now it is the time to put the component constraints from the previously generated graph to the components
-    //We need to run througth the graph and post the constraints onto the components itself
-    limitConfigs(dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)), 0); //First if is the root compositon, and we start at number 0
+    // Now it is the time to put the component constraints from the previously
+    // generated graph to the components
+    // We need to run througth the graph and post the constraints onto the
+    // components itself
+    limitConfigs(
+        dynamic_cast<Composition*>(pool->operator[](ID_ROOT_KNOT)),
+        0);  // First if is the root compositon, and we start at number 0
 
-
-
-    //Now we have defined the upper limits time to limit the actual configurations while we running throught the tree of components
-    //limitComponents(0);
-
+    // Now we have defined the upper limits time to limit the actual
+    // configurations while we running throught the tree of components
+    // limitComponents(0);
 }
 
-
 #ifdef CONSTRAIN
-void InstanceSolution::constrain(const Space& _b)
-{
+void InstanceSolution::constrain(const Space& _b) {
     /*
     printf("In constrain block %i\n",print_count);
     printf("active is: %s\n", active_brancher(*this)?"active":"inactive");
     for(size_t i=0;i<ir_assignments_brancher.size();i++){
-        printf("ir_brancher[%lu] is: %s\n",i ,ir_assignments_brancher[i](*this)?"active":"inactive");
+        printf("ir_brancher[%lu] is: %s\n",i
+,ir_assignments_brancher[i](*this)?"active":"inactive");
     }
 
 //    this->brancher();
@@ -256,14 +266,13 @@ void InstanceSolution::constrain(const Space& _b)
     InstanceSolution::postBranching(*this);
     */
     return;
-
 }
 #endif
 
 InstanceSolution::InstanceSolution(bool share, InstanceSolution& s)
     : Space(share, s)
-    //, query(s.query)
-    //, componentPool(s.componentPool)
+      //, query(s.query)
+      //, componentPool(s.componentPool)
 {
     pool = s.pool;
     cs = s.cs;
@@ -280,13 +289,11 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution& s)
 #endif
 }
 
-Space* InstanceSolution::copy(bool share)
-{
-    return new InstanceSolution(share,*this);
+Space* InstanceSolution::copy(bool share) {
+    return new InstanceSolution(share, *this);
 }
 
-
-void InstanceSolution::compare(const Space& _s, std::ostream& os) const{
+void InstanceSolution::compare(const Space& _s, std::ostream& os) const {
 #if 0
     auto s = static_cast<const InstanceSolution&>(_s);
     char buff[512];
@@ -343,8 +350,7 @@ void InstanceSolution::compare(const Space& _s, std::ostream& os) const{
 #endif
 }
 
-void InstanceSolution::printToDot(std::ostream& os) const
-{
+void InstanceSolution::printToDot(std::ostream& os) const {
 #if 0
     Pool *pool = Pool::getInstance();
     /*
@@ -460,11 +466,9 @@ void InstanceSolution::printToDot(std::ostream& os) const
     print_count++;
 
 #endif
-
 }
 
-void InstanceSolution::printToStream(std::ostream& os, bool full) const
-{
+void InstanceSolution::printToStream(std::ostream& os, bool full) const {
 #if 0
     os << "Count: " << active.size() << std::endl;
 
@@ -557,39 +561,38 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
 #endif
 }
 
-InstanceSolution* InstanceSolution::babSearch2(ClassSolution *cs, Pool *pool)
-{
-    return InstanceSolution::babSearch(cs,pool);
+InstanceSolution* InstanceSolution::babSearch2(ClassSolution* cs, Pool* pool) {
+    return InstanceSolution::babSearch(cs, pool);
 }
 
-InstanceSolution* InstanceSolution::babSearch(ClassSolution *cs, Pool *pool)
-{
+InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs, Pool* pool) {
     // Initial situation
     InstanceSolution* so = new InstanceSolution(cs, pool);
     // BAB search engine
-    //BAB<InstanceSolution> e(so);
+    // BAB<InstanceSolution> e(so);
     BAB<InstanceSolution> e(so);
-    //DFS<InstanceSolution> e(so);
+    // DFS<InstanceSolution> e(so);
     // search
     InstanceSolution* best = NULL;
 
-    while (InstanceSolution* s = e.next()){
-        if(best != NULL)
-        {
+    while (InstanceSolution* s = e.next()) {
+        if (best != NULL) {
             delete best;
-            best=0;
+            best = 0;
         }
         // Save current solution as best
-        //s->rprint();
-        //std::cout << "------------------------------------------------------------------------------------------" << std::endl;
-        //std::cout << "------------------------------------------------------------------------------------------" << std::endl;
+        // s->rprint();
+        // std::cout <<
+        // "------------------------------------------------------------------------------------------"
+        // << std::endl;
+        // std::cout <<
+        // "------------------------------------------------------------------------------------------"
+        // << std::endl;
         best = s;
-
     }
 
     // throw exception if there is no solution
-    if(best == NULL)
-    {
+    if (best == NULL) {
         delete so;
         throw std::runtime_error("InstanceSolution babSearch: No solutions");
     }
@@ -597,9 +600,10 @@ InstanceSolution* InstanceSolution::babSearch(ClassSolution *cs, Pool *pool)
     return best;
 }
 
-InstanceSolution *InstanceSolution::gistBaBSeach(ClassSolution *cs, Pool *pool){
-    InstanceSolution* m = new InstanceSolution(cs,pool);
-    //InstanceSolution* m = InstanceSolution::babSearch(Pool::getInstance());
+InstanceSolution* InstanceSolution::gistBaBSeach(ClassSolution* cs,
+                                                 Pool* pool) {
+    InstanceSolution* m = new InstanceSolution(cs, pool);
+    // InstanceSolution* m = InstanceSolution::babSearch(Pool::getInstance());
     Gist::Print<InstanceSolution> printer("Print solution");
     Gist::VarComparator<InstanceSolution> c("Compare nodes");
     Gist::Options o;
@@ -608,9 +612,8 @@ InstanceSolution *InstanceSolution::gistBaBSeach(ClassSolution *cs, Pool *pool){
     o.threads = 4;
     o.inspect.click(&printer);
     o.inspect.compare(&c);
-    Gist::bab(m,o);
+    Gist::bab(m, o);
     return m;
 }
 
-} // end namespace constrained_based_networks
-
+}  // end namespace constrained_based_networks
