@@ -16,35 +16,21 @@ class Composition;
 
 struct InstanceComponent_internal {
    public:
-    InstanceComponent_internal(unsigned int tree_id) : tree_id(tree_id) {
-        finalized = false;
+    InstanceComponent_internal(unsigned int tree_id, Component* c) : tree_id(tree_id), component(c) {
     };
 
 
-    void increse_usage() {
-        if (finalized)
-            throw std::runtime_error("InstanceComponent is already finalized");
-        usage_count++;
-    };
-
-    void initialize(Component* c) {
-        if (finalized)
-            throw std::runtime_error("InstanceComponent is already finalized");
-        underlaying_component = c;
-    }
 
     void addLimitation(Gecode::Space& space, std::string name,
                        std::string value, size_t cnt);
 
     void finalize(Gecode::Space& space) {
-        if (finalized)
-            throw std::runtime_error("InstanceComponent is already finalized");
-
+/*
         float_config.resize(usage_count);
         bool_config.resize(usage_count);
         int_config.resize(usage_count);
 
-        for (size_t i = 0; i < usage_count; i++) {
+       for (size_t i = 0; i < usage_count; i++) {
             for (auto prop : underlaying_component->getProperties()) {
                 switch (prop.t) {
                     case(ConfigurationModel::INT) : {
@@ -70,8 +56,8 @@ struct InstanceComponent_internal {
                 };
             }
         }
+        */
 
-        finalized = true;
     }
 
     void addLimitation(Gecode::Space& space) {}
@@ -80,8 +66,8 @@ struct InstanceComponent_internal {
         used_ids_in_flattend_graph.push_back(id);
     }
 
-    static std::shared_ptr<InstanceComponent_internal> NewInstanceComponent(unsigned int tree_id){
-        return std::shared_ptr<InstanceComponent_internal>(new InstanceComponent_internal(tree_id));
+    static std::shared_ptr<InstanceComponent_internal> NewInstanceComponent(unsigned int tree_id, Component *c){
+        return std::shared_ptr<InstanceComponent_internal>(new InstanceComponent_internal(tree_id,c));
     }
 
    protected:
@@ -89,10 +75,9 @@ struct InstanceComponent_internal {
     std::vector<std::map<std::string, Gecode::BoolVar>> bool_config;
     std::vector<std::map<std::string, Gecode::IntVar>> int_config;
     std::vector<unsigned int> used_ids_in_flattend_graph;
-    Component* underlaying_component;
-    size_t usage_count;
-    bool finalized;
+
     unsigned int tree_id;
+    Component* component;
 };
 
 typedef std::shared_ptr<InstanceComponent_internal> InstanceComponent;
@@ -102,6 +87,11 @@ typedef std::shared_ptr<InstanceComponent_internal> InstanceComponent;
  */
 class InstanceSolution : public Gecode::Space {
    protected:
+
+
+    std::vector<std::map <std::string, Gecode::FloatVar> > float_config;
+    std::vector<std::map <std::string, Gecode::BoolVar > > bool_config;
+    std::vector<std::map <std::string, Gecode::IntVar  > > int_config;
     /**
      * The query to compute solutions for.
      */

@@ -20,10 +20,11 @@ using namespace Gecode;
 
 #define REMOVE_REC
 
-namespace constrained_based_networks {
+namespace constrained_based_networks
+{
 
-void InstanceComponent_internal::addLimitation(Gecode::Space& space, std::string name,
-                                      std::string value, size_t cnt) {
+void InstanceComponent_internal::addLimitation(Gecode::Space& space, std::string name, std::string value, size_t cnt)
+{
     auto i = int_config[cnt].find(name);
     auto b = bool_config[cnt].find(name);
     auto d = float_config[cnt].find(name);
@@ -37,13 +38,12 @@ void InstanceComponent_internal::addLimitation(Gecode::Space& space, std::string
         std::cout << "hallo float" << std::endl;
         rel(space, b->second, IRT_EQ, atof(value.c_str()));
     } else {
-        throw std::invalid_argument("Configuration attribute with " + name +
-                                    " is unknown");
+        throw std::invalid_argument("Configuration attribute with " + name + " is unknown");
     }
 }
 
-void InstanceSolution::createFlattendIDs(Composition* cmp,
-                                         unsigned int next_free_id) {
+void InstanceSolution::createFlattendIDs(Composition* cmp, unsigned int next_free_id)
+{
     auto cmp_id = cmp->getCmpID();
     instance_components[cmp->getID()]->add_flattend_use_id(next_free_id++);
 
@@ -57,8 +57,7 @@ void InstanceSolution::createFlattendIDs(Composition* cmp,
                 // Increase is down in recursion
             } else {
                 // leaf
-                instance_components[c->getID()]
-                    ->add_flattend_use_id(next_free_id++);
+                instance_components[c->getID()]->add_flattend_use_id(next_free_id++);
             }
         } else {
             throw std::runtime_error("This shoult not happen");
@@ -66,8 +65,8 @@ void InstanceSolution::createFlattendIDs(Composition* cmp,
     }
 }
 
-void InstanceSolution::limitConfigs(Composition* cmp,
-                                    unsigned int next_free_id) {
+void InstanceSolution::limitConfigs(Composition* cmp, unsigned int next_free_id)
+{
     if (cmp->isActive()) {
         std::cout << cmp->getName();
         if (auto child_cmp = dynamic_cast<SpecializedComponentBase*>(cmp)) {
@@ -86,8 +85,7 @@ void InstanceSolution::limitConfigs(Composition* cmp,
         for (auto c : sc->configuration) {
             std::string name = c.first;
             std::string value = c.second;
-            instance_components[cmp->getID()]
-                ->addLimitation(*this, name, value, 0);
+            instance_components[cmp->getID()]->addLimitation(*this, name, value, 0);
         }
     }
 
@@ -102,8 +100,7 @@ void InstanceSolution::limitConfigs(Composition* cmp,
                 // Increase is down in recursion
             } else {
                 // leaf
-                instance_components[c->getID()]
-                    ->add_flattend_use_id(next_free_id++);
+                instance_components[c->getID()]->add_flattend_use_id(next_free_id++);
             }
         } else {
             throw std::runtime_error("This shoult not happen");
@@ -128,9 +125,7 @@ void InstanceSolution::limitComponents(unsigned int cmp_id){
 }
 */
 
-InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
-    : pool(_pool),
-      cs(_cs)
+InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool) : pool(_pool), cs(_cs)
 #if 0
     , active(*this, pool->getComponentCount(), 0, 1)
     , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
@@ -143,20 +138,24 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
     unsigned int usage_count[_pool->getCount<Component*>()];
     memset(usage_count, 0, sizeof(usage_count));
 
-    graph_analysis::BaseGraph::Ptr graph =
-        graph_analysis::BaseGraph::getInstance(
-            graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
     _cs->build_tree(graph, 0);
 
     // Search for the root_knot first
     graph_analysis::Vertex::Ptr root = 0;
     for (auto node : graph->getAllVertices()) {
         auto component = dynamic_cast<Component*>(node.get());
-        if (component->getID() ==
-            0) {  // This is the root_know we need this later
+        if (component->getID() == 0) {  // This is the root_know we need this later
             root = node;
         }
     }
+
+    // We create ONE config per element in graph, ignoring if we merge some of them
+    // This includes all compositions, because we need to constrain the composition
+    // configs to propagate the constrains until we reach a leaf (aka TaskContext)
+    float_config.resize(graph->getAllVertices().size());
+    bool_config.resize(graph->getAllVertices().size());
+    int_config.resize(graph->getAllVertices().size());
 
     for (auto node : graph->getAllVertices()) {
         auto component = dynamic_cast<Component*>(node.get());
@@ -167,17 +166,106 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
         auto task = dynamic_cast<Task*>(component);
         auto spec_cmp = dynamic_cast<SpecializedComponentBase*>(component);
         if (cmp) {
-            std::cout << "I'm having a composition here" << cmp->getName()
-                      << std::endl;
+            for(auto cfg : cmp->getProperties()){
+                switch(cfg.t){
+                    case constrained_based_networks::ConfigurationModel::INT:
+                        {
+                            try{
+                                int_config[graph->getVertexId(node)].at(cfg.name);
+                            }catch(std::out_of_range e){
+                                //Ok, propetry it is not yet created, let's create one
+                                auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
+                                int_config[graph->getVertexId(node)][cfg.name] = var;
+                            }
+                            break;
+                        }
+                    case constrained_based_networks::ConfigurationModel::DOUBLE:
+                        {
+                            try{
+                                float_config[graph->getVertexId(node)].at(cfg.name);
+                            }catch(std::out_of_range e){
+                                //Ok, propetry it is not yet created, let's create one
+                                auto var = Gecode::FloatVar(*this, 0, Gecode::Float::Limits::max);
+                                float_config[graph->getVertexId(node)][cfg.name] = var;
+                            }
+                            break;
+                        }
+                    case constrained_based_networks::ConfigurationModel::BOOL:
+                        {
+                            try{
+                                bool_config[graph->getVertexId(node)].at(cfg.name);
+                            }catch(std::out_of_range e){
+                                //Ok, propetry it is not yet created, let's create one
+                                auto var = Gecode::BoolVar(*this, 0, 1);
+                                bool_config[graph->getVertexId(node)][cfg.name] = var;
+                            }
+                            break;
+                        }
+                    case constrained_based_networks::ConfigurationModel::STRING:
+                        {
+                            throw std::runtime_error("Not yet implemented");
+                            break;
+                        }
+                }
+            }
+
+            // So we need to propagate all entries here
+            auto edges = graph->getEdgeIterator(node);
+            while (edges->next()) {
+                auto child = dynamic_cast<Component*>(edges->current()->getTargetVertex().get());
+                for (auto forward : cmp->getArgumentForwards(child)) {
+                    if (child->getProperty(forward.second) != cmp->getProperty(forward.first)) {
+                        throw std::runtime_error("The properties of child and parend differ in type");
+                    }
+                    // Dont care which type we choose check is done before
+                    switch (child->getProperty(forward.second)) {
+                        case(constrained_based_networks::ConfigurationModel::INT) : {
+                            auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
+                            int_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
+                            auto var_source = int_config[graph->getVertexId(node)][forward.first];
+                            rel(*this, var, IRT_EQ, var_source);
+                            break;
+                        }
+                        case(constrained_based_networks::ConfigurationModel::STRING) : {
+                            throw std::runtime_error("String not yet implemented");
+                            break;
+                        }
+                        case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
+                            auto var = Gecode::FloatVar(*this, 0, Gecode::Float::Limits::max);
+                            float_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
+                            auto var_source = float_config[graph->getVertexId(node)][forward.first];
+                            rel(*this, var, FRT_EQ, var_source);
+                            break;
+                        }
+                        case(constrained_based_networks::ConfigurationModel::BOOL) : {
+                            auto var = Gecode::BoolVar(*this, 0, 1);
+                            bool_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
+                            auto var_source = bool_config[graph->getVertexId(node)][forward.first];
+                            rel(*this, var, IRT_EQ, var_source);
+                            break;
+                        }
+                    };
+                }
+            }
         }
         if (spec_cmp) {
-            std::cout << "I'm having a specialized here"
-                      << spec_cmp->getComponent()->getName() << std::endl;
+            std::cout << "I'm having a specialized here" << spec_cmp->getComponent()->getName() << std::endl;
         }
         if (task) {
-            std::cout << "I'm having a task here" << task->getName()
-                      << " id: " << graph->getVertexId(node) << std::endl;
-            usage_count[task->getID()]++;
+            /*
+            std::cout << "I'm having a task here" << task->getName() << " id: " << graph->getVertexId(node) << std::endl;
+
+            //            usage_count[task->getID()]++;
+            instance_components.push_back(InstanceComponent_internal::NewInstanceComponent(task->getID(), task));
+
+            // Walk throught all knots on this path to identify confiugration limitations
+            for (auto edge : graph->getEdges(root, node)) {
+                auto source = edge->getSourceVertex();
+                auto target = edge->getTargetVertex();
+                auto comp = dynamic_cast<Component*>(edge.get());
+
+            }
+            */
         }
     }
 
@@ -194,6 +282,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
 
     return;
 
+#if 0
     // Initialize internal structure
     instance_components.resize(pool->size());
     for (size_t i = 0; i < pool->size(); i++) {
@@ -248,10 +337,12 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
     // Now we have defined the upper limits time to limit the actual
     // configurations while we running throught the tree of components
     // limitComponents(0);
+#endif
 }
 
 #ifdef CONSTRAIN
-void InstanceSolution::constrain(const Space& _b) {
+void InstanceSolution::constrain(const Space& _b)
+{
     /*
     printf("In constrain block %i\n",print_count);
     printf("active is: %s\n", active_brancher(*this)?"active":"inactive");
@@ -269,10 +360,9 @@ void InstanceSolution::constrain(const Space& _b) {
 }
 #endif
 
-InstanceSolution::InstanceSolution(bool share, InstanceSolution& s)
-    : Space(share, s)
-      //, query(s.query)
-      //, componentPool(s.componentPool)
+InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(share, s)
+//, query(s.query)
+//, componentPool(s.componentPool)
 {
     pool = s.pool;
     cs = s.cs;
@@ -289,11 +379,13 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution& s)
 #endif
 }
 
-Space* InstanceSolution::copy(bool share) {
+Space* InstanceSolution::copy(bool share)
+{
     return new InstanceSolution(share, *this);
 }
 
-void InstanceSolution::compare(const Space& _s, std::ostream& os) const {
+void InstanceSolution::compare(const Space& _s, std::ostream& os) const
+{
 #if 0
     auto s = static_cast<const InstanceSolution&>(_s);
     char buff[512];
@@ -350,7 +442,8 @@ void InstanceSolution::compare(const Space& _s, std::ostream& os) const {
 #endif
 }
 
-void InstanceSolution::printToDot(std::ostream& os) const {
+void InstanceSolution::printToDot(std::ostream& os) const
+{
 #if 0
     Pool *pool = Pool::getInstance();
     /*
@@ -468,7 +561,8 @@ void InstanceSolution::printToDot(std::ostream& os) const {
 #endif
 }
 
-void InstanceSolution::printToStream(std::ostream& os, bool full) const {
+void InstanceSolution::printToStream(std::ostream& os, bool full) const
+{
 #if 0
     os << "Count: " << active.size() << std::endl;
 
@@ -561,11 +655,13 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const {
 #endif
 }
 
-InstanceSolution* InstanceSolution::babSearch2(ClassSolution* cs, Pool* pool) {
+InstanceSolution* InstanceSolution::babSearch2(ClassSolution* cs, Pool* pool)
+{
     return InstanceSolution::babSearch(cs, pool);
 }
 
-InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs, Pool* pool) {
+InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs, Pool* pool)
+{
     // Initial situation
     InstanceSolution* so = new InstanceSolution(cs, pool);
     // BAB search engine
@@ -600,8 +696,8 @@ InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs, Pool* pool) {
     return best;
 }
 
-InstanceSolution* InstanceSolution::gistBaBSeach(ClassSolution* cs,
-                                                 Pool* pool) {
+InstanceSolution* InstanceSolution::gistBaBSeach(ClassSolution* cs, Pool* pool)
+{
     InstanceSolution* m = new InstanceSolution(cs, pool);
     // InstanceSolution* m = InstanceSolution::babSearch(Pool::getInstance());
     Gist::Print<InstanceSolution> printer("Print solution");

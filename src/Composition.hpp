@@ -11,23 +11,26 @@
 #include <gecode/int.hh>
 #include <gecode/search.hh>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
+namespace constrained_based_networks
+{
 
-namespace constrained_based_networks {
+typedef std::vector<std::pair<std::string, std::string>> Forwards;
 
 /**
  * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,
  * on which it can be connected to other components.
  */
-class Composition : public constrained_based_networks::Component, public constrained_based_networks::PortHandler{
-protected:
+class Composition : public constrained_based_networks::Component, public constrained_based_networks::PortHandler
+{
+   protected:
     /**
      * The type as an int.
      */
     int type;
 
-    std::map<std::string, Component*> children;
+    std::map<std::string, Component *> children;
+    std::map<Component *, Forwards> argument_forwards;
+    std::map<Component *, Forwards> event_forwards;
 
     size_t cmp_id;
 
@@ -36,22 +39,9 @@ protected:
      *
      * empty means not configured / no constraint on configuration.
      */
-//    std::vector<std::string> configurations;
+    //    std::vector<std::string> configurations;
 
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version){
-        /*
-            ar & fullfillments;
-            ar & active;
-            ar & name;
-            ar & type;
-//            ar & children;
-            ar & configurations;
-            */
-    }
-
-public:
+   public:
     /**
      *Default constructor to be able to use components as map value type.
      */
@@ -60,27 +50,34 @@ public:
     /**
      * Construct component with type and name.
      */
-    Composition(std::string name) ;
+    Composition(std::string name);
 
-    SpecializedComponentBase* getSpecialized();
+    Forwards getArgumentForwards(Component *child);
+    Forwards getEventForwards(Component *child);
 
-    void addConfig(std::string name, std::string value){
-        if(auto c = dynamic_cast<Composition*>(this)){
-            c->addConfig(name,value);
-        }else{
+
+    SpecializedComponentBase *getSpecialized();
+    void addConfig(std::string name, std::string value)
+    {
+        if (auto c = dynamic_cast<Composition *>(this)) {
+            c->addConfig(name, value);
+        } else {
             throw std::runtime_error("Called addConfig on invalid class");
         }
     }
 
     Gecode::IntVarArray getPossibleTaskAssignments(Gecode::Space *space);
 
-    std::vector<std::pair<std::string, Component*> > getChildren();
-    //std::list<Component*> getChildren();
+    void addArgumentForwards(std::string child, std::string source, std::string target);
+    void addEventForwards(std::string child, std::string source, std::string target);
+
+    std::vector<std::pair<std::string, Component *>> getChildren();
+    // std::list<Component*> getChildren();
 
     /**
      * Components are equal if their name and type equal.
      */
-    bool operator ==( const Composition &comp ) const;
+    bool operator==(const Composition &comp) const;
 
     std::vector<std::string> unsolveableChildren();
 
@@ -103,12 +100,12 @@ public:
     /**
      * Get the name
      */
-    const std::string& getName() const;
+    const std::string &getName() const;
 
     /**
      * Set the name
      */
-    void setName(const std::string& name);
+    void setName(const std::string &name);
 #if 0
     /**
      * Get the configuration
@@ -125,10 +122,12 @@ public:
      */
     void addChild(Component *child, std::string name);
 
-    bool abstract() const{return false;};
-
+    bool abstract() const
+    {
+        return false;
+    };
 };
 
-} // end namespace constrained_based_networks
+}  // end namespace constrained_based_networks
 
-#endif // GECODE_COMPOSITION_MANAGEMENT_COMPONENT_H
+#endif  // GECODE_COMPOSITION_MANAGEMENT_COMPONENT_H

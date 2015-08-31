@@ -4,21 +4,43 @@
 #include "Pool.hpp"
 #include "SpecializedComponent.hpp"
 
-namespace constrained_based_networks {
+namespace constrained_based_networks
+{
 
-Composition::Composition(): Component(Pool::getInstance()) {}
+Composition::Composition() : Component(Pool::getInstance())
+{
+}
 
-Composition::Composition(std::string name)
-    : Component(Pool::getInstance())
+Composition::Composition(std::string name) : Component(Pool::getInstance())
 {
     this->name = name;
-    cmp_id = pool->getItems<Composition*>().size()-1;
+    cmp_id = pool->getItems<Composition *>().size() - 1;
     std::cout << "Creating composition: " << name << std::endl;
 }
 
-bool Composition::operator ==( const Composition &comp ) const
+Forwards Composition::getArgumentForwards(Component *child)
+{
+    return argument_forwards[child];
+}
+
+Forwards Composition::getEventForwards(Component *child)
+{
+    return event_forwards[child];
+}
+
+bool Composition::operator==(const Composition &comp) const
 {
     return name == comp.name;
+}
+
+void Composition::addArgumentForwards(std::string child, std::string source, std::string target)
+{
+    argument_forwards[children[child]].push_back({source, target});
+}
+
+void Composition::addEventForwards(std::string child, std::string source, std::string target)
+{
+    event_forwards[children[child]].push_back({source, target});
 }
 
 std::string Composition::toString() const
@@ -38,7 +60,8 @@ std::string Composition::toString() const
     return ss.str();
 }
 
-size_t Composition::getCmpID() const{
+size_t Composition::getCmpID() const
+{
     return cmp_id;
 }
 
@@ -47,12 +70,12 @@ int Composition::getType() const
     return 0;
 }
 
-const std::string& Composition::getName() const
+const std::string &Composition::getName() const
 {
     return name;
 }
 
-void Composition::setName(const std::string& name)
+void Composition::setName(const std::string &name)
 {
     this->name = name;
 }
@@ -69,52 +92,58 @@ void Composition::setConfiguration(const std::vector<std::string>& configuration
 }
 #endif
 
-void Composition::addChild(Component *c,std::string name){
-    if(isIgnored()) return;
+void Composition::addChild(Component *c, std::string name)
+{
+    if (isIgnored()) return;
     children[name] = c;
 }
 
-void Composition::addConstraint(std::string child, std::string target){
+void Composition::addConstraint(std::string child, std::string target)
+{
 
-    if(children.find(child) == children.end()){
+    if (children.find(child) == children.end()) {
         throw std::invalid_argument(child + " cannot be found on " + getName());
     }
     auto c = pool->getComponent(target);
-    if(!c){
-        throw std::invalid_argument(getName()+ " cannot redefine child " + name);
+    if (!c) {
+        throw std::invalid_argument(getName() + " cannot redefine child " + name);
     }
     children.erase(child);
 
-    //addChild(pool->getComponent("DepthReader::Task"),"z");
-    //addChild(pool->getComponent("DepthReader::Task"),"z");
+    // addChild(pool->getComponent("DepthReader::Task"),"z");
+    // addChild(pool->getComponent("DepthReader::Task"),"z");
 
-    //TODO better do this later on CSP level instead here...
-    addChild(c,child);
- //   std::cout << child << "----" << children[child]->getName() <<std::endl;
-//    children[child] = pool->getComponent(name);
-
+    // TODO better do this later on CSP level instead here...
+    addChild(c, child);
+    //   std::cout << child << "----" << children[child]->getName() <<std::endl;
+    //    children[child] = pool->getComponent(name);
 }
 
-std::vector<std::string> Composition::unsolveableChildren(){
+std::vector<std::string> Composition::unsolveableChildren()
+{
     std::vector<std::string> res;
     Pool *pool = Pool::getInstance();
 
-    for(auto child : children){
-        bool valid=false;
-        for(auto provider : pool->getItems<Component*>()){
-            if(provider->abstract()){
+    for (auto child : children) {
+        bool valid = false;
+        for (auto provider : pool->getItems<Component *>()) {
+            if (provider->abstract()) {
                 continue;
             }
 
-            if(provider->isFullfilling(child.second->getName())){
-         //       std::cout << std::string("FULLFILLING: " + getName() + "." + child.first + " = " + child.second->getName() + "==" +  provider->getName()) << std::endl;
-//                printf("GOT A FULLILLING! %s for %s\n",getName().c_str(), provider->getName().c_str());
+            if (provider->isFullfilling(child.second->getName())) {
+                //       std::cout << std::string("FULLFILLING: " + getName() +
+                // "." + child.first + " = " + child.second->getName() + "==" +
+                // provider->getName()) << std::endl;
+                //                printf("GOT A FULLILLING! %s for
+                // %s\n",getName().c_str(), provider->getName().c_str());
                 valid = true;
                 break;
             }
         }
-        if(!valid){
-           // std::cout << std::string("NOT FULLFILLING:" + getName() + "." + child.first + " = " + child.second->getName()) << std::endl;
+        if (!valid) {
+            // std::cout << std::string("NOT FULLFILLING:" + getName() + "." +
+            // child.first + " = " + child.second->getName()) << std::endl;
 
             res.push_back(getName() + "." + child.first + " = " + child.second->getName());
         }
@@ -124,24 +153,24 @@ std::vector<std::string> Composition::unsolveableChildren(){
 
 Gecode::IntVarArray Composition::getPossibleTaskAssignments(Gecode::Space *space)
 {
-        //auto arr = Gecode::IntVarArray(*space,children.size(),0,pool->getNonAbstractCount()-1);
-        auto arr = Gecode::IntVarArray(*space,children.size(),0,pool->size()-1);
-        return arr;
+    // auto arr =
+    // Gecode::IntVarArray(*space,children.size(),0,pool->getNonAbstractCount()-1);
+    auto arr = Gecode::IntVarArray(*space, children.size(), 0, pool->size() - 1);
+    return arr;
 }
 
-std::vector<std::pair<std::string, Component*> > Composition::getChildren(){
-    std::vector<std::pair<std::string, Component*> > erg;
-    for(auto i : children){
-        erg.push_back(std::pair<std::string,Component*>(i.first,i.second));
+std::vector<std::pair<std::string, Component *>> Composition::getChildren()
+{
+    std::vector<std::pair<std::string, Component *>> erg;
+    for (auto i : children) {
+        erg.push_back(std::pair<std::string, Component *>(i.first, i.second));
     }
     return erg;
 };
 
-
-SpecializedComponentBase* Composition::getSpecialized()
+SpecializedComponentBase *Composition::getSpecialized()
 {
     return new SpecializedComponent<Composition>(this, pool);
 }
 
-
-} // end namespace constrained_based_networks
+}  // end namespace constrained_based_networks
