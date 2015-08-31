@@ -22,7 +22,7 @@ using namespace Gecode;
 
 namespace constrained_based_networks {
 
-void InstanceComponent::addLimitation(Gecode::Space& space, std::string name,
+void InstanceComponent_internal::addLimitation(Gecode::Space& space, std::string name,
                                       std::string value, size_t cnt) {
     auto i = int_config[cnt].find(name);
     auto b = bool_config[cnt].find(name);
@@ -45,7 +45,7 @@ void InstanceComponent::addLimitation(Gecode::Space& space, std::string name,
 void InstanceSolution::createFlattendIDs(Composition* cmp,
                                          unsigned int next_free_id) {
     auto cmp_id = cmp->getCmpID();
-    instance_components[cmp->getID()].add_flattend_use_id(next_free_id++);
+    instance_components[cmp->getID()]->add_flattend_use_id(next_free_id++);
 
     for (size_t i = 0; i < cs->ir_assignments[cmp_id].size(); i++) {
         if (cs->ir_assignments[cmp_id][i].assigned()) {
@@ -58,7 +58,7 @@ void InstanceSolution::createFlattendIDs(Composition* cmp,
             } else {
                 // leaf
                 instance_components[c->getID()]
-                    .add_flattend_use_id(next_free_id++);
+                    ->add_flattend_use_id(next_free_id++);
             }
         } else {
             throw std::runtime_error("This shoult not happen");
@@ -78,7 +78,7 @@ void InstanceSolution::limitConfigs(Composition* cmp,
     }
 
     auto cmp_id = cmp->getCmpID();
-    instance_components[cmp->getID()].add_flattend_use_id(next_free_id++);
+    instance_components[cmp->getID()]->add_flattend_use_id(next_free_id++);
 
     if (auto sc = dynamic_cast<SpecializedComponentBase*>(cmp)) {
         printf("huhu\n");
@@ -87,7 +87,7 @@ void InstanceSolution::limitConfigs(Composition* cmp,
             std::string name = c.first;
             std::string value = c.second;
             instance_components[cmp->getID()]
-                .addLimitation(*this, name, value, 0);
+                ->addLimitation(*this, name, value, 0);
         }
     }
 
@@ -103,7 +103,7 @@ void InstanceSolution::limitConfigs(Composition* cmp,
             } else {
                 // leaf
                 instance_components[c->getID()]
-                    .add_flattend_use_id(next_free_id++);
+                    ->add_flattend_use_id(next_free_id++);
             }
         } else {
             throw std::runtime_error("This shoult not happen");
@@ -198,7 +198,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
     instance_components.resize(pool->size());
     for (size_t i = 0; i < pool->size(); i++) {
         auto c = pool->operator[](i);
-        instance_components[c->getID()].initialize(c);
+        instance_components[c->getID()]->initialize(c);
     };
 
     // We need to run throught the tree of all nodes and figure out all needed
@@ -213,7 +213,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
                     "solutions");
             // std::cout << "HAve val: " << t.val() << std::endl;
             Component* child = pool->getItems<Component*>()[t.val()];
-            instance_components[child->getID()].increse_usage();
+            instance_components[child->getID()]->increse_usage();
 
             /* TODO fix this
             if(auto spez = dynamic_cast<SpecializedComponent*>(child)){
@@ -228,7 +228,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool)
     for (auto c : instance_components) {
         // Finalize components means create internal structures for the
         // constraints
-        c.finalize(*this);
+        c->finalize(*this);
     }
 
     // First we need to flatten the graph to have a unique it from our helper

@@ -14,11 +14,12 @@ class Composition;
 
 #define CONSTRAIN
 
-struct InstanceComponent {
+struct InstanceComponent_internal {
    public:
-    InstanceComponent(unsigned int tree_id) : tree_id(tree_id) {
+    InstanceComponent_internal(unsigned int tree_id) : tree_id(tree_id) {
         finalized = false;
     };
+
 
     void increse_usage() {
         if (finalized)
@@ -79,6 +80,10 @@ struct InstanceComponent {
         used_ids_in_flattend_graph.push_back(id);
     }
 
+    static std::shared_ptr<InstanceComponent_internal> NewInstanceComponent(unsigned int tree_id){
+        return std::shared_ptr<InstanceComponent_internal>(new InstanceComponent_internal(tree_id));
+    }
+
    protected:
     std::vector<std::map<std::string, Gecode::FloatVar>> float_config;
     std::vector<std::map<std::string, Gecode::BoolVar>> bool_config;
@@ -90,6 +95,7 @@ struct InstanceComponent {
     unsigned int tree_id;
 };
 
+typedef std::shared_ptr<InstanceComponent_internal> InstanceComponent;
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real
  * solutions are of type InstanceSolution.
