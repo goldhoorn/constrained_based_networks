@@ -29,6 +29,7 @@ class Composition : public constrained_based_networks::Component, public constra
     int type;
 
     std::map<std::string, Component *> children;
+   private:
     std::map<Component *, Forwards> argument_forwards;
     std::map<Component *, Forwards> event_forwards;
 

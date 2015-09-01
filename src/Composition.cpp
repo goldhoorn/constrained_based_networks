@@ -20,12 +20,14 @@ Composition::Composition(std::string name) : Component(Pool::getInstance())
 
 Forwards Composition::getArgumentForwards(Component *child)
 {
-    return argument_forwards[child];
+//    return argument_forwards[child];
+    return Forwards();
 }
 
 Forwards Composition::getEventForwards(Component *child)
 {
-    return event_forwards[child];
+ //   return event_forwards[child];
+    return Forwards();
 }
 
 bool Composition::operator==(const Composition &comp) const
@@ -35,7 +37,18 @@ bool Composition::operator==(const Composition &comp) const
 
 void Composition::addArgumentForwards(std::string child, std::string source, std::string target)
 {
-    argument_forwards[children[child]].push_back({source, target});
+    try{
+        auto &c = children.at(child);
+        argument_forwards[c].push_back({source, target});
+    }catch(std::out_of_range e){
+        std::cerr << "Could not find child \""<< child << "\"" << std::endl;
+        std::cerr << "Possible children are: " << std::endl;
+        for(auto child : children){
+            std::cerr << "- " << child.first << std::endl;
+        }
+        std::cerr << std::endl;
+        throw e;
+    }
 }
 
 void Composition::addEventForwards(std::string child, std::string source, std::string target)

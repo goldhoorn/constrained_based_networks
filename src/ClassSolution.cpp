@@ -175,6 +175,10 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
 
         for(size_t child_id = 0; child_id != composition->getChildren().size(); child_id++){
             auto child = composition->getChildren()[child_id];
+            if(child.second == 0){
+                std::cout << " - "  << child.first << std::endl;
+                throw std::runtime_error("Child is nullpointer");
+            }
             //If this composition is used all children needs to be active
             rel(*this, composition_child_constraints[child_id], IRT_NQ, 0 , imp(active[composition->getID()]));
 
