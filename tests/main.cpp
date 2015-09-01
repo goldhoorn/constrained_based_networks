@@ -401,7 +401,11 @@ int main(int argc, char* argv[]) {
         s->build_tree(graph, 0);
         graph_analysis::io::GraphIO::write("output.dot",graph,graph_analysis::representation::GRAPHVIZ);
         auto is = InstanceSolution::babSearch(s);
-        (void)is;
+        std::cout << "Finished calculuation of Instance InstanceSolution, Solution is:" << std::endl;
+        std::cout << "################################################################################"<< std::endl;
+        std::cout << "################################################################################"<< std::endl;
+        std::cout << "################################################################################"<< std::endl;
+        is->rprint();
     }else{
         std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;
     }

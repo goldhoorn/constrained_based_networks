@@ -155,6 +155,7 @@ class InstanceSolution : public Gecode::Space {
      */
 //    Pool* pool;
     ClassSolution* cs;
+    graph_analysis::BaseGraph::Ptr graph;
  //   std::vector<Gecode::IntVar> tasks;
  //   std::vector<Gecode::IntVarArray> task_assignments;
  //   std::vector<InstanceComponent> instance_components;

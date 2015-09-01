@@ -126,9 +126,10 @@ void InstanceSolution::limitComponents(unsigned int cmp_id){
 
 InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
 {
-    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
     _cs->build_tree(graph, 0);
 
+    /*
     // Search for the root_knot first
     graph_analysis::Vertex::Ptr root = 0;
     for (auto node : graph->getAllVertices()) {
@@ -137,6 +138,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
             root = node;
         }
     }
+    */
 
     //Setup the configuration arrays
     float_config.resize(graph->getAllVertices().size());
@@ -302,6 +304,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
 InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(share, s)
 {
     cs = s.cs;
+    graph = s.graph;
     for(size_t i = 0 ; 0 < float_config.size(); i++){
         for(auto c: float_config[i]){
             c.second.update(*this,share,s.float_config[i][c.first]);
@@ -504,6 +507,18 @@ void InstanceSolution::printToDot(std::ostream& os) const
 
 void InstanceSolution::printToStream(std::ostream& os, bool full) const
 {
+
+    for (auto node : graph->getAllVertices()) {
+        auto component = dynamic_cast<Component*>(node.get());
+        if(auto task = dynamic_cast<Task*>(component)){
+            os << task->getName() << std::endl;
+            for(auto p : task->getProperties()){
+                for(auto c : int_config[graph->getVertexId(node)]){
+                    os << "-- " << c.first << ": " << c.second << std::endl;
+                }
+            }
+        }
+    }
 #if 0
     os << "Count: " << active.size() << std::endl;
 
