@@ -84,6 +84,10 @@ class Component : public graph_analysis::Vertex {
     saved_conf[section][name] = value;
   }
 
+  std::string getConfFileProperty(std::string section, std::string name){
+    return saved_conf.at(section).at(name);
+  }
+
 
  protected:
   /*

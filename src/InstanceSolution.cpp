@@ -52,8 +52,74 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
             // So we need to propagate all entries here
             auto edges = graph->getEdgeIterator(node);
             while (edges->next()) {
+
+                // If our task is a child and we are NOT a specialized component
+                // (which would assume that we are not support this?, maybe we we would set a specific configuration then?!
+                auto task = dynamic_cast<Task*>(edges->current()->getTargetVertex().get());
+                auto specialized_task = dynamic_cast<SpecializedComponentBase*>(edges->current()->getTargetVertex().get());
+                if (task && specialized_task) {
+                    throw std::runtime_error("We got a specialized task as child, this is not (Yet) supported");
+                }
+                if (task) {
+                    // Okay we start to use a default config for not
+                    // TODO this must be extended later to load instead of the default-configs somthing which
+                    // can be set by somehting like a with_conf call within the compositions
+
+                    // Make sure the properties exist
+                    setupProperties(task, edges->current()->getTargetVertex(), graph);
+
+                    for (auto prop : task->getProperties()) {
+                        switch (prop.t) {
+                            case(constrained_based_networks::ConfigurationModel::INT) : {
+                                try
+                                {
+                                    rel(*this, int_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, atoi(task->getConfFileProperty("default", prop.name).c_str()));
+                                }
+                                catch (std::out_of_range e)
+                                {
+                                    std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0" << std::endl;
+                                    rel(*this, int_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, 0);
+                                }
+                                break;
+                            }
+                            case(constrained_based_networks::ConfigurationModel::STRING) : {
+                                std::cerr << "TODO implement string handling" << __FUNCTION__ << " +" << __LINE__ << std::endl;
+                                //                                throw std::runtime_error("String not yet implemented");
+                                break;
+                            }
+                            case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
+                                try
+                                {
+                                    const float val = atof(task->getConfFileProperty("default", prop.name).c_str());
+                                    rel(*this, float_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], FRT_EQ, val);
+                                }
+                                catch (std::out_of_range e)
+                                {
+                                    std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0.0" << std::endl;
+                                    rel(*this, float_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], FRT_EQ, 0);
+                                }
+                                break;
+                            }
+                            case(constrained_based_networks::ConfigurationModel::BOOL) : {
+                                try
+                                {
+
+                                    rel(*this, bool_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, atoi(task->getConfFileProperty("default", prop.name).c_str()));
+                                }
+                                catch (std::out_of_range e)
+                                {
+                                    std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming fals" << std::endl;
+                                    rel(*this, bool_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, 0);
+                                }
+                                break;
+                            }
+                        };
+                    }
+                }
+
                 auto child = dynamic_cast<Component*>(edges->current()->getTargetVertex().get());
                 for (auto forward : cmp->getArgumentForwards(child)) {
+
                     if (child->getProperty(forward.second) != cmp->getProperty(forward.first)) {
                         throw std::runtime_error("The properties of child and parend differ in type");
                     }
@@ -90,7 +156,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
         }
         if (spec_cmp) {
             std::cout << "I'm having a specialized here" << spec_cmp->getComponent()->getName() << std::endl;
-            throw std::runtime_error ("  Got a specialized component with the tree" );
+            throw std::runtime_error("  Got a specialized component with the tree");
         }
         if (task) {
             setupProperties(task, node, graph);
@@ -217,11 +283,9 @@ void InstanceSolution::printToDot(std::ostream& os) const
         auto component = dynamic_cast<Component*>(node.get());
         if (auto task = dynamic_cast<Task*>(component)) {
             os << task->getName() << std::endl;
-            for (auto p : task->getProperties()) {
-                for (auto c : float_config[graph->getVertexId(node)]) {
-                    std::cout << c.first.c_str() << std::endl;
-                    os << "-- " << c.first << ": " << c.second << std::endl;
-                }
+            for (auto c : float_config[graph->getVertexId(node)]) {
+                std::cout << c.first.c_str() << std::endl;
+                os << "-- " << c.first << ": " << c.second << std::endl;
             }
         }
     }
@@ -349,10 +413,8 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
         auto component = dynamic_cast<Component*>(node.get());
         if (auto task = dynamic_cast<Task*>(component)) {
             os << task->getName() << std::endl;
-            for (auto p : task->getProperties()) {
-                for (auto c : int_config[graph->getVertexId(node)]) {
-                    os << "-- " << c.first << ": " << c.second << std::endl;
-                }
+            for (auto c : int_config[graph->getVertexId(node)]) {
+                os << "-- " << c.first << ": " << c.second << std::endl;
             }
         }
     }

@@ -78,7 +78,7 @@ class InstanceSolution : public Gecode::Space
                     catch (std::out_of_range e)
                     {
                         // Ok, propetry it is not yet created, let's create one
-                        auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
+                        auto var = Gecode::IntVar(*this, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
                         std::cout << "int test: " << cfg.name << std::endl;
                         int_config[graph->getVertexId(vertex)][cfg.name] = var;
                     }
@@ -92,7 +92,7 @@ class InstanceSolution : public Gecode::Space
                     catch (std::out_of_range e)
                     {
                         // Ok, propetry it is not yet created, let's create one
-                        auto var = Gecode::FloatVar(*this, 0, Gecode::Float::Limits::max);
+                        auto var = Gecode::FloatVar(*this, Gecode::Float::Limits::min, Gecode::Float::Limits::max);
                         float_config[graph->getVertexId(vertex)][cfg.name] = var;
                     }
                     break;
