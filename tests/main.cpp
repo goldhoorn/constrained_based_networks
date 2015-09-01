@@ -400,7 +400,7 @@ int main(int argc, char* argv[]) {
     if(s){
         s->build_tree(graph, 0);
         graph_analysis::io::GraphIO::write("output.dot",graph,graph_analysis::representation::GRAPHVIZ);
-        auto is = InstanceSolution::babSearch(s, pool);
+        auto is = InstanceSolution::babSearch(s);
         (void)is;
     }else{
         std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;

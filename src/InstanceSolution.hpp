@@ -12,8 +12,7 @@ namespace constrained_based_networks {
 
 class Composition;
 
-#define CONSTRAIN
-
+#if 0
 struct InstanceComponent_internal {
    public:
     InstanceComponent_internal(unsigned int tree_id, Component* c) : tree_id(tree_id), component(c) {
@@ -81,6 +80,10 @@ struct InstanceComponent_internal {
 };
 
 typedef std::shared_ptr<InstanceComponent_internal> InstanceComponent;
+#endif
+
+
+
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real
  * solutions are of type InstanceSolution.
@@ -92,6 +95,52 @@ class InstanceSolution : public Gecode::Space {
     std::vector<std::map <std::string, Gecode::FloatVar> > float_config;
     std::vector<std::map <std::string, Gecode::BoolVar > > bool_config;
     std::vector<std::map <std::string, Gecode::IntVar  > > int_config;
+
+    template <typename C>
+    void setupProperties(C component, graph_analysis::Vertex::Ptr vertex, graph_analysis::BaseGraph::Ptr graph){
+            for(auto cfg : component->getProperties()){
+                switch(cfg.t){
+                    case constrained_based_networks::ConfigurationModel::INT:
+                        {
+                            try{
+                                int_config[graph->getVertexId(vertex)].at(cfg.name);
+                            }catch(std::out_of_range e){
+                                //Ok, propetry it is not yet created, let's create one
+                                auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
+                                int_config[graph->getVertexId(vertex)][cfg.name] = var;
+                            }
+                            break;
+                        }
+                    case constrained_based_networks::ConfigurationModel::DOUBLE:
+                        {
+                            try{
+                                float_config[graph->getVertexId(vertex)].at(cfg.name);
+                            }catch(std::out_of_range e){
+                                //Ok, propetry it is not yet created, let's create one
+                                auto var = Gecode::FloatVar(*this, 0, Gecode::Float::Limits::max);
+                                float_config[graph->getVertexId(vertex)][cfg.name] = var;
+                            }
+                            break;
+                        }
+                    case constrained_based_networks::ConfigurationModel::BOOL:
+                        {
+                            try{
+                                bool_config[graph->getVertexId(vertex)].at(cfg.name);
+                            }catch(std::out_of_range e){
+                                //Ok, propetry it is not yet created, let's create one
+                                auto var = Gecode::BoolVar(*this, 0, 1);
+                                bool_config[graph->getVertexId(vertex)][cfg.name] = var;
+                            }
+                            break;
+                        }
+                    case constrained_based_networks::ConfigurationModel::STRING:
+                        {
+                            throw std::runtime_error("Not yet implemented");
+                            break;
+                        }
+                }
+            }
+    }
     /**
      * The query to compute solutions for.
      */
@@ -104,14 +153,14 @@ class InstanceSolution : public Gecode::Space {
      * Assignments of query components to pool components. This is what has to
      * be solved.
      */
-    Pool* pool;
+//    Pool* pool;
     ClassSolution* cs;
-    std::vector<Gecode::IntVar> tasks;
-    std::vector<Gecode::IntVarArray> task_assignments;
-    std::vector<InstanceComponent> instance_components;
+ //   std::vector<Gecode::IntVar> tasks;
+ //   std::vector<Gecode::IntVarArray> task_assignments;
+ //   std::vector<InstanceComponent> instance_components;
     //    void limitComponents(unsigned int cmp_id);
-    void createFlattendIDs(Composition* cmp, unsigned int next_free_id);
-    void limitConfigs(Composition* cmp, unsigned int next_free_id);
+ //   void createFlattendIDs(Composition* cmp, unsigned int next_free_id);
+ //   void limitConfigs(Composition* cmp, unsigned int next_free_id);
 
     /*
     std::vector<Gecode::IntVarArray> ir_assignments;
@@ -141,23 +190,13 @@ class InstanceSolution : public Gecode::Space {
 
    public:
     void compare(const Space& s, std::ostream& os) const;
-    static int print_count;
-    static void postBranching(Space& space);
-    static void postBranching2(Space& space);
+   // static int print_count;
+   // static void postBranching(Space& space);
+  //  static void postBranching2(Space& space);
     /**
      * Construct a solution with an initial situation to search.
      */
-    InstanceSolution(ClassSolution* cs, Pool* pool = Pool::getInstance());
-
-#ifdef CONSTRAIN
-    /*
-     * constrain function for best solution search. the
-     * currently best solution _b is passed and we have to constraint that this
-     * solution can only
-     * be better than b, for it to be excluded if it isn't
-     */
-    virtual void constrain(const Gecode::Space& _b);
-#endif
+    InstanceSolution(ClassSolution* cs);
 
     /**
      * search support. There must be a copy constructor like this for the search
@@ -199,9 +238,9 @@ class InstanceSolution : public Gecode::Space {
      *
      * \throw Exception if there is no solution.
      */
-    static InstanceSolution* babSearch2(ClassSolution* cs, Pool* pool);
-    static InstanceSolution* babSearch(ClassSolution* cs, Pool* pool);
-    static InstanceSolution* gistBaBSeach(ClassSolution* cs, Pool* pool);
+    static InstanceSolution* babSearch2(ClassSolution* cs);
+    static InstanceSolution* babSearch(ClassSolution* cs);
+    static InstanceSolution* gistBaBSeach(ClassSolution* cs);
 };
 
 }  // end namespace constrained_based_networks

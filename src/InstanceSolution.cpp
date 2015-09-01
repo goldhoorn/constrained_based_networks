@@ -18,11 +18,9 @@
 
 using namespace Gecode;
 
-#define REMOVE_REC
-
 namespace constrained_based_networks
 {
-
+#if 0
 void InstanceComponent_internal::addLimitation(Gecode::Space& space, std::string name, std::string value, size_t cnt)
 {
     auto i = int_config[cnt].find(name);
@@ -124,20 +122,10 @@ void InstanceSolution::limitComponents(unsigned int cmp_id){
     }
 }
 */
+#endif
 
-InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool) : pool(_pool), cs(_cs)
-#if 0
-    , active(*this, pool->getComponentCount(), 0, 1)
-    , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
-#ifdef REMOVE_REC
-    , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
-#endif
-#endif
+InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
 {
-
-    unsigned int usage_count[_pool->getCount<Component*>()];
-    memset(usage_count, 0, sizeof(usage_count));
-
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
     _cs->build_tree(graph, 0);
 
@@ -150,64 +138,28 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool) : pool(_pool
         }
     }
 
-    // We create ONE config per element in graph, ignoring if we merge some of them
-    // This includes all compositions, because we need to constrain the composition
-    // configs to propagate the constrains until we reach a leaf (aka TaskContext)
+    //Setup the configuration arrays
     float_config.resize(graph->getAllVertices().size());
     bool_config.resize(graph->getAllVertices().size());
     int_config.resize(graph->getAllVertices().size());
 
+    // Setup all propagations and actual requirements for all configs we have
+    // In case we have a specialized component, this is the only case
+    // (currently) where a configuiration is actually filled
+    // with values. Later a extension based on configurations is needed
     for (auto node : graph->getAllVertices()) {
         auto component = dynamic_cast<Component*>(node.get());
-        if (!component) {
-            throw std::runtime_error("Cannot get component from graph");
-        }
+        if (!component) throw std::runtime_error("Cannot get component from graph");
+
+        // We need only to separate between this types, al other types should not occur anymore in the graph
+        // Like DataServices are replaced with actual task-contexts
         auto cmp = dynamic_cast<Composition*>(component);
         auto task = dynamic_cast<Task*>(component);
         auto spec_cmp = dynamic_cast<SpecializedComponentBase*>(component);
+        if(!task && !cmp) throw std::runtime_error("We have some unresolved or unknown elements within the graph");
+
         if (cmp) {
-            for(auto cfg : cmp->getProperties()){
-                switch(cfg.t){
-                    case constrained_based_networks::ConfigurationModel::INT:
-                        {
-                            try{
-                                int_config[graph->getVertexId(node)].at(cfg.name);
-                            }catch(std::out_of_range e){
-                                //Ok, propetry it is not yet created, let's create one
-                                auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
-                                int_config[graph->getVertexId(node)][cfg.name] = var;
-                            }
-                            break;
-                        }
-                    case constrained_based_networks::ConfigurationModel::DOUBLE:
-                        {
-                            try{
-                                float_config[graph->getVertexId(node)].at(cfg.name);
-                            }catch(std::out_of_range e){
-                                //Ok, propetry it is not yet created, let's create one
-                                auto var = Gecode::FloatVar(*this, 0, Gecode::Float::Limits::max);
-                                float_config[graph->getVertexId(node)][cfg.name] = var;
-                            }
-                            break;
-                        }
-                    case constrained_based_networks::ConfigurationModel::BOOL:
-                        {
-                            try{
-                                bool_config[graph->getVertexId(node)].at(cfg.name);
-                            }catch(std::out_of_range e){
-                                //Ok, propetry it is not yet created, let's create one
-                                auto var = Gecode::BoolVar(*this, 0, 1);
-                                bool_config[graph->getVertexId(node)][cfg.name] = var;
-                            }
-                            break;
-                        }
-                    case constrained_based_networks::ConfigurationModel::STRING:
-                        {
-                            throw std::runtime_error("Not yet implemented");
-                            break;
-                        }
-                }
-            }
+            setupProperties(cmp, node, graph);
 
             // So we need to propagate all entries here
             auto edges = graph->getEdgeIterator(node);
@@ -252,20 +204,26 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool) : pool(_pool
             std::cout << "I'm having a specialized here" << spec_cmp->getComponent()->getName() << std::endl;
         }
         if (task) {
-            /*
-            std::cout << "I'm having a task here" << task->getName() << " id: " << graph->getVertexId(node) << std::endl;
+            setupProperties(task, node, graph);
+        }
+    }
 
-            //            usage_count[task->getID()]++;
-            instance_components.push_back(InstanceComponent_internal::NewInstanceComponent(task->getID(), task));
-
-            // Walk throught all knots on this path to identify confiugration limitations
-            for (auto edge : graph->getEdges(root, node)) {
-                auto source = edge->getSourceVertex();
-                auto target = edge->getTargetVertex();
-                auto comp = dynamic_cast<Component*>(edge.get());
-
-            }
-            */
+    // Setup the branching for ALL task-context here, this could
+    // be done within the previous loop to save effienfy, but to have the code
+    // more strutured do this explicitly and separeated here
+    for (auto node : graph->getAllVertices()) {
+        if(dynamic_cast<Task*>(node.get())){
+           auto id = graph->getVertexId(node);
+           for(auto c : bool_config[id]){
+               branch(*this, c.second, INT_VAL_MIN());
+           }
+           for(auto c : float_config[id]){
+               branch(*this, c.second, FLOAT_VAL_SPLIT_MIN());
+           }
+           for(auto c : int_config[id]){
+               branch(*this, c.second, INT_VAL_MIN());
+           }
+           //TODO add string variable
         }
     }
 
@@ -340,43 +298,26 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs, Pool* _pool) : pool(_pool
 #endif
 }
 
-#ifdef CONSTRAIN
-void InstanceSolution::constrain(const Space& _b)
-{
-    /*
-    printf("In constrain block %i\n",print_count);
-    printf("active is: %s\n", active_brancher(*this)?"active":"inactive");
-    for(size_t i=0;i<ir_assignments_brancher.size();i++){
-        printf("ir_brancher[%lu] is: %s\n",i
-,ir_assignments_brancher[i](*this)?"active":"inactive");
-    }
-
-//    this->brancher();
-    //printf("Current Brancher: %i\n",this->brancher(2));
-
-    InstanceSolution::postBranching(*this);
-    */
-    return;
-}
-#endif
 
 InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(share, s)
-//, query(s.query)
-//, componentPool(s.componentPool)
 {
-    pool = s.pool;
     cs = s.cs;
-#if 0
-    active.update(*this, share, s.active);
-    depends.update(*this, share, s.depends);
-#ifdef REMOVE_REC
-    depends_recursive.update(*this, share, s.depends_recursive);
-#endif
-    ir_assignments.resize(s.ir_assignments.size());
-    for(size_t i = 0; i < s.ir_assignments.size();i++){
-        ir_assignments[i].update(*this,share,s.ir_assignments[i]);
+    for(size_t i = 0 ; 0 < float_config.size(); i++){
+        for(auto c: float_config[i]){
+            c.second.update(*this,share,s.float_config[i][c.first]);
+        }
     }
-#endif
+    for(size_t i = 0 ; 0 < bool_config.size(); i++){
+        for(auto c: bool_config[i]){
+            c.second.update(*this,share,s.bool_config[i][c.first]);
+        }
+    }
+    for(size_t i = 0 ; 0 < int_config.size(); i++){
+        for(auto c: int_config[i]){
+            c.second.update(*this,share,s.int_config[i][c.first]);
+        }
+    }
+    //TODO String configs
 }
 
 Space* InstanceSolution::copy(bool share)
@@ -655,15 +596,15 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
 #endif
 }
 
-InstanceSolution* InstanceSolution::babSearch2(ClassSolution* cs, Pool* pool)
+InstanceSolution* InstanceSolution::babSearch2(ClassSolution* cs)
 {
-    return InstanceSolution::babSearch(cs, pool);
+    return InstanceSolution::babSearch(cs);
 }
 
-InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs, Pool* pool)
+InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs)
 {
     // Initial situation
-    InstanceSolution* so = new InstanceSolution(cs, pool);
+    InstanceSolution* so = new InstanceSolution(cs);
     // BAB search engine
     // BAB<InstanceSolution> e(so);
     BAB<InstanceSolution> e(so);
@@ -696,9 +637,9 @@ InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs, Pool* pool)
     return best;
 }
 
-InstanceSolution* InstanceSolution::gistBaBSeach(ClassSolution* cs, Pool* pool)
+InstanceSolution* InstanceSolution::gistBaBSeach(ClassSolution* cs)
 {
-    InstanceSolution* m = new InstanceSolution(cs, pool);
+    InstanceSolution* m = new InstanceSolution(cs);
     // InstanceSolution* m = InstanceSolution::babSearch(Pool::getInstance());
     Gist::Print<InstanceSolution> printer("Print solution");
     Gist::VarComparator<InstanceSolution> c("Compare nodes");
