@@ -120,19 +120,28 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(shar
 {
     cs = s.cs;
     graph = s.graph;
-    for (size_t i = 0; 0 < float_config.size(); i++) {
-        for (auto c : float_config[i]) {
-            c.second.update(*this, share, s.float_config[i][c.first]);
+
+    float_config.resize(s.float_config.size());
+    for (size_t i = 0; i < s.float_config.size(); i++) {
+        for (auto c : s.float_config[i]) {
+            float_config[i][c.first] = FloatVar();
+            float_config[i][c.first].update(*this, share, s.float_config[i][c.first]);
         }
     }
-    for (size_t i = 0; 0 < bool_config.size(); i++) {
-        for (auto c : bool_config[i]) {
-            c.second.update(*this, share, s.bool_config[i][c.first]);
+
+    bool_config.resize(s.bool_config.size());
+    for (size_t i = 0; i < s.bool_config.size(); i++) {
+        for (auto c : s.bool_config[i]) {
+            bool_config[i][c.first] = BoolVar();
+            bool_config[i][c.first].update(*this, share, s.bool_config[i][c.first]);
         }
     }
-    for (size_t i = 0; 0 < int_config.size(); i++) {
-        for (auto c : int_config[i]) {
-            c.second.update(*this, share, s.int_config[i][c.first]);
+
+    int_config.resize(s.int_config.size());
+    for (size_t i = 0; i < s.int_config.size(); i++) {
+        for (auto c : s.int_config[i]) {
+            int_config[i][c.first] = IntVar();
+            int_config[i][c.first].update(*this, share, s.int_config[i][c.first]);
         }
     }
     // TODO String configs
@@ -203,6 +212,18 @@ void InstanceSolution::compare(const Space& _s, std::ostream& os) const
 
 void InstanceSolution::printToDot(std::ostream& os) const
 {
+    for (auto node : graph->getAllVertices()) {
+        auto component = dynamic_cast<Component*>(node.get());
+        if (auto task = dynamic_cast<Task*>(component)) {
+            os << task->getName() << std::endl;
+            for (auto p : task->getProperties()) {
+                for (auto c : float_config[graph->getVertexId(node)]) {
+                    std::cout << c.first.c_str() << std::endl;
+                    os << "-- " << c.first << ": " << c.second << std::endl;
+                }
+            }
+        }
+    }
 #if 0
     Pool *pool = Pool::getInstance();
     /*

@@ -79,6 +79,7 @@ class InstanceSolution : public Gecode::Space
                     {
                         // Ok, propetry it is not yet created, let's create one
                         auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
+                        std::cout << "int test: " << cfg.name << std::endl;
                         int_config[graph->getVertexId(vertex)][cfg.name] = var;
                     }
                     break;
@@ -110,7 +111,8 @@ class InstanceSolution : public Gecode::Space
                     break;
                 }
                 case constrained_based_networks::ConfigurationModel::STRING: {
-                    throw std::runtime_error("Not yet implemented");
+                    std::cout << "String hanlding not yet implemented in " << __FILE__ << " +" << __LINE__ << std::endl;
+//                    throw std::runtime_error("Not yet implemented");
                     break;
                 }
             }
