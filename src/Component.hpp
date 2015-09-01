@@ -79,6 +79,12 @@ class Component : public graph_analysis::Vertex {
     return self;
   }
 
+  void addConfFileProperty(std::string section, std::string name, std::string value){
+  //TODO Model-checking?!
+    saved_conf[section][name] = value;
+  }
+
+
  protected:
   /*
    * DataServices that this component fullfills
@@ -87,6 +93,8 @@ class Component : public graph_analysis::Vertex {
   std::vector<std::string> events;
   std::vector<ConfigurationModel> properties;
   graph_analysis::Vertex::Ptr self;
+
+  std::map<std::string, std::map <std::string, std::string  > > saved_conf;
 
   Pool *pool;
   bool active;
