@@ -126,7 +126,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
 #endif
 {
-    std::cout << "Hallo" << __LINE__ << std::endl;
+//    std::cout << "Hallo" << __LINE__ << std::endl;
 /*
     std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
     std::cout << "Got " << pool->getItems<Composition*>().size() << "Compositions" << std::endl;
@@ -143,9 +143,26 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     auto compositions = pool->getItems<Composition*>();
     for(size_t cmp_counter = 0; cmp_counter != compositions.size();cmp_counter++){
         auto composition = compositions[cmp_counter];
-        /*
-                    //if(composition->getID() == 318){
+
+        if(dynamic_cast<SpecializedComponentBase*>(composition)){
+            std::cout << "Got a specialized " <<  composition->getName() << "(" << composition->getID() << ")"  << std::endl;
+            if(composition->isActive()){
+                std::cout << "-- And it should started!!" << std::endl;
+            }
+//            throw std::runtime_error("Jeha");
+        }
+#if 0
+                    if(composition->getID() == 360){
                         std::cout << "pointer in class solution: " << composition << std::endl;
+                        std::cout << "Name: " << composition->getName() << std::endl;
+                        std::cout << "Pool: " << pool << std::endl;
+                        std::cout << "pointer in vector: " << pool->operator[](360)  << std::endl;
+                        if(composition->isActive()){
+                            std::cout << "-- And it should started!!" << std::endl;
+                        }else{
+                            std::cout << "-- And it should NOT started!!" << std::endl;
+                        }
+
                         auto s = dynamic_cast<SpecializedComponentBase*>(composition);
 
                         if(!s){
@@ -155,8 +172,8 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
                             throw std::runtime_error("Jeha das ist gut" );
                         }
 
-                    //}
-        */
+                    }
+#endif
         /*
                     auto s = dynamic_cast<SpecializedComponentBase*>(composition);
                     if(s){
@@ -169,8 +186,8 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
                     */
 //        std::cout << "Processing composition " << composition->getName() << " (" << cmp_counter << ")" << std::endl;
         auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
-        std::cout << "Hallo" << __LINE__ << std::endl;
-        std::cout << "Counter vs max: " << cmp_counter << "/" << compositions.size() << std::endl;
+        //std::cout << "Hallo" << __LINE__ << std::endl;
+        //std::cout << "Counter vs max: " << cmp_counter << "/" << compositions.size() << std::endl;
         markCompositionAsChildless(composition, cmp_counter);
 
         for(size_t child_id = 0; child_id != composition->getChildren().size(); child_id++){
@@ -349,6 +366,12 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             auto c = (*pool)[id];
 
             graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+            auto a = pool->getItems<Composition*>()[cmp_id];
+            auto b = (pool->getItems<Composition*>()[cmp_id]->getPtr());
+            std::string aa = (dynamic_cast<SpecializedComponentBase*>(a) == 0)?"true":"false";
+            std::string bb = (dynamic_cast<SpecializedComponentBase*>(b.get()) == 0)?"true":"false";
+            std::cout << "Must equal: " << aa << " vs. " << bb  << " "  << a->getName() << "(" << a->getID() << ")" <<  std::endl;
+            std::cout << "pointer in CS: " << a  << " | " << dynamic_cast<SpecializedComponentBase*>(a) << std::endl;
             e->setSourceVertex((pool->getItems<Composition*>()[cmp_id]->getPtr()));
             e->setTargetVertex(c->getPtr());
             g->addEdge(e);

@@ -23,7 +23,7 @@ class Pool {
         load(filename);
     }
 
-    void addComponent(Component* c);
+    size_t addComponent(Component* c);
 
     static Pool* getInstance();
 

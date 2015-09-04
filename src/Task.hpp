@@ -66,7 +66,7 @@ public:
     /**
      * Get the name
      */
-    std::string getName() const;
+    virtual std::string getName() const;
 
     /**
      * Set the name

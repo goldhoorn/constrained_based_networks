@@ -101,7 +101,7 @@ class Composition : public constrained_based_networks::Component, public constra
     /**
      * Get the name
      */
-    const std::string &getName() const;
+    virtual std::string getName() const;
 
     /**
      * Set the name

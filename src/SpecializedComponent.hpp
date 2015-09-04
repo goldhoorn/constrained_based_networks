@@ -32,7 +32,12 @@ class SpecializedComponentBase : private boost::noncopyable {
   };
 
   virtual constrained_based_networks::Component* getComponent() = 0;
+  virtual constrained_based_networks::Component* getOrginal() = 0;
+  virtual bool isActive() = 0;
+  virtual void setActive(bool active = true)=0;
   virtual unsigned int getID() const = 0;
+  virtual std::string getName(bool b) const=0;
+  virtual std::string getName() const=0;
 
   unsigned int id;
 
@@ -47,27 +52,55 @@ class SpecializedComponentBase : private boost::noncopyable {
 };
 
 template <class T>
-class SpecializedComponent : public T, public SpecializedComponentBase {
+class SpecializedComponent :  public SpecializedComponentBase,  public T{
  public:
   SpecializedComponent(T* t, Pool* pool) : T(*t) {
-    classScope = true;
+    //classScope = false;
     pool->addComponent(this);
+    org = t;
   }
+
+  virtual bool isActive(){return active;};
+  virtual void setActive(bool active = true){this->active = active;};
 
   virtual ~SpecializedComponent() {};
 
   virtual constrained_based_networks::Component* getComponent() {
     return this;
   };
+  
+  virtual std::string getName() const{
+    return getName(false);
+  }
+
+  virtual std::string getName(bool base) const{
+      if(base) return T::getName();
+
+      std::stringstream s;
+      s << T::getName() << "_" << getID();
+    return s.str();
+  }
+
+  // This is ugly helper function to recover the IDs from mergeComponent
+  // should not used somewhere else, a cast should be sufficent
+  virtual constrained_based_networks::Component* getOrginal() {
+    return org;
+  };
 
   virtual unsigned int getID() const {
+      return SpecializedComponentBase::id;
+      /*
     if (classScope) {
       return T::getID();
     } else {
       return SpecializedComponentBase::id;
     }
-  };
+*/
 
-  bool classScope;
+  };
+  private:
+    T *org;
+    bool active;
+//  bool classScope;
 };
 };

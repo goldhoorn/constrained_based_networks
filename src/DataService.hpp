@@ -82,7 +82,7 @@ public:
     /**
      * Get the name
      */
-    const std::string& getName() const;
+    virtual std::string getName() const;
 
     /**
      * Set the name

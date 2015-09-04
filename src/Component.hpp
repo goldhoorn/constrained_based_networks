@@ -42,7 +42,7 @@ class Component : public graph_analysis::Vertex {
   bool isFullfilling(std::string name);
   virtual bool isActive();
   virtual void setActive(bool active = true);
-  std::string getName() const;
+  virtual std::string getName() const;
   std::string toString() const { return getName(); }
   std::string getClassName() const { return "MyVertex"; }
 

@@ -39,6 +39,13 @@ namespace constrained_based_networks {
             void setStart(SpecializedComponentBase *c);
             bool abstract() const{return false;}
 
+            /*
+             * This is a ugly part again, we need to update out internal components
+             * and searching for the correspinding one in a pool
+             * This is used when the pool get altered by e.G. mergeDoubles
+             */
+            void updateInternals(Pool *pool);
+
             SpecializedComponentBase *getSpecialized();
 /*
             SpecializedComponent<StateMachine> *getSpecialized()
@@ -62,6 +69,7 @@ namespace constrained_based_networks {
         protected:
             std::vector<Transition> transitions;
             const Component *start;
+            Component* searchCorresponding(Component *c, Pool *pool);
 
     };
 }

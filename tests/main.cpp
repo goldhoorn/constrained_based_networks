@@ -27,6 +27,27 @@ void solve_final_network(ClassSolution s){
 
 //void resolve(std::string name, bool res, bool debug = false){
 ClassSolution* resolve(Component *c, bool res, bool debug = false){
+        std::cout << "Resolving for component: " <<  c->getName() << " (" << c->getID() << ")" << std::endl;
+        //Checking check check
+        if(c != pool->operator[](c->getID())){
+            std::cout << "Failig id in step 1: " << c->getID() << " for component with name: " << c->getName() << std::endl;
+            if(auto spec = dynamic_cast<SpecializedComponentBase *>(c)){
+                std::cout << "It is a specialized one, bsae id: " << spec->getOrginal()->getID() << std::endl;
+            }
+            throw std::runtime_error("1 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
+        }
+
+    //Check again
+    for(auto co: pool->getItems<Component*>()){
+        if(co != pool->operator[](co->getID())){
+            std::cout << "Check in resolve for the following component failed: " << c->getName() << std::endl;
+            std::cout << "Failig id: " << co->getID() << " for component with name: " << co->getName() << std::endl;
+            if(auto spec = dynamic_cast<SpecializedComponentBase*>(co)){
+                std::cout << "It is a specialized one: " << spec->getID() << " and base id: " << spec->getComponent()->getID() << std::endl;
+            }
+            throw std::runtime_error("Pool is inconsistent to IDs");
+        }
+    }
 
     if(auto sm =  dynamic_cast<StateMachine*>(c)){
         for(auto state : sm->getStates()){
@@ -40,15 +61,25 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
     }
 
     c->setActive(true);
-    /*
+    
     if(!dynamic_cast<SpecializedComponentBase *>(c)){
         throw std::runtime_error("I currently want a specialized\n");
     }else{
         std::cout << "starte: \n";
         std::cout << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getName() << ": " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getID() << std::endl;
         std::cout << "pointer in main: " << c  << " | " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent() << std::endl;
+        std::cout << "Pool in main: " << pool << std::endl;
+//        std::cout << "pointer in vector in main: " << pool->operator[](360)  << std::endl;
+
     }
-    */
+        if(c != pool->operator[](c->getID())){
+            std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
+            if(auto spec = dynamic_cast<SpecializedComponentBase *>(c)){
+                std::cout << "It is a specialized one, bsae id: " << spec->getOrginal()->getID() << std::endl;
+            }
+            throw std::runtime_error("2 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
+        }
+
 /*
     for(auto c : pool->getItems<Component*>()){
         auto d = dynamic_cast<SpecializedComponentBase*>(c);
@@ -364,9 +395,12 @@ int main(int argc, char* argv[]) {
 
 
     pool = Pool::getInstance();
+
     pool->mergeDoubles();
+
+    std::cout << "Have Components: " << pool->getItems<Component*>().size() << std::endl;
+
     /*
-    std::cout << "Have compositions: " << pool->getItems<Composition*>().size() << std::endl;
     for(auto c :  pool->getItems<Composition*>()){
         std::cout << c->getName() << std::endl;
     }
@@ -396,17 +430,31 @@ int main(int argc, char* argv[]) {
 
     //try{
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    
+    for(auto c: pool->getItems<Component*>()){
+        if(c != pool->operator[](c->getID())){
+            std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
+            if(auto spec = dynamic_cast<SpecializedComponentBase*>(c)){
+                std::cout << "It is a specialized one: " << spec->getID() << " and base id: " << spec->getComponent()->getID() << std::endl;
+            }
+            throw std::runtime_error("Pool is inconsistent to IDs");
+        }
+    }
+
+
+
     auto s = resolve(pool->getComponent(name),resolve_nonresolveable,debug);
     if(s){
         s->build_tree(graph, 0);
+        std::cout << "Finished calculuation of ClassSolution continue with instance" << std::endl;
         graph_analysis::io::GraphIO::write("output.dot",graph,graph_analysis::representation::GRAPHVIZ);
-        InstanceSolution::gistBaBSeach(s);
+//        InstanceSolution::gistBaBSeach(s);
         std::cout << "Finished calculuation of Instance InstanceSolution, Solution is:" << std::endl;
         std::cout << "################################################################################"<< std::endl;
         std::cout << "################################################################################"<< std::endl;
         std::cout << "################################################################################"<< std::endl;
-        //auto is = InstanceSolution::babSearch(s);
-        //is->rprint();
+        auto is = InstanceSolution::babSearch(s);
+        is->rprint();
     }else{
         std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;
     }

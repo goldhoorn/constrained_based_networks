@@ -43,7 +43,7 @@ int DataService::getType() const
 }
 */
 
-const std::string& DataService::getName() const
+std::string DataService::getName() const
 {
     return name;
 }

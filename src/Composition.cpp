@@ -15,7 +15,7 @@ Composition::Composition(std::string name) : Component(Pool::getInstance())
 {
     this->name = name;
     cmp_id = pool->getItems<Composition *>().size() - 1;
-    std::cout << "Creating composition: " << name << std::endl;
+//    std::cout << "Creating composition: " << name << std::endl;
 }
 
 Forwards Composition::getArgumentForwards(Component *child)
@@ -83,7 +83,7 @@ int Composition::getType() const
     return 0;
 }
 
-const std::string &Composition::getName() const
+std::string Composition::getName() const
 {
     return name;
 }

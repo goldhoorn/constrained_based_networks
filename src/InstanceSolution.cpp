@@ -281,12 +281,36 @@ void InstanceSolution::printToDot(std::ostream& os) const
 {
     for (auto node : graph->getAllVertices()) {
         auto component = dynamic_cast<Component*>(node.get());
-        if (auto task = dynamic_cast<Task*>(component)) {
+        if (auto composition = dynamic_cast<Composition*>(component)) {
+            os << "Cmp::" << composition->getName() << std::endl;
+            for (auto c : float_config[graph->getVertexId(node)]) {
+                std::cout << c.first.c_str() << std::endl;
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
+            for (auto c : bool_config[graph->getVertexId(node)]) {
+                std::cout << c.first.c_str() << std::endl;
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
+            for (auto c : int_config[graph->getVertexId(node)]) {
+                std::cout << c.first.c_str() << std::endl;
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
+        }else if (auto task = dynamic_cast<Task*>(component)) {
             os << task->getName() << std::endl;
             for (auto c : float_config[graph->getVertexId(node)]) {
                 std::cout << c.first.c_str() << std::endl;
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
+            for (auto c : bool_config[graph->getVertexId(node)]) {
+                std::cout << c.first.c_str() << std::endl;
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
+            for (auto c : int_config[graph->getVertexId(node)]) {
+                std::cout << c.first.c_str() << std::endl;
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
+        }else{
+            std::runtime_error("HAve somehting unknown in graphe here");
         }
     }
 #if 0

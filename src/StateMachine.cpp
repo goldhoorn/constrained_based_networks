@@ -22,6 +22,38 @@ void StateMachine::setStart(const Component *c){
 }
 
 
+
+Component* StateMachine::searchCorresponding(Component *c, Pool *pool){
+        if(auto spec = dynamic_cast<SpecializedComponentBase*>(c)){
+            //search for object in DB
+            for(auto pci : pool->getItems<Component*>()){
+                if(auto pc = dynamic_cast<SpecializedComponentBase*>(pci)){
+                    if(pc->getComponent()->getName() == spec->getComponent()->getName()
+                            && pc->configuration == spec->configuration){
+//                            std::cout << "pc: " << pc << " pci: " << pci << std::endl;
+//                            std::cout << "pc: " << sizeof(*pc) << " pci: " << sizeof(*pci)  << " " << std::abs((long int)pc-(long int)pci) << std::endl;
+//                            throw std::runtime_error("bla");
+                            return pci;
+                    }
+                }
+            }
+            throw std::runtime_error("Could not find compatible component in pool");
+        }else{
+            return c;
+        }
+}
+
+void StateMachine::updateInternals(Pool *pool){
+    for(auto &t : transitions){
+        std::cout << "Was sourcesource: "  << t.source->getName() << std::endl;
+        t.source = searchCorresponding(t.source,pool);
+        std::cout << "Found for source: "  << t.source->getName() << std::endl;
+        t.target = searchCorresponding(t.target,pool);
+        t.event_source = searchCorresponding(t.event_source,pool);
+    }
+}
+
+
 void StateMachine::addTransition(std::string s,  std::string t, std::string event_s, std::string event_name){
     auto source = pool->getComponent(s);
     auto target = pool->getComponent(t);
