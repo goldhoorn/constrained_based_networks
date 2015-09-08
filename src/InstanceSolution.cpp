@@ -68,6 +68,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
                     // Make sure the properties exist
                     setupProperties(task, edges->current()->getTargetVertex(), graph);
 
+
                     for (auto prop : task->getProperties()) {
                         switch (prop.t) {
                             case(constrained_based_networks::ConfigurationModel::INT) : {
@@ -77,8 +78,18 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
                                 }
                                 catch (std::out_of_range e)
                                 {
-                                    std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0" << std::endl;
-                                    rel(*this, int_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, 0);
+                                    int val =0;
+                                    if(spec_cmp){
+                                        auto it = spec_cmp->configuration.find(prop.name);
+                                        if( it != spec_cmp->configuration.end() ){
+                                            val = atoi(it->second.c_str());
+                                        }else{
+                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0" << std::endl;
+                                        }
+                                    }else{
+                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0" << std::endl;
+                                    }
+                                    rel(*this, int_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, val);
                                 }
                                 break;
                             }
@@ -95,8 +106,18 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
                                 }
                                 catch (std::out_of_range e)
                                 {
-                                    std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0.0" << std::endl;
-                                    rel(*this, float_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], FRT_EQ, 0);
+                                    double val =0;
+                                    if(spec_cmp){
+                                        auto it = spec_cmp->configuration.find(prop.name);
+                                        if( it != spec_cmp->configuration.end() ){
+                                            val = atof(it->second.c_str());
+                                        }else{
+                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0.0" << std::endl;
+                                        }
+                                    }else{
+                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0.0" << std::endl;
+                                    }
+                                    rel(*this, float_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], FRT_EQ, val);
                                 }
                                 break;
                             }
@@ -108,8 +129,18 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
                                 }
                                 catch (std::out_of_range e)
                                 {
-                                    std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming fals" << std::endl;
-                                    rel(*this, bool_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, 0);
+                                    bool val = false;
+                                    if(spec_cmp){
+                                        auto it = spec_cmp->configuration.find(prop.name);
+                                        if( it != spec_cmp->configuration.end() ){
+                                            val = atoi(it->second.c_str());
+                                        }else{
+                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming false" << std::endl;
+                                        }
+                                    }else{
+                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming false" << std::endl;
+                                    }
+                                    rel(*this, bool_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, val);
                                 }
                                 break;
                             }
