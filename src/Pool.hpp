@@ -78,10 +78,25 @@ class Pool {
     std::vector<std::string> component_names;
     std::vector<std::vector<Component*>> component_helper;
 
+    std::map<Component*, size_t> component_ids;
+
     void load(std::string filename);
     void save(std::string filename);
     Component* getComponent(std::string);
-    unsigned int getId(const Component*) const;
+
+    unsigned int getId(const Component *obj) const;
+
+    template <typename T>
+    unsigned int getTypeSpecificId(const T t){
+        size_t cnt=0;
+        for(auto i : getItems<T>()){
+            if(i == t){
+                return cnt;
+            }
+            cnt++;
+        }
+        throw std::runtime_error("Cannot found element " + t->getName() + " in Database");
+    }
 
    private:
     std::vector<Component*> components;
@@ -89,6 +104,7 @@ class Pool {
     static Pool* pool;
     Pool();
     friend class boost::serialization::access;
+    void setDirty();
 
     template <class Archive>
     void serialize(Archive& ar, const unsigned int version) {

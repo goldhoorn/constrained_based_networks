@@ -155,8 +155,8 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
             }
         }
         if (spec_cmp) {
-            std::cout << "I'm having a specialized here" << spec_cmp->getComponent()->getName() << std::endl;
-            throw std::runtime_error("  Got a specialized component with the tree");
+            std::cout << "I'm having a specialized here Please implement me in in InstanceSolution " << spec_cmp->getComponent()->getName() << std::endl;
+//            throw std::runtime_error("  Got a specialized component with the tree");
         }
         if (task) {
             setupProperties(task, node, graph);

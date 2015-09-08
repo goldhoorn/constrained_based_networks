@@ -27,6 +27,7 @@ void solve_final_network(ClassSolution s){
 
 //void resolve(std::string name, bool res, bool debug = false){
 ClassSolution* resolve(Component *c, bool res, bool debug = false){
+    /*
         std::cout << "Resolving for component: " <<  c->getName() << " (" << c->getID() << ")" << std::endl;
         //Checking check check
         if(c != pool->operator[](c->getID())){
@@ -36,7 +37,7 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
             }
             throw std::runtime_error("1 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
         }
-
+*/
     //Check again
     for(auto co: pool->getItems<Component*>()){
         if(co != pool->operator[](co->getID())){
@@ -61,7 +62,7 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
     }
 
     c->setActive(true);
-    
+/*
     if(!dynamic_cast<SpecializedComponentBase *>(c)){
         throw std::runtime_error("I currently want a specialized\n");
     }else{
@@ -72,6 +73,8 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
 //        std::cout << "pointer in vector in main: " << pool->operator[](360)  << std::endl;
 
     }
+*/
+/**
         if(c != pool->operator[](c->getID())){
             std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
             if(auto spec = dynamic_cast<SpecializedComponentBase *>(c)){
@@ -79,6 +82,7 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
             }
             throw std::runtime_error("2 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
         }
+        */
 
 /*
     for(auto c : pool->getItems<Component*>()){
@@ -379,6 +383,7 @@ int main(int argc, char* argv[]) {
         {create_model,"Buoy::DetectorNewCmp"},
         {create_model,"Wall::Follower"},
         {create_model,"Main::LawnMoverOverPipe"},
+        {create_model,"AuvControl::SimpleMove"},
         {0,""}
     };
 

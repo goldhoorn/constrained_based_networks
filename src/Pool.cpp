@@ -49,38 +49,49 @@ void Pool::mergeDoubles()
 {
     std::vector<Component *> new_components;
     for (size_t i = 0; i < components.size(); i++) {
-        auto c = components[i];
+        auto &c = components[i];
         auto spec = dynamic_cast<SpecializedComponentBase *>(c);
         if (spec) {
             bool valid = true;
-            for (auto existing : new_components) {
+            Component *base = 0;
+            for (auto &existing : new_components) {
                 bool name_equals = false;
 
-                if(auto s2 = dynamic_cast<SpecializedComponentBase*>(existing)){
+                if (auto s2 = dynamic_cast<SpecializedComponentBase *>(existing)) {
                     name_equals = spec->getName(true) == s2->getName(true);
-                    std::cout << spec->getComponent()->getName() << " and " << s2->getComponent()->getName() << std::endl;
-                }else{
-                    name_equals = spec->getComponent()->getName() == existing->getName();
+                    // std::cout << spec->getComponent()->getName() << " and " << s2->getComponent()->getName() << std::endl;
+                } else {
+                    // name_equals = spec->getComponent()->getName() == existing->getName();
+                    name_equals = spec->getName(true) == existing->getName();
                 }
 
                 if (name_equals) {
-                    auto cmp = dynamic_cast<SpecializedComponent<Composition> *>(existing);
+                    //auto cmp = dynamic_cast<SpecializedComponent<Composition> *>(existing);
+                    auto cmp = dynamic_cast<SpecializedComponentBase*>(existing);
                     if (!cmp) {
+                        std::cout << "Got base component" << std::endl;
+                        base = existing;
                         // We found the base-class of this specialized one
                     } else {
                         if (cmp->configuration == spec->configuration) {
                             // Skip this it already is part of the database, we can stop here
-                            if (c->isActive()) {
+                            if (c->isActive()) {  // Don't do this here, this would cause other specilaized one to start
                                 existing->setActive(true);
                             }
                             valid = false;
-                            break;
+//                            break;
                         }
                     }
                 }
             }
             if (valid) {
-                new_components.push_back(c);
+                if(base){
+                    auto spec_new = base->getSpecialized();
+                    spec_new->configuration = spec->configuration;
+                    new_components.push_back(dynamic_cast<Component*>(spec_new));
+                }else{
+                    throw std::runtime_error("Cannot re-add new component, base-class is unknown");
+                }
             }
         } else {
             new_components.push_back(c);
@@ -105,6 +116,12 @@ void Pool::mergeDoubles()
         }
     }
 
+    // This needs to be done BEFORE updatInternals of the StateMachines
+    // is called. The updateInternals uses (this) pool to search
+    // for corresponding components
+    components = new_components;
+    setDirty();
+
     // Cleanup orginal pointer of state-machines
     for (size_t i = 0; i < new_components.size(); i++) {
         if (auto sm = dynamic_cast<StateMachine *>(new_components[i])) {
@@ -112,9 +129,14 @@ void Pool::mergeDoubles()
         }
     }
 
-    components = new_components;
+    //Sainitry check, should not needed after update the SMs
+    setDirty();
+}
+
+void Pool::setDirty(){
     component_helper.clear();
     component_names.clear();
+    component_ids.clear();
 }
 
 size_t Pool::addComponent(Component *c)
@@ -127,8 +149,7 @@ size_t Pool::addComponent(Component *c)
         c->id = id;
     }
     components.push_back(c);
-    component_helper.clear();
-    component_names.clear();
+    setDirty();
     return id;
 }
 
@@ -184,9 +205,9 @@ void Pool::load(std::string filename)
     ia >> (*this);
     ifs.close();
 
-    std::cout << "Loading finish" << std::endl;
-    for (auto c : components) {
-        std::cout << c->getName() << std::endl;
-    }
+    //    std::cout << "Loading finish" << std::endl;
+    //    for (auto c : components) {
+    //        std::cout << c->getName() << std::endl;
+    //    }
 }
 };

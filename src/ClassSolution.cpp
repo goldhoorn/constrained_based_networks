@@ -144,6 +144,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     for(size_t cmp_counter = 0; cmp_counter != compositions.size();cmp_counter++){
         auto composition = compositions[cmp_counter];
 
+        /*
         if(dynamic_cast<SpecializedComponentBase*>(composition)){
             std::cout << "Got a specialized " <<  composition->getName() << "(" << composition->getID() << ")"  << std::endl;
             if(composition->isActive()){
@@ -151,6 +152,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
             }
 //            throw std::runtime_error("Jeha");
         }
+        */
 #if 0
                     if(composition->getID() == 360){
                         std::cout << "pointer in class solution: " << composition << std::endl;
@@ -258,7 +260,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
 //        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
         ir_assignments.push_back(composition_child_constraints);
     }
-    
+
     std::cout << "Hallo" << __LINE__ << std::endl;
 
 #if 1
@@ -271,8 +273,8 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
             if(c==p)continue;
 
             //Walk throught childs of first
-            for(size_t idxp=0; idxp < ir_assignments[p].size(); idxp++){
-                for(size_t idxc=0; idxc < ir_assignments[c].size(); idxc++){
+            for(int idxp=0; idxp < ir_assignments[p].size(); idxp++){
+                for(int idxc=0; idxc < ir_assignments[c].size(); idxc++){
                     rel(*this,(parent->getID() == ir_assignments[c][idxc]) >> (ir_assignments[p][idxp] != child->getID()));
                     rel(*this,(child->getID() == ir_assignments[p][idxp]) >> (ir_assignments[c][idxc] != parent->getID()));
                 }
@@ -330,7 +332,7 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
 
 bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &ids){
 //    std::cout << "checking root " << pool->getItems<Composition*>()[cmp_id]->getName() << std::endl;
-    for(size_t i =0;i< ir_assignments[cmp_id].size();i++){
+    for(int i =0;i< ir_assignments[cmp_id].size();i++){
         if(ir_assignments[cmp_id][i].assigned()){
             unsigned int id = ir_assignments[cmp_id][i].val();
 //            std::cout << "checking " << id << std::endl;
@@ -345,7 +347,7 @@ bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &id
                     return false; //TODO forbit this solution
                 }
                 ids.push_back(id);
-                if(!allDepsResolved(cmp->getCmpID(), ids)){
+                if(!allDepsResolved(pool->getTypeSpecificId<Composition*>(cmp), ids)){
                     return false;
                 }else{
                 }
@@ -360,7 +362,7 @@ bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t> &id
 
 
 bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cmp_id){
-    for(size_t i =0;i< ir_assignments[cmp_id].size();i++){
+    for(int i =0;i< ir_assignments[cmp_id].size();i++){
         if(ir_assignments[cmp_id][i].assigned()){
             unsigned int id = ir_assignments[cmp_id][i].val();
             auto c = (*pool)[id];
@@ -387,7 +389,7 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
                 }
                 */
                 //ids.push_back(id);
-                build_tree(g,cmp->getCmpID());
+                build_tree(g,pool->getTypeSpecificId<Composition*>(cmp));
             }else{
                 //Nothing to do, the child is a leaf, which got added by the block before this if
                 //
@@ -411,7 +413,7 @@ void ClassSolution::removeAllUnsedCmps(std::vector<size_t> ids){
    for(auto cmp : pool->getItems<Composition*>()){
        bool contain=false;
        for(auto id : ids){
-//           std::cout << "Cmp " << cmp->getName() << " has id: " << cmp->getCmpID() << std::endl;
+//           std::cout << "Cmp " << cmp->getName() << " has id: " << pool->getTypeSpecificId<Composition*>(cmp) << std::endl;
            if(id == cmp->getID()){
             contain = true;
             break;
@@ -443,22 +445,34 @@ void ClassSolution::postBranching2(Space &space){
 //    std::vector<size_t> ids;
     if(home.findNextBrancher(ID_ROOT_KNOT)){
 //        ClassSolution::postBranching(space);
+        std::cerr << __FUNCTION__ << " " <<  __LINE__ << std::endl;
+        //Nearly finished, we remove all unsed-children
+        //At this point we resolved the complete tree of components,
+        ////but have some maybe unused components. The next function will
+        //remove all unsed components from the graph
         home.doMissingBranching();
     }else{
+        std::cerr << __FUNCTION__ << " " <<  __LINE__ << std::endl;
+        //We are not yet fnished here, the findNext brancher has resolved some additional branching
+        //points and has already registered them in our Space
         branch(home, &ClassSolution::postBranching2);
     }
 //    std::cout << "end " << __FUNCTION__ << std::endl;
 }
 
 void ClassSolution::doMissingBranching(){
-    for(size_t i=0;i<active.size();i++){
+    for(int i=0;i<active.size();i++){
+//        std::cerr << __FUNCTION__ << " " <<  __LINE__ << std::endl;
         if(!active[i].assigned()){ //It seems this is not used
+            std::cerr << "Removing " << pool->operator[](i)->getName() << std::endl;
+            std::cerr << __FUNCTION__ << " " <<  __LINE__ << std::endl;
             rel(*this,active[i],IRT_EQ,0);
             rel(*this,depends[i] == IntSet::empty);
             rel(*this,depends_recursive[i] == IntSet::empty);
        //     branch(*this, active[i], INT_VAL_MIN());
         }
     }
+    std::cerr << __FUNCTION__ << " " <<  __LINE__ << std::endl;
     std::cout << "BUJAAACHACKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
     branch(*this, depends, SET_VAR_SIZE_MIN(), SET_VAL_MIN_EXC());
     branch(*this, depends_recursive, SET_VAR_SIZE_MIN(), SET_VAL_MIN_EXC());
@@ -467,12 +481,15 @@ void ClassSolution::doMissingBranching(){
 
 bool ClassSolution::findNextBrancher(unsigned int id){
     bool finish = true;
+    std::cerr << "Checking " << pool->operator[](id)->getName() << std::endl;
     if(auto cmp = dynamic_cast<Composition*>((*pool)[id])){
         if(!depends[id].assigned()){
+            std::cerr << "The dependencies not resolved" << std::endl;
             finish=false;
             branch(*this, depends[id], SET_VAL_MIN_INC());
         }
         if(!depends_recursive[id].assigned()){
+            std::cerr << "Recursive dependencies not resolved" << std::endl;
             finish=false;
             branch(*this, depends_recursive[id], SET_VAL_MIN_INC());
         }
@@ -480,26 +497,40 @@ bool ClassSolution::findNextBrancher(unsigned int id){
         for(size_t c_id = 0; c_id < cmp->getChildren().size(); c_id++){
 //        for(auto child_p : cmp->getChildren()){
             auto child = cmp->getChildren()[c_id].second;
-            if(!ir_assignments[cmp->getCmpID()][c_id].assigned()){
-                branch(*this, ir_assignments[cmp->getCmpID()][c_id], INT_VAL_MIN());
+            std::cerr << "Checking Child" << child->getName() << std::endl;
+            if(!ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].assigned()){
+                std::cerr << "-- Not assigned yet" << std::endl;
+                branch(*this, ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id], INT_VAL_MIN());
 
                 if(!active[child->getID()].assigned()){
+                    std::cerr << "-- What?" << std::endl;
                     branch(*this, active[child->getID()],INT_VAL_MIN());
                 }
+
                 finish=false;
             }else{
-                //printf("-- Got here id: %lu (%lu,%lu)\n",ir_assignments[cmp->getCmpID()][c_id].val(),cmp->getCmpID(),c_id);
-                if(!findNextBrancher(ir_assignments[cmp->getCmpID()][c_id].val())){
+                //Child is resolved for us
+                //printf("-- Got here id: %lu (%lu,%lu)\n",ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].val(),pool->getTypeSpecificId<Composition*>(cmp),c_id);
+                std::cerr << "Child is assigned to " << pool->operator[](ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].val())->getName() << std::endl;
+                std::cerr << "Checking now children " << std::endl;
+                if(!findNextBrancher(ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].val())){
+                    std::cerr << "Returned from lower layer to << resolving of " << pool->operator[](id)->getName() << std::endl;
+                    std::cerr << "And Child constraints are not yet resolved" << std::endl;
                     finish=false;
                 }
+                std::cerr << "Returned from lower layer to << resolving of " << pool->operator[](id)->getName() << std::endl;
             }
         }
     }else{
         if(!active[id].assigned()){
+            std::cerr << "-- " << pool->operator[](id)->getName() << " is not yet assigned to beeing active" << std::endl;
             finish=false;
             branch(*this, active[id],INT_VAL_MIN());
+        }else{
+            std::cerr << "-- " << pool->operator[](id)->getName() << " is assigned to beeing active " << active[id].val() << std::endl;
         }
     }
+    std::cerr << "return " << pool->operator[](id)->getName() << std::endl;
     return finish;
 }
 
@@ -753,7 +784,7 @@ void ClassSolution::printToDot(std::ostream& os) const
     sprintf(buff,"/tmp/dep-graph-%i.dot", print_count);
     std::ofstream file2(buff);
     file2 << "digraph G {" << std::endl;
-    for(size_t i = 1; i< depends.size();i++){
+    for(int i = 1; i< depends.size();i++){
         auto o = (*pool)[i];
 
         for (SetVarGlbValues j(depends[i]); j(); ++j){
@@ -774,7 +805,7 @@ void ClassSolution::printToDot(std::ostream& os) const
     sprintf(buff,"/tmp/dep-rgraph-%i.dot", print_count);
     std::ofstream file3(buff);
     file3 << "digraph G {" << std::endl;
-    for(size_t i = 1; i< depends_recursive.size();i++){
+    for(int i = 1; i< depends_recursive.size();i++){
         auto o = (*pool)[i];
         for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
             //if(j.val() < ID_START && !full) continue;
@@ -840,7 +871,7 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
     os << "}" << std::endl;
 #if 1
     os << "Dependencies { " << std::endl;
-    for(size_t i = full?0:ID_START; i< depends.size();i++){
+    for(int i = full?0:ID_START; i< depends.size();i++){
         //auto o = pool->getItems<Composition*>()[i];//(*pool)[i];
         auto o = (*pool)[i];
         //os << "Deps for " << o->getName() << ": " << std::endl;//<< depends << std::endl;

@@ -86,7 +86,7 @@ class Composition : public constrained_based_networks::Component, public constra
     void addConstraint(std::string child, std::string target);
 
     /** Get the Composition ID, NOT the id within the pool*/
-    size_t getCmpID() const;
+//    size_t getCmpID() const;
 
     /**
      * String representation of a component

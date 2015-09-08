@@ -73,10 +73,12 @@ std::string Composition::toString() const
     return ss.str();
 }
 
+/*
 size_t Composition::getCmpID() const
 {
     return cmp_id;
 }
+*/
 
 int Composition::getType() const
 {

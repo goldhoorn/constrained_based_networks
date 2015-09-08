@@ -8,99 +8,131 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/noncopyable.hpp>
 #include <iostream>
+#include "Composition.hpp"
 
-namespace constrained_based_networks {
+namespace constrained_based_networks
+{
 
-struct Configuration : public std::map<std::string, std::string> {
-  //    std::vector<std::string> name;
-  //    std::vector<std::string> value;
+struct Configuration : public std::map<std::string, std::string>
+{
+    //    std::vector<std::string> name;
+    //    std::vector<std::string> value;
 
-  void add(std::string _name, std::string _value) {
-    operator[](_name) = _value;
-  }
+    void add(std::string _name, std::string _value)
+    {
+        operator[](_name) = _value;
+    }
 };
 
-class SpecializedComponentBase : private boost::noncopyable {
- public:
-  SpecializedComponentBase() {}
-  virtual ~SpecializedComponentBase() {}
+class SpecializedComponentBase : private boost::noncopyable
+{
+   public:
+    SpecializedComponentBase()
+    {
+    }
+    virtual ~SpecializedComponentBase()
+    {
+    }
 
-  Configuration configuration;
+    Configuration configuration;
 
-  void addConfig(std::string name, std::string value) {
-    configuration.add(name, value);
-  };
+    void addConfig(std::string name, std::string value)
+    {
+        configuration.add(name, value);
+    };
 
-  virtual constrained_based_networks::Component* getComponent() = 0;
-  virtual constrained_based_networks::Component* getOrginal() = 0;
-  virtual bool isActive() = 0;
-  virtual void setActive(bool active = true)=0;
-  virtual unsigned int getID() const = 0;
-  virtual std::string getName(bool b) const=0;
-  virtual std::string getName() const=0;
+    virtual constrained_based_networks::Component* getComponent() = 0;
+    virtual constrained_based_networks::Component* getOrginal() = 0;
+    virtual bool isActive() = 0;
+    virtual void setActive(bool active = true) = 0;
+    virtual unsigned int getID() const = 0;
+    virtual std::string getName(bool b) const = 0;
+    virtual std::string getName() const = 0;
 
-  unsigned int id;
+    unsigned int id;
+    /*
+    operator const Component*() const{
+        std::cerr << "FUSEL" << std::endl;
+        return 0;
+    };
+    */
 
-  /*
-  operator const Component*() const{
-      std::cerr << "FUSEL" << std::endl;
-      return 0;
-  };
-  */
-
-  friend class Pool;
+    friend class Pool;
 };
 
 template <class T>
-class SpecializedComponent :  public SpecializedComponentBase,  public T{
- public:
-  SpecializedComponent(T* t, Pool* pool) : T(*t) {
-    //classScope = false;
-    pool->addComponent(this);
-    org = t;
-  }
-
-  virtual bool isActive(){return active;};
-  virtual void setActive(bool active = true){this->active = active;};
-
-  virtual ~SpecializedComponent() {};
-
-  virtual constrained_based_networks::Component* getComponent() {
-    return this;
-  };
-  
-  virtual std::string getName() const{
-    return getName(false);
-  }
-
-  virtual std::string getName(bool base) const{
-      if(base) return T::getName();
-
-      std::stringstream s;
-      s << T::getName() << "_" << getID();
-    return s.str();
-  }
-
-  // This is ugly helper function to recover the IDs from mergeComponent
-  // should not used somewhere else, a cast should be sufficent
-  virtual constrained_based_networks::Component* getOrginal() {
-    return org;
-  };
-
-  virtual unsigned int getID() const {
-      return SpecializedComponentBase::id;
-      /*
-    if (classScope) {
-      return T::getID();
-    } else {
-      return SpecializedComponentBase::id;
+class SpecializedComponent : public SpecializedComponentBase, public T
+{
+   public:
+    SpecializedComponent(T* t, Pool* pool) : T(*t), pool(pool)
+    {
+        // classScope = false;
+        pool->addComponent(this);
+        org = t;
+        active=false;
     }
-*/
 
-  };
-  private:
-    T *org;
+    virtual bool isActive()
+    {
+        std::cerr << "Is Active on specialized called " << active << " on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
+        return active;
+    };
+
+    virtual void setActive(bool active = true)
+    {
+        std::cerr << "----------------############ Set active on specialized called " << active << std::endl;
+        std::cerr << "on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
+        this->active = active;
+        if (active && id != ID_ROOT_KNOT) {  // ID for the root-knot-composition
+            dynamic_cast<Composition*>((*pool)[1])->addChild(this, "child_" + getName());
+        }
+        std::cerr << " " << active << " " << this->active << " " << T::active  << std::endl;
+    }
+
+    virtual ~SpecializedComponent() {};
+
+    virtual constrained_based_networks::Component* getComponent()
+    {
+        return this;
+    };
+
+    virtual std::string getName() const
+    {
+        return getName(false);
+    }
+
+    virtual std::string getName(bool base) const
+    {
+        if (base) return T::getName();
+
+        std::stringstream s;
+        s << T::getName() << "_" << getID();
+        return s.str();
+    }
+
+    // This is ugly helper function to recover the IDs from mergeComponent
+    // should not used somewhere else, a cast should be sufficent
+    virtual constrained_based_networks::Component* getOrginal()
+    {
+        return org;
+    };
+
+    virtual unsigned int getID() const
+    {
+        return SpecializedComponentBase::id;
+        /*
+      if (classScope) {
+        return T::getID();
+      } else {
+        return SpecializedComponentBase::id;
+      }
+    */
+    };
+
+   private:
+    T* org;
     bool active;
-//  bool classScope;
+    Pool* pool;
+    //  bool classScope;
 };
 };

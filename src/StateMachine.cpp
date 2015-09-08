@@ -28,7 +28,7 @@ Component* StateMachine::searchCorresponding(Component *c, Pool *pool){
             //search for object in DB
             for(auto pci : pool->getItems<Component*>()){
                 if(auto pc = dynamic_cast<SpecializedComponentBase*>(pci)){
-                    if(pc->getComponent()->getName() == spec->getComponent()->getName()
+                    if(pc->getName(true) == spec->getName(true)
                             && pc->configuration == spec->configuration){
 //                            std::cout << "pc: " << pc << " pci: " << pci << std::endl;
 //                            std::cout << "pc: " << sizeof(*pc) << " pci: " << sizeof(*pci)  << " " << std::abs((long int)pc-(long int)pci) << std::endl;
