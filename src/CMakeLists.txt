@@ -10,6 +10,7 @@ set(SOURCES
    PortHandler.cpp
    StateMachine.cpp
    InstanceSolution.cpp
+   Logger.cpp
    #  Import.cpp
 )
 
@@ -25,6 +26,7 @@ set(HEADERS
    StateMachine.hpp
    InstanceSolution.hpp
    SpecializedComponent.hpp
+   Logger.hpp
    #   Import.hpp
 )
 

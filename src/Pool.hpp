@@ -8,6 +8,7 @@
 #include <boost/archive/text_iarchive.hpp>
 
 #include "Task.hpp"
+#include "Logger.hpp"
 
 namespace constrained_based_networks {
 
