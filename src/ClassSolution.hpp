@@ -51,8 +51,8 @@ protected:
     void removeAllUnsedCmps(std::vector<size_t> ids);
     void doMissingBranching();
     void createConstraintsForComposition(Composition *cmp);
-    std::map<Composition*, unsigned int> cmp_ids;
-    std::vector<bool> cmp_constraints_done;
+    //std::map<Composition*, unsigned int> cmp_ids;
+    //std::vector<bool> cmp_constraints_done;
     void prepareCompositionConstraints(Composition *composition);
 
 public:

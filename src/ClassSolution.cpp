@@ -133,10 +133,10 @@ void ClassSolution::prepareCompositionConstraints(Composition* composition)
 
 void ClassSolution::createConstraintsForComposition(Composition* composition)
 {
-    auto cmp_counter = cmp_ids[composition];
-    if (cmp_constraints_done[cmp_counter]) return;
-    cmp_constraints_done[cmp_counter] = true;
-    cmp_ids[composition] = cmp_counter;
+    auto cmp_counter = pool->getTypeSpecificId<Composition*>(composition);
+//    if (cmp_constraints_done[cmp_counter]) return;
+//    cmp_constraints_done[cmp_counter] = true;
+//    cmp_ids[composition] = cmp_counter;
     auto& composition_child_constraints = ir_assignments[cmp_counter];
 
     //        std::cout << "Processing composition " << composition->getName() << " (" << cmp_counter << ")" << std::endl;
@@ -228,12 +228,13 @@ ClassSolution::ClassSolution(Pool* _pool)
     depsOnlyOnCmp();
 
     auto compositions = pool->getItems<Composition*>();
-    cmp_constraints_done.resize(compositions.size(), false);
+//    cmp_constraints_done.resize(compositions.size(), false);
 
     for (size_t cmp_counter = 0; cmp_counter != compositions.size(); cmp_counter++) {
         auto composition = compositions[cmp_counter];
+        assert(cmp_counter == pool->getTypeSpecificId<Composition*>(composition));
         prepareCompositionConstraints(composition);
-        cmp_ids[composition] = cmp_counter;
+        //cmp_ids[composition] = cmp_counter;
     }
     // createConstraintsForComposition(compositions[0]);
 
@@ -600,8 +601,8 @@ ClassSolution::ClassSolution(bool share, ClassSolution& s) : Space(share, s)
     */
 
     pool = s.pool;
-    cmp_constraints_done = s.cmp_constraints_done;
-    cmp_ids = s.cmp_ids;
+//    cmp_constraints_done = s.cmp_constraints_done;
+//    cmp_ids = s.cmp_ids;
     active.update(*this, share, s.active);
     depends.update(*this, share, s.depends);
 #ifdef REMOVE_REC
