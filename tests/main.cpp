@@ -16,9 +16,47 @@ struct Tests{
     std::string name;
 };
 
+#if 0
+void bla(){
+    for (int i = 0; i < ir_assignments[cmp_id].size(); i++) {
+        if (ir_assignments[cmp_id][i].assigned()) {
+            unsigned int id = ir_assignments[cmp_id][i].val();
+            auto c = (*pool)[id];
 
+            graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+            auto a = pool->getItems<Composition*>()[cmp_id];
+            auto b = (pool->getItems<Composition*>()[cmp_id]->getPtr());
+            std::string aa = (dynamic_cast<SpecializedComponentBase*>(a) == 0) ? "true" : "false";
+            std::string bb = (dynamic_cast<SpecializedComponentBase*>(b.get()) == 0) ? "true" : "false";
+            std::cout << "Must equal: " << aa << " vs. " << bb << " " << a->getName() << "(" << a->getID() << ")" << std::endl;
+            std::cout << "pointer in CS: " << a << " | " << dynamic_cast<SpecializedComponentBase*>(a) << std::endl;
+            e->setSourceVertex((pool->getItems<Composition*>()[cmp_id]->getPtr()));
+            e->setTargetVertex(c->getPtr());
+            g->addEdge(e);
 
-
+            if (auto cmp = dynamic_cast<Composition*>(c)) {
+                /* //We don't need this check here was already done before
+                for(auto id2 : ids) if(id == id2){
+                    std::cout << "This cannot be we depend and outself?" << std::endl;
+                    //this is a failure posting invalid constrain
+                    rel(*this, active[0],IRT_EQ, 1);
+                    rel(*this, active[1],IRT_EQ, 0);
+                    return false; //TODO forbit this solution
+                }
+                */
+                // ids.push_back(id);
+                build_tree(g, pool->getTypeSpecificId<Composition*>(cmp));
+            } else {
+                // Nothing to do, the child is a leaf, which got added by the block before this if
+                //
+            }
+        } else {
+            std::cout << "Unresolved: " << (*pool)[i]->getName() << std::endl;
+        }
+    }
+    return true;
+}
+#endif
 
 void solve_final_network(ClassSolution s){
 
@@ -435,7 +473,7 @@ int main(int argc, char* argv[]) {
 
     //try{
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-    
+
     for(auto c: pool->getItems<Component*>()){
         if(c != pool->operator[](c->getID())){
             std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
@@ -452,13 +490,18 @@ int main(int argc, char* argv[]) {
     if(s){
         s->build_tree(graph, 0);
         std::cout << "Finished calculuation of ClassSolution continue with instance" << std::endl;
+
         graph_analysis::io::GraphIO::write("output.dot",graph,graph_analysis::representation::GRAPHVIZ);
+        graph_analysis::io::GraphIO::write("output.gexf", graph, graph_analysis::representation::GEXF);
+        graph_analysis::io::GraphIO::write("output.yml", graph, graph_analysis::representation::YAML);
+        std::cout << "End dump" << std::endl;
+
 //        InstanceSolution::gistBaBSeach(s);
         std::cout << "Finished calculuation of Instance InstanceSolution, Solution is:" << std::endl;
         std::cout << "################################################################################"<< std::endl;
         std::cout << "################################################################################"<< std::endl;
         std::cout << "################################################################################"<< std::endl;
-        auto is = InstanceSolution::babSearch(s);
+        auto is = InstanceSolution::babSearch(graph);
         is->rprint();
     }else{
         std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;

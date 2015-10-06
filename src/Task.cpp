@@ -48,15 +48,6 @@ int Task::getType() const
 }
 */
 
-std::string Task::getName() const
-{
-    return name;
-}
-
-void Task::setName(const std::string& name)
-{
-    this->name = name;
-}
 /*
 const std::vector<std::string>& Task::getConfiguration() const
 {

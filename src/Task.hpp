@@ -63,15 +63,8 @@ public:
      */
     std::string toString() const;
 
-    /**
-     * Get the name
-     */
-    virtual std::string getName() const;
+    virtual std::string getClassName() const { return "constrained_based_networks::Task"; }
 
-    /**
-     * Set the name
-     */
-    void setName(const std::string& name);
 #if 0
     /**
      * Get the configuration

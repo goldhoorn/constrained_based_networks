@@ -38,6 +38,7 @@ namespace constrained_based_networks {
             void setStart(const Component *c);
             void setStart(SpecializedComponentBase *c);
             bool abstract() const{return false;}
+            virtual std::string getClassName() const { return "constrained_based_networks::StateMachine"; }
 
             /*
              * This is a ugly part again, we need to update out internal components

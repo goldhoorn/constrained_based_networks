@@ -56,6 +56,7 @@ class Composition : public constrained_based_networks::Component, public constra
     Forwards getArgumentForwards(Component *child);
     Forwards getEventForwards(Component *child);
 
+    virtual std::string getClassName() const { return "constrained_based_networks::Composition"; }
 
     SpecializedComponentBase *getSpecialized();
     void addConfig(std::string name, std::string value)
@@ -98,15 +99,6 @@ class Composition : public constrained_based_networks::Component, public constra
      */
     int getType() const;
 
-    /**
-     * Get the name
-     */
-    virtual std::string getName() const;
-
-    /**
-     * Set the name
-     */
-    void setName(const std::string &name);
 #if 0
     /**
      * Get the configuration

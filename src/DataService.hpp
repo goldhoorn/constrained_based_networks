@@ -78,16 +78,8 @@ public:
      * String representation of a component
      */
     std::string toString() const;
-
-    /**
-     * Get the name
-     */
-    virtual std::string getName() const;
-
-    /**
-     * Set the name
-     */
-    void setName(const std::string& name);
+  
+    virtual std::string getClassName() const { return "constrained_based_networks::DataService"; }
 
     /**
      * Get the configuration

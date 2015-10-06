@@ -42,9 +42,11 @@ class Component : public graph_analysis::Vertex {
   bool isFullfilling(std::string name);
   virtual bool isActive();
   virtual void setActive(bool active = true);
-  virtual std::string getName() const;
+  virtual const std::string& getName() const;
   std::string toString() const { return getName(); }
-  std::string getClassName() const { return "MyVertex"; }
+  virtual std::string getClassName() const { return "constrained_based_networks::Component"; }
+
+  virtual const std::string& getLabel() const { return getName(); }
 
   // Made for testing purposes
   bool isIgnored();

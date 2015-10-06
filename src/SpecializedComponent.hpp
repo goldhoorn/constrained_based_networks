@@ -46,8 +46,8 @@ class SpecializedComponentBase : private boost::noncopyable
     virtual bool isActive() = 0;
     virtual void setActive(bool active = true) = 0;
     virtual unsigned int getID() const = 0;
-    virtual std::string getName(bool b) const = 0;
-    virtual std::string getName() const = 0;
+    virtual const std::string& getName(bool b) const = 0;
+    virtual const std::string& getName() const = 0;
 
     unsigned int id;
     /*
@@ -70,6 +70,11 @@ class SpecializedComponent : public SpecializedComponentBase, public T
         pool->addComponent(this);
         org = t;
         active=false;
+
+        std::stringstream s;
+        s << T::getName() << "_" << getID();
+        specialized_name = s.str();
+
     }
 
     virtual bool isActive()
@@ -96,18 +101,17 @@ class SpecializedComponent : public SpecializedComponentBase, public T
         return this;
     };
 
-    virtual std::string getName() const
+    virtual const std::string& getName() const
     {
         return getName(false);
     }
 
-    virtual std::string getName(bool base) const
+    virtual const std::string& getName(bool base) const
     {
-        if (base) return T::getName();
+        if (base)
+            return T::getName();
 
-        std::stringstream s;
-        s << T::getName() << "_" << getID();
-        return s.str();
+        return specialized_name;
     }
 
     // This is ugly helper function to recover the IDs from mergeComponent
@@ -133,6 +137,7 @@ class SpecializedComponent : public SpecializedComponentBase, public T
     T* org;
     bool active;
     Pool* pool;
+    std::string specialized_name;
     //  bool classScope;
 };
 };

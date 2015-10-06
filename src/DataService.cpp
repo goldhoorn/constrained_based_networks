@@ -43,15 +43,6 @@ int DataService::getType() const
 }
 */
 
-std::string DataService::getName() const
-{
-    return name;
-}
-
-void DataService::setName(const std::string& name)
-{
-    this->name = name;
-}
 /*
 const std::vector<std::string>& DataService::getConfiguration() const
 {

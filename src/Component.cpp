@@ -16,7 +16,7 @@ bool Component::isActive() {
   return active;
 };
 
-std::string Component::getName() const { return name; }
+const std::string& Component::getName() const { return name; }
 
 void Component::setActive(bool a) {
   active = a;

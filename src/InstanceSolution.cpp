@@ -21,11 +21,8 @@ using namespace Gecode;
 namespace constrained_based_networks
 {
 
-InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
+InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : graph(_graph)
 {
-    graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-    _cs->build_tree(graph, 0);
-
     // Setup the configuration arrays
     float_config.resize(graph->getAllVertices().size());
     bool_config.resize(graph->getAllVertices().size());
@@ -157,6 +154,7 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
                     // Dont care which type we choose check is done before
                     switch (child->getProperty(forward.second)) {
                         case(constrained_based_networks::ConfigurationModel::INT) : {
+                            assert(false);
                             auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
                             int_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
                             auto var_source = int_config[graph->getVertexId(node)][forward.first];
@@ -216,7 +214,6 @@ InstanceSolution::InstanceSolution(ClassSolution* _cs) : cs(_cs)
 
 InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(share, s)
 {
-    cs = s.cs;
     graph = s.graph;
 
     float_config.resize(s.float_config.size());
@@ -477,15 +474,15 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
     // active[i].val()
 }
 
-InstanceSolution* InstanceSolution::babSearch2(ClassSolution* cs)
+InstanceSolution* InstanceSolution::babSearch2(graph_analysis::BaseGraph::Ptr graph)
 {
-    return InstanceSolution::babSearch(cs);
+    return InstanceSolution::babSearch(graph);
 }
 
-InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs)
+InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr graph)
 {
     // Initial situation
-    InstanceSolution* so = new InstanceSolution(cs);
+    InstanceSolution* so = new InstanceSolution(graph);
     // BAB search engine
     // BAB<InstanceSolution> e(so);
     BAB<InstanceSolution> e(so);
@@ -518,9 +515,9 @@ InstanceSolution* InstanceSolution::babSearch(ClassSolution* cs)
     return best;
 }
 
-InstanceSolution* InstanceSolution::gistBaBSeach(ClassSolution* cs)
+InstanceSolution* InstanceSolution::gistBaBSeach(graph_analysis::BaseGraph::Ptr graph)
 {
-    InstanceSolution* m = new InstanceSolution(cs);
+    InstanceSolution* m = new InstanceSolution(graph);
     Gist::Print<InstanceSolution> printer("Print solution");
     Gist::VarComparator<InstanceSolution> c("Compare nodes");
     Gist::Options o;

@@ -85,16 +85,6 @@ int Composition::getType() const
     return 0;
 }
 
-std::string Composition::getName() const
-{
-    return name;
-}
-
-void Composition::setName(const std::string &name)
-{
-    this->name = name;
-}
-
 #if 0
 const std::vector<std::string>& Composition::getConfiguration() const
 {

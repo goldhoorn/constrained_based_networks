@@ -1,7 +1,6 @@
 #ifndef DECODE_INSTANCE_SOLUTION_H
 #define DECODE_INSTANCE_SOLUTION_H
 
-#include "ClassSolution.hpp"
 #include <gecode/set.hh>
 #include <gecode/int.hh>
 #include <gecode/float.hh>
@@ -21,15 +20,15 @@ class InstanceSolution : public Gecode::Space
 {
    public:
     // Default user-constructor
-    InstanceSolution(ClassSolution* cs);
+    InstanceSolution(graph_analysis::BaseGraph::Ptr graph);
 
     // Helper method for copying
     InstanceSolution(bool share, InstanceSolution& s);
 
     // Some helper-static constructors which also rxecures the search
-    static InstanceSolution* babSearch2(ClassSolution* cs);
-    static InstanceSolution* babSearch(ClassSolution* cs);
-    static InstanceSolution* gistBaBSeach(ClassSolution* cs);
+    static InstanceSolution* babSearch2(graph_analysis::BaseGraph::Ptr graph);
+    static InstanceSolution* babSearch(graph_analysis::BaseGraph::Ptr graph);
+    static InstanceSolution* gistBaBSeach(graph_analysis::BaseGraph::Ptr graph);
 
     // helper methods for gist
     void compare(const Space& s, std::ostream& os) const;
@@ -58,7 +57,6 @@ class InstanceSolution : public Gecode::Space
     static void print(const Space& home, const Gecode::BrancherHandle& bh, unsigned int a, Gecode::BoolVar x, int i, const int& n, std::ostream& o);
 
    protected:
-    ClassSolution* cs;
     graph_analysis::BaseGraph::Ptr graph;
 
     std::vector<std::map<std::string, Gecode::FloatVar>> float_config;
