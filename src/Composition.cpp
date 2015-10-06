@@ -14,7 +14,7 @@ Composition::Composition() : Component(Pool::getInstance())
 Composition::Composition(std::string name) : Component(Pool::getInstance())
 {
     this->name = name;
-    cmp_id = pool->getItems<Composition *>().size() - 1;
+    //cmp_id = pool->getItems<Composition *>().size() - 1;
 //    std::cout << "Creating composition: " << name << std::endl;
 }
 

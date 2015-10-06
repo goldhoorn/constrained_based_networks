@@ -33,7 +33,7 @@ class Composition : public constrained_based_networks::Component, public constra
     std::map<Component *, Forwards> argument_forwards;
     std::map<Component *, Forwards> event_forwards;
 
-    size_t cmp_id;
+//    size_t cmp_id;
 
     /**
      * The configuration consists of a variable sized vector of strings, naming one configuration profile.

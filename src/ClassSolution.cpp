@@ -119,85 +119,27 @@ bool ClassSolution::markCompositionAsChildless(Composition *composition, size_t 
 
 int ClassSolution::print_count = 0;
 
-ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
-    , active(*this, pool->getComponentCount(), 0, 1)
-    , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
-#ifdef REMOVE_REC
-    , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
-#endif
-{
-//    std::cout << "Hallo" << __LINE__ << std::endl;
-/*
-    std::cout << "Got " << pool->getItems<DataService*>().size() << "DataServices" << std::endl;
-    std::cout << "Got " << pool->getItems<Composition*>().size() << "Compositions" << std::endl;
-    std::cout << "Got " << pool->getItems<Task*>().size() << "Tasks" << std::endl;
-*/
-    //Defining inactive as the opposide to active
+void ClassSolution::prepareCompositionConstraints(Composition *composition){
+    ir_assignments.push_back(composition->getPossibleTaskAssignments(this));
+}
 
+void ClassSolution::createConstraintsForComposition(Composition *composition){
+        auto cmp_counter = cmp_ids[composition];
+        if(cmp_constraints_done[cmp_counter]) return;
+        cmp_constraints_done[cmp_counter] = true;
+        cmp_ids[composition] = cmp_counter;
+        auto& composition_child_constraints = ir_assignments[cmp_counter];
 
-    markAbstractAsInactive();
-    markActiveAsActive();
-    removeSelfCompositonsFromDepends();
-    depsOnlyOnCmp();
-
-    auto compositions = pool->getItems<Composition*>();
-    for(size_t cmp_counter = 0; cmp_counter != compositions.size();cmp_counter++){
-        auto composition = compositions[cmp_counter];
-
-        /*
-        if(dynamic_cast<SpecializedComponentBase*>(composition)){
-            std::cout << "Got a specialized " <<  composition->getName() << "(" << composition->getID() << ")"  << std::endl;
-            if(composition->isActive()){
-                std::cout << "-- And it should started!!" << std::endl;
-            }
-//            throw std::runtime_error("Jeha");
-        }
-        */
-#if 0
-                    if(composition->getID() == 360){
-                        std::cout << "pointer in class solution: " << composition << std::endl;
-                        std::cout << "Name: " << composition->getName() << std::endl;
-                        std::cout << "Pool: " << pool << std::endl;
-                        std::cout << "pointer in vector: " << pool->operator[](360)  << std::endl;
-                        if(composition->isActive()){
-                            std::cout << "-- And it should started!!" << std::endl;
-                        }else{
-                            std::cout << "-- And it should NOT started!!" << std::endl;
-                        }
-
-                        auto s = dynamic_cast<SpecializedComponentBase*>(composition);
-
-                        if(!s){
-                            DEBUG_CLASS_SOLUTION << "bla id: " << composition->getID() << std::endl;
-                            throw std::runtime_error("Das ist schlecht ");
-                        }else{
-                            throw std::runtime_error("Jeha das ist gut" );
-                        }
-
-                    }
-#endif
-        /*
-                    auto s = dynamic_cast<SpecializedComponentBase*>(composition);
-                    if(s){
-                        std::string str = composition->getName() + "(!)";
-                        for(auto c : s->configuration){
-                            str = str + "\n" + c.first + "=" + c.second;
-                        }
-                        std::cout << "Huch: " << str << std::endl;
-                    }
-                    */
 //        std::cout << "Processing composition " << composition->getName() << " (" << cmp_counter << ")" << std::endl;
-        auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
+        //auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
         //std::cout << "Hallo" << __LINE__ << std::endl;
         //std::cout << "Counter vs max: " << cmp_counter << "/" << compositions.size() << std::endl;
         markCompositionAsChildless(composition, cmp_counter);
 
         for(size_t child_id = 0; child_id != composition->getChildren().size(); child_id++){
             auto child = composition->getChildren()[child_id];
-            if(child.second == 0){
-                std::cout << " - "  << child.first << std::endl;
-                throw std::runtime_error("Child is nullpointer");
-            }
+            assert(child.second != 0);
+
             //If this composition is used all children needs to be active
             rel(*this, composition_child_constraints[child_id], IRT_NQ, 0 , imp(active[composition->getID()]));
 
@@ -255,11 +197,41 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
                 }
             }
         }
-
-
 //        branch(*this, composition_child_constraints, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
-        ir_assignments.push_back(composition_child_constraints);
+//        ir_assignments.push_back(composition_child_constraints);
+}
+
+ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
+    , active(*this, pool->getComponentCount(), 0, 1)
+    , depends(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
+#ifdef REMOVE_REC
+    , depends_recursive(*this,pool->getComponentCount(), IntSet::empty, IntSet(0,pool->getComponentCount()-1)) //pool->getCount<Composition*>()-1))
+#endif
+{
+    //Defining inactive as the opposide to active
+
+
+    markAbstractAsInactive();
+    markActiveAsActive();
+    removeSelfCompositonsFromDepends();
+    depsOnlyOnCmp();
+
+    auto compositions = pool->getItems<Composition*>();
+    cmp_constraints_done.resize(compositions.size(),false);
+
+    for(size_t cmp_counter = 0; cmp_counter != compositions.size();cmp_counter++){
+        auto composition = compositions[cmp_counter];
+        prepareCompositionConstraints(composition);
+        cmp_ids[composition] = cmp_counter;
     }
+    //createConstraintsForComposition(compositions[0]);
+
+    //I tried to do this inside the branching but the memory explodes :-(
+    //So it seems we have to do this one globally
+    for(auto cmp: compositions){
+        createConstraintsForComposition(cmp);
+    }
+
 
     std::cout << "Hallo" << __LINE__ << std::endl;
 
@@ -290,16 +262,17 @@ ClassSolution::ClassSolution(Pool *_pool): pool(_pool)
     markInactiveAsInactive();
     branch(*this, active[ID_ROOT_KNOT], INT_VAL_MIN());
     branch(*this, &ClassSolution::postBranching2);
+
     //active_brancher =  branch(*this, active, INT_VAR_SIZE_MIN(), INT_VAL_MIN(),NULL,&print);
     //active_brancher =  branch(*this, active, INT_VAR_ACTIVITY_MAX(0.8), INT_VAL_MIN());
     //branch(*this, &ClassSolution::postBranching);
-    for(size_t i = 0; i < ir_assignments.size();i++){
+//    for(size_t i = 0; i < ir_assignments.size();i++){
 //        ir_assignments_brancher.push_back(branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN()));
         //ir_assignments_brancher.push_back(branch(*this, ir_assignments[i], INT_VAR_ACTIVITY_MAX(0.8), INT_VAL_MIN()));
         //branch(*this, &ClassSolution::postBranching);
 //        branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
         //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MAX_EXC());
-    }
+//    }
     //branch(*this, &ClassSolution::postBranching);
     //branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
 //    depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
@@ -494,6 +467,8 @@ bool ClassSolution::findNextBrancher(unsigned int id){
             branch(*this, depends_recursive[id], SET_VAL_MIN_INC());
         }
 
+        createConstraintsForComposition(cmp);
+
         for(size_t c_id = 0; c_id < cmp->getChildren().size(); c_id++){
 //        for(auto child_p : cmp->getChildren()){
             auto child = cmp->getChildren()[c_id].second;
@@ -620,6 +595,8 @@ ClassSolution::ClassSolution(bool share, ClassSolution& s)
 
 
     pool = s.pool;
+    cmp_constraints_done = s.cmp_constraints_done;
+    cmp_ids = s.cmp_ids;
     active.update(*this, share, s.active);
     depends.update(*this, share, s.depends);
 #ifdef REMOVE_REC
