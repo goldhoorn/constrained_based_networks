@@ -26,7 +26,6 @@ class InstanceSolution : public Gecode::Space
     InstanceSolution(bool share, InstanceSolution& s);
 
     // Some helper-static constructors which also rxecures the search
-    static InstanceSolution* babSearch2(graph_analysis::BaseGraph::Ptr graph);
     static InstanceSolution* babSearch(graph_analysis::BaseGraph::Ptr graph);
     static InstanceSolution* gistBaBSeach(graph_analysis::BaseGraph::Ptr graph);
 
@@ -59,9 +58,14 @@ class InstanceSolution : public Gecode::Space
    protected:
     graph_analysis::BaseGraph::Ptr graph;
 
+    void gatherAllStringConfigs();
+
     std::vector<std::map<std::string, Gecode::FloatVar>> float_config;
     std::vector<std::map<std::string, Gecode::BoolVar>> bool_config;
     std::vector<std::map<std::string, Gecode::IntVar>> int_config;
+    std::vector<std::map<std::string, Gecode::IntVar>> string_config;
+
+    std::shared_ptr<std::map<std::string, unsigned int> > string_helper;
 
     template <typename C>
     void setupProperties(C component, graph_analysis::Vertex::Ptr vertex, graph_analysis::BaseGraph::Ptr graph)
@@ -109,8 +113,16 @@ class InstanceSolution : public Gecode::Space
                     break;
                 }
                 case constrained_based_networks::ConfigurationModel::STRING: {
-                    std::cout << "String hanlding not yet implemented in " << __FILE__ << " +" << __LINE__ << std::endl;
-//                    throw std::runtime_error("Not yet implemented");
+                    try
+                    {
+                        string_config[graph->getVertexId(vertex)].at(cfg.name);
+                    }
+                    catch (std::out_of_range e)
+                    {
+                        // Ok, propetry it is not yet created, let's create one
+                        auto var = Gecode::IntVar(*this, 0, string_helper->size());
+                        string_config[graph->getVertexId(vertex)][cfg.name] = var;
+                    }
                     break;
                 }
             }

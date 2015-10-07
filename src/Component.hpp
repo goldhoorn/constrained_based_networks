@@ -90,6 +90,14 @@ class Component : public graph_analysis::Vertex {
     return saved_conf.at(section).at(name);
   }
 
+  std::list<std::string> getSections(){
+    std::list<std::string> erg;
+    for(auto elem : saved_conf){
+        erg.push_back(elem.first);
+    }
+    return erg;
+  }
+
 
  protected:
   /*

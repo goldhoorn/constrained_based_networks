@@ -21,12 +21,59 @@ using namespace Gecode;
 namespace constrained_based_networks
 {
 
+void InstanceSolution::gatherAllStringConfigs(){
+    std::set<std::string> strings;
+    strings.insert("");
+    for(const auto &v : graph->getAllVertices()){
+        auto component = dynamic_cast<Component*>(v.get());
+        if (!component) throw std::runtime_error("Cannot get component from graph");
+        auto spec_component = dynamic_cast<SpecializedComponentBase*>(component);
+
+        for(const auto &prop : component->getProperties()){
+            if(prop.t == ConfigurationModel::STRING){
+
+                //Save all possible options from the config
+                for(const auto& section : component->getSections()){
+                    try{
+                    strings.insert(component->getConfFileProperty(section, prop.name));
+                    }catch(std::out_of_range e){
+                        //Do nothign because it is notmal that not all propertys exist in all sections
+                    }
+                }
+
+                //If this is a specialized component it might have configuration request on it's own
+                if(spec_component){
+                    auto it = spec_component->configuration.find(prop.name);
+
+                    //If this specalized component has a requirement for a string property
+                    //Otherwise it does not
+                    if( it != spec_component->configuration.end() ){
+                        strings.insert(it->second);
+                    }
+                }
+            }
+        }
+    }
+    string_helper = std::shared_ptr< std::map<std::string, unsigned int> >(new std::map<std::string, unsigned int> );
+    unsigned int cnt=0;
+    for(auto s : strings){
+        string_helper->insert( {s,cnt++} );
+    }
+}
+
+
 InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : graph(_graph)
 {
+    gatherAllStringConfigs();
+    for(auto c : *string_helper){
+        std::cout <<c.first  << std::endl;
+    }
+
     // Setup the configuration arrays
     float_config.resize(graph->getAllVertices().size());
     bool_config.resize(graph->getAllVertices().size());
     int_config.resize(graph->getAllVertices().size());
+    string_config.resize(graph->getAllVertices().size());
 
     // Setup all propagations and actual requirements for all configs we have
     // In case we have a specialized component, this is the only case
@@ -54,9 +101,11 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
                 // (which would assume that we are not support this?, maybe we we would set a specific configuration then?!
                 auto task = dynamic_cast<Task*>(edges->current()->getTargetVertex().get());
                 auto specialized_task = dynamic_cast<SpecializedComponentBase*>(edges->current()->getTargetVertex().get());
+
                 if (task && specialized_task) {
                     throw std::runtime_error("We got a specialized task as child, this is not (Yet) supported");
                 }
+
                 if (task) {
                     // Okay we start to use a default config for not
                     // TODO this must be extended later to load instead of the default-configs somthing which
@@ -91,8 +140,38 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
                                 break;
                             }
                             case(constrained_based_networks::ConfigurationModel::STRING) : {
-                                std::cerr << "TODO implement string handling" << __FUNCTION__ << " +" << __LINE__ << std::endl;
-                                //                                throw std::runtime_error("String not yet implemented");
+                                try
+                                {
+                                    //This can fail
+                                    std::string str = task->getConfFileProperty("default", prop.name);
+                                    unsigned int id = 0;
+                                    if(string_helper->find(str) == string_helper->end()){
+                                        throw std::runtime_error("String helper does not contain the needed string this should not happen");
+                                    }else{
+                                        id = string_helper->at(str);
+                                    }
+                                    rel(*this, string_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, id);
+                                }
+                                catch (std::out_of_range e)
+                                {
+                                    int id =0;
+                                    if(spec_cmp){
+                                        auto it = spec_cmp->configuration.find(prop.name);
+                                        if( it != spec_cmp->configuration.end() ){
+                                            std::string str;
+                                            if(string_helper->find(str) == string_helper->end()){
+                                                throw std::runtime_error("String helper does not contain the needed string this should not happen");
+                                            }else{
+                                                id = string_helper->at(str);
+                                            }
+                                        }else{
+                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming empty string" << std::endl;
+                                        }
+                                    }else{
+                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming empty string" << std::endl;
+                                    }
+                                    rel(*this, string_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, id);
+                                }
                                 break;
                             }
                             case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
@@ -154,7 +233,6 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
                     // Dont care which type we choose check is done before
                     switch (child->getProperty(forward.second)) {
                         case(constrained_based_networks::ConfigurationModel::INT) : {
-                            assert(false);
                             auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
                             int_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
                             auto var_source = int_config[graph->getVertexId(node)][forward.first];
@@ -162,7 +240,10 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::STRING) : {
-                            throw std::runtime_error("String not yet implemented");
+                            auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
+                            string_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
+                            auto var_source = string_config[graph->getVertexId(node)][forward.first];
+                            rel(*this, var, IRT_EQ, var_source);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
@@ -182,10 +263,6 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
                     };
                 }
             }
-        }
-        if (spec_cmp) {
-            std::cout << "I'm having a specialized here Please implement me in in InstanceSolution " << spec_cmp->getComponent()->getName() << std::endl;
-//            throw std::runtime_error("  Got a specialized component with the tree");
         }
         if (task) {
             setupProperties(task, node, graph);
@@ -207,7 +284,9 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
             for (auto c : int_config[id]) {
                 branch(*this, c.second, INT_VAL_MIN());
             }
-            // TODO add string variable
+            for (auto c : string_config[id]) {
+                branch(*this, c.second, INT_VAL_MIN());
+            }
         }
     }
 }
@@ -215,6 +294,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
 InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(share, s)
 {
     graph = s.graph;
+    string_helper = s.string_helper;
 
     float_config.resize(s.float_config.size());
     for (size_t i = 0; i < s.float_config.size(); i++) {
@@ -239,7 +319,13 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(shar
             int_config[i][c.first].update(*this, share, s.int_config[i][c.first]);
         }
     }
-    // TODO String configs
+    string_config.resize(s.string_config.size());
+    for (size_t i = 0; i < s.string_config.size(); i++) {
+        for (auto c : s.string_config[i]) {
+            string_config[i][c.first] = IntVar();
+            string_config[i][c.first].update(*this, share, s.string_config[i][c.first]);
+        }
+    }
 }
 
 Space* InstanceSolution::copy(bool share)
@@ -323,6 +409,10 @@ void InstanceSolution::printToDot(std::ostream& os) const
                 std::cout << c.first.c_str() << std::endl;
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
+            for (auto c : string_config[graph->getVertexId(node)]) {
+                std::cout << c.first.c_str() << std::endl;
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
         }else if (auto task = dynamic_cast<Task*>(component)) {
             os << task->getName() << std::endl;
             for (auto c : float_config[graph->getVertexId(node)]) {
@@ -334,6 +424,10 @@ void InstanceSolution::printToDot(std::ostream& os) const
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
             for (auto c : int_config[graph->getVertexId(node)]) {
+                std::cout << c.first.c_str() << std::endl;
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
+            for (auto c : string_config[graph->getVertexId(node)]) {
                 std::cout << c.first.c_str() << std::endl;
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
@@ -468,15 +562,19 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
             for (auto c : int_config[graph->getVertexId(node)]) {
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
+            for (auto c : string_config[graph->getVertexId(node)]) {
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
+            for (auto c : bool_config[graph->getVertexId(node)]) {
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
+            for (auto c : float_config[graph->getVertexId(node)]) {
+                os << "-- " << c.first << ": " << c.second << std::endl;
+            }
         }
     }
     // active[i].assigned()
     // active[i].val()
-}
-
-InstanceSolution* InstanceSolution::babSearch2(graph_analysis::BaseGraph::Ptr graph)
-{
-    return InstanceSolution::babSearch(graph);
 }
 
 InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr graph)
@@ -489,12 +587,13 @@ InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr gra
     // DFS<InstanceSolution> e(so);
     // search
     InstanceSolution* best = NULL;
-
+    unsigned int cnt=0;
     while (InstanceSolution* s = e.next()) {
         if (best != NULL) {
             delete best;
             best = 0;
         }
+        cnt++;
         // Save current solution as best
         // s->rprint();
         // std::cout <<
@@ -512,6 +611,9 @@ InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr gra
         throw std::runtime_error("InstanceSolution babSearch: No solutions");
     }
     delete so;
+    std::cout << "#####################################################" << std::endl;
+    std::cout << "Found " << cnt << " instance solutions" << std::endl;
+    std::cout << "#####################################################" << std::endl;
     return best;
 }
 

@@ -17,7 +17,9 @@ PortHandler::~PortHandler(){
 bool PortHandler::operator ==( const PortHandler &comp ) const
 {
 //    return name == comp.name;
-#warning TODO implement me
+    throw std::runtime_error("Implement portHandler operator==");
+    //TODO implement me
+    return false;
 }
 
 std::string PortHandler::toString() const
