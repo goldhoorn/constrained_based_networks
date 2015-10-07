@@ -7,6 +7,7 @@
 #include <constrained_based_networks/SpecializedComponent.hpp>
 #include <graph_analysis/GraphIO.hpp>
 #include "dump.hpp"
+#include  <sys/stat.h>
 
 using namespace constrained_based_networks;
 Pool *pool;
@@ -64,7 +65,7 @@ void solve_final_network(ClassSolution s){
 
 
 //void resolve(std::string name, bool res, bool debug = false){
-ClassSolution* resolve(Component *c, bool res, bool debug = false){
+std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool debug = false){
     /*
         std::cout << "Resolving for component: " <<  c->getName() << " (" << c->getID() << ")" << std::endl;
         //Checking check check
@@ -133,17 +134,20 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
     }
 */
     try{
-        ClassSolution* s=0;
+        std::vector<graph_analysis::BaseGraph::Ptr> erg;
         if(debug){
-            s = ClassSolution::gistBaBSeach();
+            //TODO
+            ClassSolution::gistBaBSeach();
         }else{
-            s = ClassSolution::babSearch(pool);
+            erg = ClassSolution::babSearch(pool);
         }
 
+#if 0
         std::cout << "+++++ Is solveable: " << c->getName() << std::endl;
         s->rprint();
         std::cout << "End ClassSolution " << c->getName() << std::endl;
-        return s;
+#endif
+        return erg;
 
     }catch(std::runtime_error e){
         std::cout << "!!!!! UN-Solveable: " << c->getName() << " " << e.what() << " " << std::endl;
@@ -152,22 +156,22 @@ ClassSolution* resolve(Component *c, bool res, bool debug = false){
             Composition *comp = dynamic_cast<Composition*>(c);
             if(!comp){
                 std::cerr << c->getName() << " is No compositon FATAL" << std::endl;
-                return 0;
+                return std::vector<graph_analysis::BaseGraph::Ptr>();
             }
             for(auto child : comp->getChildren()){
                 if(child.second->abstract()){
                     if(c->getName() == (child.second->getName() + "_cmp")){
                         std::cerr << "Cannot finally solve " <<  c->getName() << std::endl;
-                        return 0;
+                        return std::vector<graph_analysis::BaseGraph::Ptr>();
                     }
                     //TODO fix here specializations got lost
-                    resolve(pool->getComponent(child.second->getName() + "_cmp"),res,debug);
+                    return resolve(pool->getComponent(child.second->getName() + "_cmp"),res,debug);
                 }else{
-                    resolve(child.second,res, debug);
+                    return resolve(child.second,res, debug);
                 }
             }
         }
-        return 0;
+        return std::vector<graph_analysis::BaseGraph::Ptr>();
     }
 }
 
@@ -484,18 +488,19 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    std::stringstream folder;
+    folder << "result-" << test_id << "/";
 
-
-    auto s = resolve(pool->getComponent(name),resolve_nonresolveable,debug);
-    if(s){
-        s->build_tree(graph, 0);
-        std::cout << "Finished calculuation of ClassSolution continue with instance" << std::endl;
-
-        graph_analysis::io::GraphIO::write("output.dot",graph,graph_analysis::representation::GRAPHVIZ);
-        graph_analysis::io::GraphIO::write("output.gexf", graph, graph_analysis::representation::GEXF);
-        graph_analysis::io::GraphIO::write("output.yml", graph, graph_analysis::representation::YAML);
+    mkdir(folder.str().c_str(),0755);
+    unsigned int cnt=0;
+    for(auto graph : resolve(pool->getComponent(name),resolve_nonresolveable,debug)){
+        std::cout << "Finished calculuation of ClassSolution number" << cnt << std::endl;
+        std::stringstream s;
+        s << folder.str() << "output-" << std::setw(4) << std::setfill('0') << cnt++;
+        graph_analysis::io::GraphIO::write(s.str(), graph, graph_analysis::representation::GEXF);
         std::cout << "End dump" << std::endl;
-
+    }
+#if 0
 //        InstanceSolution::gistBaBSeach(s);
         std::cout << "Finished calculuation of Instance InstanceSolution, Solution is:" << std::endl;
         std::cout << "################################################################################"<< std::endl;
@@ -506,6 +511,7 @@ int main(int argc, char* argv[]) {
     }else{
         std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;
     }
+#endif
 
 
     //}catch(...){

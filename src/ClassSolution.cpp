@@ -924,13 +924,17 @@ void ClassSolution::print(const Space& home, const BrancherHandle& bh, unsigned 
     */
 }
 
+#if 0
 ClassSolution* ClassSolution::babSearch2()
 {
     return ClassSolution::babSearch(Pool::getInstance());
 }
+#endif
 
-ClassSolution* ClassSolution::babSearch(Pool* pool)
+std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
 {
+    std::vector<graph_analysis::BaseGraph::Ptr> erg;
+
     // Initial situation
     ClassSolution* so = new ClassSolution(pool);
     // BAB search engine
@@ -945,6 +949,10 @@ ClassSolution* ClassSolution::babSearch(Pool* pool)
             delete best;
             best = 0;
         }
+        graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+        s->build_tree(graph, 0);
+        erg.push_back(graph);
+
         // Save current solution as best
         // s->rprint();
         // std::cout << "------------------------------------------------------------------------------------------" << std::endl;
@@ -958,7 +966,8 @@ ClassSolution* ClassSolution::babSearch(Pool* pool)
         throw std::runtime_error("ClassSolution babSearch: No solutions");
     }
     delete so;
-    return best;
+    delete best;
+    return erg;
 }
 
 ClassSolution* ClassSolution::gistBaBSeach()

@@ -116,8 +116,8 @@ public:
      *
      * \throw Exception if there is no solution.
      */
-    static ClassSolution* babSearch2();
-    static ClassSolution* babSearch(Pool *pool);
+//    static ClassSolution* babSearch2();
+    static std::vector<graph_analysis::BaseGraph::Ptr> babSearch(Pool *pool);
     static ClassSolution* gistBaBSeach();
 };
 
