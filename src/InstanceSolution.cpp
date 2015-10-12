@@ -3,6 +3,7 @@
 #include <gecode/gist.hh>
 #include <gecode/minimodel.hh>
 
+#include <memory>
 #include <vector>
 #include <map>
 #include <stdexcept>
@@ -13,7 +14,7 @@
 #include "SpecializedComponent.hpp"
 #include <stdlib.h>
 #include <fstream>
-
+#include <graph_analysis/GraphIO.hpp>
 #include <gecode/gist.hh>
 
 using namespace Gecode;
@@ -25,7 +26,8 @@ void InstanceSolution::gatherAllStringConfigs(){
     std::set<std::string> strings;
     strings.insert("");
     for(const auto &v : graph->getAllVertices()){
-        auto component = dynamic_cast<Component*>(v.get());
+        auto helper_node = boost::static_pointer_cast<ComponentInstanceHelper>(v);
+        auto component = dynamic_cast<Component*>(helper_node->component.get());
         if (!component) throw std::runtime_error("Cannot get component from graph");
         auto spec_component = dynamic_cast<SpecializedComponentBase*>(component);
 
@@ -62,8 +64,53 @@ void InstanceSolution::gatherAllStringConfigs(){
 }
 
 
-InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : graph(_graph)
+void InstanceSolution::buildInstanceGraph(graph_analysis::Vertex::Ptr parent_orig, graph_analysis::DirectedGraphInterface &orig, graph_analysis::Vertex::Ptr parent){
+    //Only for testing
+    if(!orig.getOutEdgeIterator(parent_orig)->next()){
+        return;
+    }
+    static int i=0;
+    ++i;
+    std::cout << "------------ " << i << " OUT EDGES of " << parent_orig->toString() << "-----------" << std::endl;
+    for(auto v : orig.outEdges(parent_orig)){
+        auto target = ComponentInstanceHelper::make(v->getTargetVertex());
+        graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+        e->setSourceVertex(parent);
+        e->setTargetVertex(target);
+        graph->addEdge(e);
+        std::cout << i << " Jeha from " << parent_orig->toString() << " -> " << v->getTargetVertex()->toString() << std::endl;
+        buildInstanceGraph(v->getTargetVertex(),orig,target);
+    }
+
+    std::cout << "------------ " << i << " OUT EDGES END -------------" << std::endl;
+    --i;
+}
+
+void InstanceSolution::buildStructure(graph_analysis::Vertex::Ptr parent){
+//    for(auto v : orig.outEdges(parent)){
+//    }
+}
+
+InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : graph(_graph)
 {
+    graph_analysis::Vertex::Ptr root;
+    std::vector<graph_analysis::BaseGraph::Ptr> erg;
+    for(auto v:_graph->getAllVertices()){
+        if(v->getLabel() == "root-knot"){
+            root = v;
+            break;
+        }
+    }
+    if(!root){
+        throw std::runtime_error("Could not get the root knot of the graph");
+    }
+
+    graph = boost::static_pointer_cast<graph_analysis::DirectedGraphInterface>(graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH));
+    auto orig = dynamic_cast<graph_analysis::DirectedGraphInterface*>(_graph.get());
+    assert(orig);
+
+    buildInstanceGraph(root,*orig, ComponentInstanceHelper::make(root));
+
     gatherAllStringConfigs();
     for(auto c : *string_helper){
         std::cout <<c.first  << std::endl;
@@ -79,8 +126,9 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
     // In case we have a specialized component, this is the only case
     // (currently) where a configuiration is actually filled
     // with values. Later a extension based on configurations is needed
-    for (auto node : graph->getAllVertices()) {
-        auto component = dynamic_cast<Component*>(node.get());
+    for (auto helper_node : graph->getAllVertices()) {
+        auto helper_node2 = boost::static_pointer_cast<ComponentInstanceHelper>(helper_node);
+        auto component = dynamic_cast<Component*>(helper_node2->component.get());
         if (!component) throw std::runtime_error("Cannot get component from graph");
 
         // We need only to separate between this types, al other types should not occur anymore in the graph
@@ -91,10 +139,10 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
         if (!task && !cmp) throw std::runtime_error("We have some unresolved or unknown elements within the graph");
 
         if (cmp) {
-            setupProperties(cmp, node, graph);
+            setupProperties(cmp, helper_node2, graph);
 
             // So we need to propagate all entries here
-            auto edges = graph->getEdgeIterator(node);
+            auto edges = graph->getEdgeIterator(helper_node2);
             while (edges->next()) {
 
                 // If our task is a child and we are NOT a specialized component
@@ -235,28 +283,28 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
                         case(constrained_based_networks::ConfigurationModel::INT) : {
                             auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
                             int_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
-                            auto var_source = int_config[graph->getVertexId(node)][forward.first];
+                            auto var_source = int_config[graph->getVertexId(helper_node2)][forward.first];
                             rel(*this, var, IRT_EQ, var_source);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::STRING) : {
                             auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
                             string_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
-                            auto var_source = string_config[graph->getVertexId(node)][forward.first];
+                            auto var_source = string_config[graph->getVertexId(helper_node2)][forward.first];
                             rel(*this, var, IRT_EQ, var_source);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
                             auto var = Gecode::FloatVar(*this, 0, Gecode::Float::Limits::max);
                             float_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
-                            auto var_source = float_config[graph->getVertexId(node)][forward.first];
+                            auto var_source = float_config[graph->getVertexId(helper_node2)][forward.first];
                             rel(*this, var, FRT_EQ, var_source);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::BOOL) : {
                             auto var = Gecode::BoolVar(*this, 0, 1);
                             bool_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
-                            auto var_source = bool_config[graph->getVertexId(node)][forward.first];
+                            auto var_source = bool_config[graph->getVertexId(helper_node2)][forward.first];
                             rel(*this, var, IRT_EQ, var_source);
                             break;
                         }
@@ -265,7 +313,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph) : grap
             }
         }
         if (task) {
-            setupProperties(task, node, graph);
+            setupProperties(task, helper_node2, graph);
         }
     }
 
@@ -593,7 +641,7 @@ InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr gra
             delete best;
             best = 0;
         }
-        cnt++;
+        ++cnt;
         // Save current solution as best
         // s->rprint();
         // std::cout <<
@@ -614,6 +662,7 @@ InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr gra
     std::cout << "#####################################################" << std::endl;
     std::cout << "Found " << cnt << " instance solutions" << std::endl;
     std::cout << "#####################################################" << std::endl;
+    graph_analysis::io::GraphIO::write("instance-erg.dot", best->graph, graph_analysis::representation::GRAPHVIZ);
     return best;
 }
 

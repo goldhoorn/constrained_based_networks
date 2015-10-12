@@ -6,9 +6,34 @@
 #include <gecode/float.hh>
 #include <gecode/search.hh>
 #include "Pool.hpp"
+#include <graph_analysis/GraphAnalysis.hpp>
 
 namespace constrained_based_networks
 {
+
+    class ComponentInstanceHelper : public graph_analysis::Vertex {
+        public:
+            ComponentInstanceHelper(graph_analysis::Vertex::Ptr underlaying):
+                component(underlaying)
+        {
+        }
+
+        graph_analysis::Vertex::Ptr getPtr(){
+          if (self.get() == nullptr) {
+            self = graph_analysis::Vertex::Ptr(this);
+          }
+          return self;
+        }
+        static graph_analysis::Vertex::Ptr make(graph_analysis::Vertex::Ptr o){
+            auto c = new ComponentInstanceHelper(o);
+            return c->getPtr();
+        }
+        std::string toString() const { return component->toString(); }
+
+        graph_analysis::Vertex::Ptr component;
+        graph_analysis::Vertex::Ptr self;
+    };
+
 
 class Composition;
 
@@ -56,9 +81,12 @@ class InstanceSolution : public Gecode::Space
     static void print(const Space& home, const Gecode::BrancherHandle& bh, unsigned int a, Gecode::BoolVar x, int i, const int& n, std::ostream& o);
 
    protected:
-    graph_analysis::BaseGraph::Ptr graph;
+    graph_analysis::DirectedGraphInterface::Ptr graph;
+
+    void buildStructure(graph_analysis::Vertex::Ptr parent);
 
     void gatherAllStringConfigs();
+    void buildInstanceGraph(graph_analysis::Vertex::Ptr orig_parent, graph_analysis::DirectedGraphInterface &orig, graph_analysis::Vertex::Ptr parent);
 
     std::vector<std::map<std::string, Gecode::FloatVar>> float_config;
     std::vector<std::map<std::string, Gecode::BoolVar>> bool_config;
