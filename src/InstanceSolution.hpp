@@ -81,6 +81,7 @@ class InstanceSolution : public Gecode::Space
     static void print(const Space& home, const Gecode::BrancherHandle& bh, unsigned int a, Gecode::BoolVar x, int i, const int& n, std::ostream& o);
 
    protected:
+    size_t verticies_in_tree;
     graph_analysis::DirectedGraphInterface::Ptr graph;
 
     void buildStructure(graph_analysis::Vertex::Ptr parent);
@@ -92,6 +93,7 @@ class InstanceSolution : public Gecode::Space
     std::vector<std::map<std::string, Gecode::BoolVar>> bool_config;
     std::vector<std::map<std::string, Gecode::IntVar>> int_config;
     std::vector<std::map<std::string, Gecode::IntVar>> string_config;
+    Gecode::BoolVarArray interleaved;
 
     std::shared_ptr<std::map<std::string, unsigned int> > string_helper;
 

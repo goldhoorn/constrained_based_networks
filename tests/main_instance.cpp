@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     }
     if(!file){
         std::cerr << "Please use a file for testing" << std::endl
-            << "-d  Debug mode" << std::endl 
+            << "-d  Debug mode" << std::endl
             << "-r  Resolve unresoloveable" << std::endl
             << "-t  Test ID for real-generated" << std::endl
             << "-f  Filename (nonoptional" << std::endl;
@@ -71,7 +71,8 @@ int main(int argc, char* argv[]) {
 
 
     auto is = InstanceSolution::babSearch(graph);
-    is->rprint();
+    (void)is;
+//    is->rprint();
 
     return 0;
 }

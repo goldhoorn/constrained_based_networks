@@ -66,24 +66,24 @@ void InstanceSolution::gatherAllStringConfigs(){
 
 void InstanceSolution::buildInstanceGraph(graph_analysis::Vertex::Ptr parent_orig, graph_analysis::DirectedGraphInterface &orig, graph_analysis::Vertex::Ptr parent){
     //Only for testing
-    if(!orig.getOutEdgeIterator(parent_orig)->next()){
-        return;
-    }
-    static int i=0;
-    ++i;
-    std::cout << "------------ " << i << " OUT EDGES of " << parent_orig->toString() << "-----------" << std::endl;
+    //if(!orig.getOutEdgeIterator(parent_orig)->next()){
+    //    return;
+    //}
+    //static int i=0;
+    //++i;
+    //std::cout << "------------ " << i << " OUT EDGES of " << parent_orig->toString() << "-----------" << std::endl;
     for(auto v : orig.outEdges(parent_orig)){
         auto target = ComponentInstanceHelper::make(v->getTargetVertex());
         graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
         e->setSourceVertex(parent);
         e->setTargetVertex(target);
         graph->addEdge(e);
-        std::cout << i << " Jeha from " << parent_orig->toString() << " -> " << v->getTargetVertex()->toString() << std::endl;
+    //    std::cout << i << " Jeha from " << parent_orig->toString() << " -> " << v->getTargetVertex()->toString() << std::endl;
         buildInstanceGraph(v->getTargetVertex(),orig,target);
     }
 
-    std::cout << "------------ " << i << " OUT EDGES END -------------" << std::endl;
-    --i;
+    //std::cout << "------------ " << i << " OUT EDGES END -------------" << std::endl;
+    //--i;
 }
 
 void InstanceSolution::buildStructure(graph_analysis::Vertex::Ptr parent){
@@ -117,10 +117,47 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
     }
 
     // Setup the configuration arrays
-    float_config.resize(graph->getAllVertices().size());
-    bool_config.resize(graph->getAllVertices().size());
-    int_config.resize(graph->getAllVertices().size());
-    string_config.resize(graph->getAllVertices().size());
+    verticies_in_tree = graph->getAllVertices().size();
+    float_config.resize (verticies_in_tree);
+    bool_config.resize  (verticies_in_tree);
+    int_config.resize   (verticies_in_tree);
+    string_config.resize(verticies_in_tree);
+
+    interleaved = Gecode::BoolVarArray(*this,verticies_in_tree*verticies_in_tree,0,1);
+
+    for (auto _n1: graph->vertices()) {
+        auto i = graph->getVertexId(_n1);
+        auto n1 = boost::static_pointer_cast<ComponentInstanceHelper>(_n1);
+        assert(n1);
+        for (auto _n2: graph->vertices()) {
+            auto n2 = boost::static_pointer_cast<ComponentInstanceHelper>(_n2);
+            assert(n2);
+            auto j = graph->getVertexId(_n2);
+
+            //The relation interleaved is symetric, if we are the same than another, the another is the same than we
+            rel(*this,interleaved[i+(verticies_in_tree*j)], IRT_EQ, interleaved[j+(verticies_in_tree*i)]);
+
+            if(n1->component != n2->component){
+                //std::cout << "Cannot be interleaved " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
+                rel(*this,interleaved[i+(verticies_in_tree*j)], IRT_NQ, 1);
+                /* We don't need this becase the root is always diffeent to anything else
+                if(i == 0 || j==0){
+                    rel(*this,interleaved[i+(max*j)], IRT_NQ, 1);
+                }
+                */
+            }else{
+                //We cannot interleave us which us self
+                if(i==j){
+                    //std::cout << "Cannot be interleaved because its th same " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
+                    rel(*this,interleaved[i+(verticies_in_tree*j)], IRT_NQ, 1);
+                }else{
+                    //std::cout << "could be interleaved " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
+                    //std::cout << i << " and " << j << std::endl;
+                    //std::cout << i+(verticies_in_tree*j) << " and " << j+(verticies_in_tree*i) << std::endl;
+                }
+            }
+        }
+    }
 
     // Setup all propagations and actual requirements for all configs we have
     // In case we have a specialized component, this is the only case
@@ -337,12 +374,14 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
             }
         }
     }
+    branch(*this, interleaved, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
 }
 
 InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(share, s)
 {
     graph = s.graph;
     string_helper = s.string_helper;
+    verticies_in_tree = s.verticies_in_tree;
 
     float_config.resize(s.float_config.size());
     for (size_t i = 0; i < s.float_config.size(); i++) {
@@ -374,6 +413,7 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(shar
             string_config[i][c.first].update(*this, share, s.string_config[i][c.first]);
         }
     }
+    interleaved.update(*this,share,s.interleaved);
 }
 
 Space* InstanceSolution::copy(bool share)
@@ -602,11 +642,13 @@ void InstanceSolution::printToDot(std::ostream& os) const
 
 void InstanceSolution::printToStream(std::ostream& os, bool full) const
 {
-
-    for (auto node : graph->getAllVertices()) {
-        auto component = dynamic_cast<Component*>(node.get());
+    for (auto _node : graph->vertices()) {
+        auto node = boost::reinterpret_pointer_cast<ComponentInstanceHelper>(_node);
+        auto component = dynamic_cast<Component*>(node->component.get());
+        std::cout << "- " << component->toString() << std::endl;
         if (auto task = dynamic_cast<Task*>(component)) {
-            os << task->getName() << std::endl;
+            (void)task;
+//            os << task->getName() << std::endl;
             for (auto c : int_config[graph->getVertexId(node)]) {
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
@@ -620,9 +662,17 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
         }
+
+        for ( auto _n2 : graph->vertices() ){
+            const auto idx = graph->getVertexId(_n2) + (graph->getVertexId(_node) * verticies_in_tree);
+            assert(interleaved[idx].assigned());
+            if(interleaved[idx].val()){
+                //auto interleaved_component = boost::reinterpret_pointer_cast<ComponentInstanceHelper>(_n2);
+                os << "--- is interleved with:" << _n2->toString() << " " << interleaved[idx].val() << std::endl;
+            }
+
+        }
     }
-    // active[i].assigned()
-    // active[i].val()
 }
 
 InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr graph)
@@ -642,8 +692,12 @@ InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr gra
             best = 0;
         }
         ++cnt;
+        std::stringstream filename;
+        filename << "Instance-" << cnt << ".dot";
+        graph_analysis::io::GraphIO::write(filename.str(), s->graph, graph_analysis::representation::GRAPHVIZ);
         // Save current solution as best
-        // s->rprint();
+        std::cout << "############ Solution " << cnt << " ############################" << std::endl;
+        s->rprint();
         // std::cout <<
         // "------------------------------------------------------------------------------------------"
         // << std::endl;
