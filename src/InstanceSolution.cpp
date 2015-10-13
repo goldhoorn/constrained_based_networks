@@ -22,86 +22,91 @@ using namespace Gecode;
 namespace constrained_based_networks
 {
 
-void InstanceSolution::gatherAllStringConfigs(){
+void InstanceSolution::gatherAllStringConfigs()
+{
     std::set<std::string> strings;
     strings.insert("");
-    for(const auto &v : graph->getAllVertices()){
+    for (const auto& v : graph->getAllVertices()) {
         auto helper_node = boost::static_pointer_cast<ComponentInstanceHelper>(v);
         auto component = dynamic_cast<Component*>(helper_node->component.get());
         if (!component) throw std::runtime_error("Cannot get component from graph");
         auto spec_component = dynamic_cast<SpecializedComponentBase*>(component);
 
-        for(const auto &prop : component->getProperties()){
-            if(prop.t == ConfigurationModel::STRING){
+        for (const auto& prop : component->getProperties()) {
+            if (prop.t == ConfigurationModel::STRING) {
 
-                //Save all possible options from the config
-                for(const auto& section : component->getSections()){
-                    try{
-                    strings.insert(component->getConfFileProperty(section, prop.name));
-                    }catch(std::out_of_range e){
-                        //Do nothign because it is notmal that not all propertys exist in all sections
+                // Save all possible options from the config
+                for (const auto& section : component->getSections()) {
+                    try
+                    {
+                        strings.insert(component->getConfFileProperty(section, prop.name));
+                    }
+                    catch (std::out_of_range e)
+                    {
+                        // Do nothign because it is notmal that not all propertys exist in all sections
                     }
                 }
 
-                //If this is a specialized component it might have configuration request on it's own
-                if(spec_component){
+                // If this is a specialized component it might have configuration request on it's own
+                if (spec_component) {
                     auto it = spec_component->configuration.find(prop.name);
 
-                    //If this specalized component has a requirement for a string property
-                    //Otherwise it does not
-                    if( it != spec_component->configuration.end() ){
+                    // If this specalized component has a requirement for a string property
+                    // Otherwise it does not
+                    if (it != spec_component->configuration.end()) {
                         strings.insert(it->second);
                     }
                 }
             }
         }
     }
-    string_helper = std::shared_ptr< std::map<std::string, unsigned int> >(new std::map<std::string, unsigned int> );
-    unsigned int cnt=0;
-    for(auto s : strings){
-        string_helper->insert( {s,cnt++} );
+    string_helper = std::shared_ptr<std::map<std::string, unsigned int>>(new std::map<std::string, unsigned int>);
+    unsigned int cnt = 0;
+    for (auto s : strings) {
+        string_helper->insert({s, cnt++});
     }
 }
 
-
-void InstanceSolution::buildInstanceGraph(graph_analysis::Vertex::Ptr parent_orig, graph_analysis::DirectedGraphInterface &orig, graph_analysis::Vertex::Ptr parent){
-    //Only for testing
-    //if(!orig.getOutEdgeIterator(parent_orig)->next()){
+void InstanceSolution::buildInstanceGraph(graph_analysis::Vertex::Ptr parent_orig, graph_analysis::DirectedGraphInterface& orig, graph_analysis::Vertex::Ptr parent)
+{
+    // Only for testing
+    // if(!orig.getOutEdgeIterator(parent_orig)->next()){
     //    return;
     //}
-    //static int i=0;
+    // static int i=0;
     //++i;
-    //std::cout << "------------ " << i << " OUT EDGES of " << parent_orig->toString() << "-----------" << std::endl;
-    for(auto v : orig.outEdges(parent_orig)){
+    // std::cout << "------------ " << i << " OUT EDGES of " << parent_orig->toString() << "-----------" << std::endl;
+    for (auto v : orig.outEdges(parent_orig)) {
         auto target = ComponentInstanceHelper::make(v->getTargetVertex());
         graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
         e->setSourceVertex(parent);
         e->setTargetVertex(target);
         graph->addEdge(e);
-    //    std::cout << i << " Jeha from " << parent_orig->toString() << " -> " << v->getTargetVertex()->toString() << std::endl;
-        buildInstanceGraph(v->getTargetVertex(),orig,target);
+        //    std::cout << i << " Jeha from " << parent_orig->toString() << " -> " << v->getTargetVertex()->toString() << std::endl;
+        buildInstanceGraph(v->getTargetVertex(), orig, target);
     }
 
-    //std::cout << "------------ " << i << " OUT EDGES END -------------" << std::endl;
+    // std::cout << "------------ " << i << " OUT EDGES END -------------" << std::endl;
     //--i;
 }
 
-void InstanceSolution::buildStructure(graph_analysis::Vertex::Ptr parent){
-//    for(auto v : orig.outEdges(parent)){
-//    }
+void InstanceSolution::buildStructure(graph_analysis::Vertex::Ptr parent)
+{
+    //    for(auto v : orig.outEdges(parent)){
+    //    }
 }
 
-InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : graph(_graph)
+InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : graph(_graph)
 {
     graph_analysis::Vertex::Ptr root;
     std::vector<graph_analysis::BaseGraph::Ptr> erg;
-    for(auto v:_graph->getAllVertices()){
-        if(v->getLabel() == "root-knot"){
+    for (auto v : _graph->getAllVertices()) {
+        if (v->getLabel() == "root-knot") {
             root = v;
             break;
         }
     }
-    if(!root){
+    if (!root) {
         throw std::runtime_error("Could not get the root knot of the graph");
     }
 
@@ -109,55 +114,19 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
     auto orig = dynamic_cast<graph_analysis::DirectedGraphInterface*>(_graph.get());
     assert(orig);
 
-    buildInstanceGraph(root,*orig, ComponentInstanceHelper::make(root));
+    buildInstanceGraph(root, *orig, ComponentInstanceHelper::make(root));
 
     gatherAllStringConfigs();
-    for(auto c : *string_helper){
-        std::cout <<c.first  << std::endl;
+    for (auto c : *string_helper) {
+        std::cout << c.first << std::endl;
     }
 
     // Setup the configuration arrays
     verticies_in_tree = graph->getAllVertices().size();
-    float_config.resize (verticies_in_tree);
-    bool_config.resize  (verticies_in_tree);
-    int_config.resize   (verticies_in_tree);
+    float_config.resize(verticies_in_tree);
+    bool_config.resize(verticies_in_tree);
+    int_config.resize(verticies_in_tree);
     string_config.resize(verticies_in_tree);
-
-    interleaved = Gecode::BoolVarArray(*this,verticies_in_tree*verticies_in_tree,0,1);
-
-    for (auto _n1: graph->vertices()) {
-        auto i = graph->getVertexId(_n1);
-        auto n1 = boost::static_pointer_cast<ComponentInstanceHelper>(_n1);
-        assert(n1);
-        for (auto _n2: graph->vertices()) {
-            auto n2 = boost::static_pointer_cast<ComponentInstanceHelper>(_n2);
-            assert(n2);
-            auto j = graph->getVertexId(_n2);
-
-            //The relation interleaved is symetric, if we are the same than another, the another is the same than we
-            rel(*this,interleaved[i+(verticies_in_tree*j)], IRT_EQ, interleaved[j+(verticies_in_tree*i)]);
-
-            if(n1->component != n2->component){
-                //std::cout << "Cannot be interleaved " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
-                rel(*this,interleaved[i+(verticies_in_tree*j)], IRT_NQ, 1);
-                /* We don't need this becase the root is always diffeent to anything else
-                if(i == 0 || j==0){
-                    rel(*this,interleaved[i+(max*j)], IRT_NQ, 1);
-                }
-                */
-            }else{
-                //We cannot interleave us which us self
-                if(i==j){
-                    //std::cout << "Cannot be interleaved because its th same " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
-                    rel(*this,interleaved[i+(verticies_in_tree*j)], IRT_NQ, 1);
-                }else{
-                    //std::cout << "could be interleaved " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
-                    //std::cout << i << " and " << j << std::endl;
-                    //std::cout << i+(verticies_in_tree*j) << " and " << j+(verticies_in_tree*i) << std::endl;
-                }
-            }
-        }
-    }
 
     // Setup all propagations and actual requirements for all configs we have
     // In case we have a specialized component, this is the only case
@@ -199,7 +168,6 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
                     // Make sure the properties exist
                     setupProperties(task, edges->current()->getTargetVertex(), graph);
 
-
                     for (auto prop : task->getProperties()) {
                         switch (prop.t) {
                             case(constrained_based_networks::ConfigurationModel::INT) : {
@@ -209,15 +177,15 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
                                 }
                                 catch (std::out_of_range e)
                                 {
-                                    int val =0;
-                                    if(spec_cmp){
+                                    int val = 0;
+                                    if (spec_cmp) {
                                         auto it = spec_cmp->configuration.find(prop.name);
-                                        if( it != spec_cmp->configuration.end() ){
+                                        if (it != spec_cmp->configuration.end()) {
                                             val = atoi(it->second.c_str());
-                                        }else{
+                                        } else {
                                             std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0" << std::endl;
                                         }
-                                    }else{
+                                    } else {
                                         std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0" << std::endl;
                                     }
                                     rel(*this, int_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, val);
@@ -227,32 +195,32 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
                             case(constrained_based_networks::ConfigurationModel::STRING) : {
                                 try
                                 {
-                                    //This can fail
+                                    // This can fail
                                     std::string str = task->getConfFileProperty("default", prop.name);
                                     unsigned int id = 0;
-                                    if(string_helper->find(str) == string_helper->end()){
+                                    if (string_helper->find(str) == string_helper->end()) {
                                         throw std::runtime_error("String helper does not contain the needed string this should not happen");
-                                    }else{
+                                    } else {
                                         id = string_helper->at(str);
                                     }
                                     rel(*this, string_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, id);
                                 }
                                 catch (std::out_of_range e)
                                 {
-                                    int id =0;
-                                    if(spec_cmp){
+                                    int id = 0;
+                                    if (spec_cmp) {
                                         auto it = spec_cmp->configuration.find(prop.name);
-                                        if( it != spec_cmp->configuration.end() ){
+                                        if (it != spec_cmp->configuration.end()) {
                                             std::string str;
-                                            if(string_helper->find(str) == string_helper->end()){
+                                            if (string_helper->find(str) == string_helper->end()) {
                                                 throw std::runtime_error("String helper does not contain the needed string this should not happen");
-                                            }else{
+                                            } else {
                                                 id = string_helper->at(str);
                                             }
-                                        }else{
+                                        } else {
                                             std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming empty string" << std::endl;
                                         }
-                                    }else{
+                                    } else {
                                         std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming empty string" << std::endl;
                                     }
                                     rel(*this, string_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, id);
@@ -267,15 +235,15 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
                                 }
                                 catch (std::out_of_range e)
                                 {
-                                    double val =0;
-                                    if(spec_cmp){
+                                    double val = 0;
+                                    if (spec_cmp) {
                                         auto it = spec_cmp->configuration.find(prop.name);
-                                        if( it != spec_cmp->configuration.end() ){
+                                        if (it != spec_cmp->configuration.end()) {
                                             val = atof(it->second.c_str());
-                                        }else{
+                                        } else {
                                             std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0.0" << std::endl;
                                         }
-                                    }else{
+                                    } else {
                                         std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0.0" << std::endl;
                                     }
                                     rel(*this, float_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], FRT_EQ, val);
@@ -291,14 +259,14 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
                                 catch (std::out_of_range e)
                                 {
                                     bool val = false;
-                                    if(spec_cmp){
+                                    if (spec_cmp) {
                                         auto it = spec_cmp->configuration.find(prop.name);
-                                        if( it != spec_cmp->configuration.end() ){
+                                        if (it != spec_cmp->configuration.end()) {
                                             val = atoi(it->second.c_str());
-                                        }else{
+                                        } else {
                                             std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming false" << std::endl;
                                         }
-                                    }else{
+                                    } else {
                                         std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming false" << std::endl;
                                     }
                                     rel(*this, bool_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, val);
@@ -351,6 +319,74 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)// : gr
         }
         if (task) {
             setupProperties(task, helper_node2, graph);
+        }
+    }
+
+    // Handle the interlaaving, means if a component should be the same than another one in the real instanciation
+    // This is maybe the most important part of this class to idntify single and double-tasks
+    interleaved = Gecode::BoolVarArray(*this, verticies_in_tree * verticies_in_tree, 0, 1);
+    for (auto _n1 : graph->vertices()) {
+        auto i = graph->getVertexId(_n1);
+        auto n1 = boost::static_pointer_cast<ComponentInstanceHelper>(_n1);
+        assert(n1);
+        for (auto _n2 : graph->vertices()) {
+            auto n2 = boost::static_pointer_cast<ComponentInstanceHelper>(_n2);
+            assert(n2);
+            auto j = graph->getVertexId(_n2);
+
+            // The relation interleaved is symetric, if we are the same than another, the another is the same than we
+            rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_EQ, interleaved[j + (verticies_in_tree * i)]);
+
+            if (n1->component != n2->component) {
+                // std::cout << "Cannot be interleaved " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
+                rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_NQ, 1);
+                /* We don't need this becase the root is always diffeent to anything else
+                if(i == 0 || j==0){
+                    rel(*this,interleaved[i+(max*j)], IRT_NQ, 1);
+                }
+                */
+            } else {
+                // We cannot interleave us which us self
+                if (i == j) {
+                    // std::cout << "Cannot be interleaved because its th same " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
+                    rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_NQ, 1);
+                } else {
+                    // Ok the components are equal in her name, make sure that they are
+                    // interleaved only if the configuration is consistent
+                    auto component = dynamic_cast<Component*>(n2->component.get());
+                    assert(component);
+
+                    for (auto prop : component->getProperties()) {
+                        switch (prop.t) {
+                            case ConfigurationModel::DOUBLE:
+                                rel(*this, interleaved[i + (verticies_in_tree * j)] >> (float_config[i][prop.name] == float_config[j][prop.name]));
+                                break;
+                            case ConfigurationModel::INT:
+                                rel(*this, interleaved[i + (verticies_in_tree * j)] >> (int_config[i][prop.name] == int_config[j][prop.name]));
+                                break;
+                            case ConfigurationModel::STRING:
+                                rel(*this, interleaved[i + (verticies_in_tree * j)] >> (string_config[i][prop.name] == string_config[j][prop.name]));
+                                break;
+                            case ConfigurationModel::BOOL:
+                                rel(*this, interleaved[i + (verticies_in_tree * j)] >> (bool_config[i][prop.name] == bool_config[j][prop.name]));
+                                break;
+                            default:
+                                throw std::runtime_error("Unknown type in config handling");
+                        }
+                    }
+                    std::cout << n2->toString() << std::endl;
+                    auto children1 = graph->getOutEdgeIterator(n2);  //->//composition->getChildren();
+                    auto children2 = graph->getOutEdgeIterator(n1);  ////dynamic_cast<Composition*>(n1->component.get())->getChildren();
+                    while (children1->next() && children2->next()) {
+                        auto child_id1 = graph->getVertexId(children1->current()->getTargetVertex());
+                        auto child_id2 = graph->getVertexId(children2->current()->getTargetVertex());
+                        rel(*this, interleaved[i + (verticies_in_tree * j)] >> interleaved[child_id1 + (verticies_in_tree * child_id2)]);
+                    }
+                    // std::cout << "could be interleaved " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
+                    // std::cout << i << " and " << j << std::endl;
+                    // std::cout << i+(verticies_in_tree*j) << " and " << j+(verticies_in_tree*i) << std::endl;
+                }
+            }
         }
     }
 
@@ -413,7 +449,7 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution& s) : Space(shar
             string_config[i][c.first].update(*this, share, s.string_config[i][c.first]);
         }
     }
-    interleaved.update(*this,share,s.interleaved);
+    interleaved.update(*this, share, s.interleaved);
 }
 
 Space* InstanceSolution::copy(bool share)
@@ -501,7 +537,7 @@ void InstanceSolution::printToDot(std::ostream& os) const
                 std::cout << c.first.c_str() << std::endl;
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
-        }else if (auto task = dynamic_cast<Task*>(component)) {
+        } else if (auto task = dynamic_cast<Task*>(component)) {
             os << task->getName() << std::endl;
             for (auto c : float_config[graph->getVertexId(node)]) {
                 std::cout << c.first.c_str() << std::endl;
@@ -519,7 +555,7 @@ void InstanceSolution::printToDot(std::ostream& os) const
                 std::cout << c.first.c_str() << std::endl;
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
-        }else{
+        } else {
             std::runtime_error("HAve somehting unknown in graphe here");
         }
     }
@@ -648,7 +684,7 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
         std::cout << "- " << component->toString() << std::endl;
         if (auto task = dynamic_cast<Task*>(component)) {
             (void)task;
-//            os << task->getName() << std::endl;
+            //            os << task->getName() << std::endl;
             for (auto c : int_config[graph->getVertexId(node)]) {
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
@@ -663,14 +699,13 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
             }
         }
 
-        for ( auto _n2 : graph->vertices() ){
+        for (auto _n2 : graph->vertices()) {
             const auto idx = graph->getVertexId(_n2) + (graph->getVertexId(_node) * verticies_in_tree);
             assert(interleaved[idx].assigned());
-            if(interleaved[idx].val()){
-                //auto interleaved_component = boost::reinterpret_pointer_cast<ComponentInstanceHelper>(_n2);
+            if (interleaved[idx].val()) {
+                // auto interleaved_component = boost::reinterpret_pointer_cast<ComponentInstanceHelper>(_n2);
                 os << "--- is interleved with:" << _n2->toString() << " " << interleaved[idx].val() << std::endl;
             }
-
         }
     }
 }
@@ -685,7 +720,7 @@ InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr gra
     // DFS<InstanceSolution> e(so);
     // search
     InstanceSolution* best = NULL;
-    unsigned int cnt=0;
+    unsigned int cnt = 0;
     while (InstanceSolution* s = e.next()) {
         if (best != NULL) {
             delete best;
@@ -697,7 +732,7 @@ InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr gra
         graph_analysis::io::GraphIO::write(filename.str(), s->graph, graph_analysis::representation::GRAPHVIZ);
         // Save current solution as best
         std::cout << "############ Solution " << cnt << " ############################" << std::endl;
-        s->rprint();
+        // s->rprint();
         // std::cout <<
         // "------------------------------------------------------------------------------------------"
         // << std::endl;

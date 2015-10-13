@@ -257,26 +257,25 @@ std::string test_ambigious_configs(){
     };
 
 std::string load_test(int nr=-1){
+    std::string name = "";
     if(nr==-1){
+        printf("Creating model from export\n");
         create_model();
-        return "";
-    }
-
-    printf("Running test: %i\n",nr);
-
-    std::string name;
-    if(tests[nr].name == ""){
-        name = tests[nr].v();
     }else{
-        tests[nr].v();
-        name = tests[nr].name;
+        //printf("Running test: %i\n",nr);
+        if(tests[nr].name == ""){
+            name = tests[nr].v();
+        }else{
+            tests[nr].v();
+            name = tests[nr].name;
+        }
+        printf("Running test with name: %s\n",name.c_str());
     }
 
     pool = Pool::getInstance();
 
     pool->mergeDoubles();
 
-    printf("Running test with name: %s\n",name.c_str());
     return name;
 
 }
