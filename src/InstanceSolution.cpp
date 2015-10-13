@@ -96,12 +96,11 @@ void InstanceSolution::buildStructure(graph_analysis::Vertex::Ptr parent)
     //    }
 }
 
-InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : graph(_graph)
+graph_analysis::Vertex::Ptr InstanceSolution::getRoot(const graph_analysis::BaseGraph::Ptr& _graph)
 {
     graph_analysis::Vertex::Ptr root;
-    std::vector<graph_analysis::BaseGraph::Ptr> erg;
     for (auto v : _graph->getAllVertices()) {
-        if (v->getLabel() == "root-knot") {
+        if (v->toString() == "root-knot") {
             root = v;
             break;
         }
@@ -109,6 +108,12 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     if (!root) {
         throw std::runtime_error("Could not get the root knot of the graph");
     }
+    return root;
+}
+
+InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : graph(_graph)
+{
+    graph_analysis::Vertex::Ptr root = getRoot(_graph);
 
     graph = boost::static_pointer_cast<graph_analysis::DirectedGraphInterface>(graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH));
     auto orig = dynamic_cast<graph_analysis::DirectedGraphInterface*>(_graph.get());
@@ -117,9 +122,6 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     buildInstanceGraph(root, *orig, ComponentInstanceHelper::make(root));
 
     gatherAllStringConfigs();
-    for (auto c : *string_helper) {
-        std::cout << c.first << std::endl;
-    }
 
     // Setup the configuration arrays
     verticies_in_tree = graph->getAllVertices().size();
@@ -374,7 +376,6 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                                 throw std::runtime_error("Unknown type in config handling");
                         }
                     }
-                    std::cout << n2->toString() << std::endl;
                     auto children1 = graph->getOutEdgeIterator(n2);  //->//composition->getChildren();
                     auto children2 = graph->getOutEdgeIterator(n1);  ////dynamic_cast<Composition*>(n1->component.get())->getChildren();
                     while (children1->next() && children2->next()) {
@@ -457,64 +458,6 @@ Space* InstanceSolution::copy(bool share)
     return new InstanceSolution(share, *this);
 }
 
-void InstanceSolution::compare(const Space& _s, std::ostream& os) const
-{
-#if 0
-    auto s = static_cast<const InstanceSolution&>(_s);
-    char buff[512];
-    sprintf(buff,"/tmp/dep-%i.dot", print_count);
-    std::ofstream file(buff);
-    file << "digraph G {" << std::endl;
-    size_t cmp_id=0;
-    for(auto composition : pool->getItems<Composition*>()){
-        size_t child_id=0;
-        for(auto child : composition->getChildren()){
-            if(ir_assignments[cmp_id][child_id].assigned() && s.ir_assignments[cmp_id][child_id].assigned()){
-                if(s.ir_assignments[cmp_id][child_id].val() > ID_START){
-                    if(ir_assignments[cmp_id][child_id].val() == s.ir_assignments[cmp_id][child_id].val()){
-                        file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[label=\"" << child.first << "\"];" << std::endl;
-                    }else{
-                        file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
-                        file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[s.ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
-                    }
-                }
-            }else if(ir_assignments[cmp_id][child_id].assigned()){
-                if(ir_assignments[cmp_id][child_id].val() > ID_START){
-                file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
-                file << "\t\"" << composition->getName() << "\" -> \"" << "N/A (unresolved)" << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
-                }
-//                file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
-//                file << "\t\"" << composition->getName() << "\" -> \"" << "N/A (unresolved)" << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
-//                 if(ir_assignments[cmp_id][child_id].val() > ID_START){ //Only print assigned solutions
-//                    if(!s.ir_assignments[cmp_id][child_id].assigned()){
- //                       file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
-//                        file << "\t\"" << composition->getName() << "\" -> \"" << "N/A (unresolved)" << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
-  //                  }else{
-//                    }
-//                 }
-            }else if(s.ir_assignments[cmp_id][child_id].assigned()){
-                if(s.ir_assignments[cmp_id][child_id].val() > ID_START){
-                    file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[s.ir_assignments[cmp_id][child_id].val()]->getName() << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
-                    file << "\t\"" << composition->getName() << "\" -> \"" << "N/A (unresolved)" << "\"[color=green,label=\"" << child.first << "\"];" << std::endl;
-                }
-            }else{
-                std::cerr << "somethign is really strange here" << std::endl;
-            }
-            child_id++;
-        }
-        cmp_id++;
-    }
-
-
-    file << "}" << std::endl;
-    sprintf(buff,"dot -Tsvg /tmp/dep-%i.dot -o /tmp/dep-%i.svg",print_count,print_count);
-    system(buff);
-    os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
-
-    const_cast<InstanceSolution*>(this)->print_count++;
-#endif
-}
-
 void InstanceSolution::printToDot(std::ostream& os) const
 {
     for (auto node : graph->getAllVertices()) {
@@ -559,121 +502,6 @@ void InstanceSolution::printToDot(std::ostream& os) const
             std::runtime_error("HAve somehting unknown in graphe here");
         }
     }
-#if 0
-    Pool *pool = Pool::getInstance();
-    /*
-    os << "Count: " << active.size() << std::endl;
-
-    os << "Running State: { " << std::endl;
-    for(int i = full?0:ID_START; i < active.size(); i++)
-    {
-        //os << "\t" << (*Pool::getInstance())[i]->getName() << "=";
-        if(active[i].assigned())
-        {
-            if(active[i].val() || full){
-                os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
-            }
-        }
-        else
-        {
-            os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
-        }
-//        os << ", "<< std::endl;
-    }
-    os << "}" << std::endl;
-
-
-    os << "Child Selection: { " << std::endl;
-    */
-
-    //TODO ugly
-    char buff[512];
-    sprintf(buff,"/tmp/dep-%i.dot", print_count);
-    std::ofstream file(buff);
-    file << "digraph G {" << std::endl;
-    size_t cmp_id=0;
-    for(auto composition : pool->getItems<Composition*>()){
-        size_t child_id=0;
-        for(auto child : composition->getChildren()){
-            if(ir_assignments[cmp_id][child_id].assigned()){
-                 if(ir_assignments[cmp_id][child_id].val() > ID_START){ //Only print assigned solutions
-                    file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[label=\"" << child.first << "\"];" << std::endl;
-                    //os <<  " (" << ir_assignments[cmp_id][child_id] << ")" << std::endl;
-                 }
-            }else{
-                for (IntVarValues j(ir_assignments[cmp_id][child_id]); j(); ++j){
-                    //file << "\t\"" << composition->getName() << "\" -> \"!" << ir_assignments[cmp_id][child_id] << "\"[color=red];" << std::endl;
-                    //file << "\t\"!" << ir_assignments[cmp_id][child_id] << "\"[color=red];" << std::endl;
-                    file << "\t\"" << composition->getName() << "\" -> \"" << (*pool)[j.val()]->getName() << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
-                    file << "\t\"" << (*pool)[j.val()]->getName() << "\"[color=red];" << std::endl;
-                    file << "\t\"" << composition->getName() << "\"[color=red];" << std::endl;
-                    if(active[j.val()].assigned()){
-                        if(active[j.val()].val()){
-                            file << "\t\"" << (*pool)[j.val()]->getName() << "\"[style=filled,fillcolor=green];" << std::endl;
-                        }else{
-                            file << "\t\"" << (*pool)[j.val()]->getName() << "\"[style=filled,fillcolor=red];" << std::endl;
-                        }
-                    }else{
-                        file << "\t\"" << (*pool)[j.val()]->getName() << "\"[style=filled,fillcolor=yellow];" << std::endl;
-                    }
-                }
-//                os << "\t" << composition->getName() << "." << child.first << "=" << ir_assignments[cmp_id][child_id] << std::endl;
-            }
-            child_id++;
-        }
-        cmp_id++;
-    }
-    file << "}" << std::endl;
-    sprintf(buff,"dot -Tsvg /tmp/dep-%i.dot -o /tmp/dep-%i.svg",print_count,print_count);
-    system(buff);
-    os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
-
-#if 1
-    sprintf(buff,"/tmp/dep-graph-%i.dot", print_count);
-    std::ofstream file2(buff);
-    file2 << "digraph G {" << std::endl;
-    for(size_t i = 1; i< depends.size();i++){
-        auto o = (*pool)[i];
-
-        for (SetVarGlbValues j(depends[i]); j(); ++j){
-            //if(j.val() < ID_START && !full) continue;
-            file2 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\";" << std::endl;
-        }
-        for (SetVarUnknownValues j(depends[i]); j(); ++j){
-            file2 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\"[color=yellow];" << std::endl;
-        }
-    }
-    file2 << "}" << std::endl;
-    file2.close();
-    sprintf(buff,"dot -Tsvg /tmp/dep-graph-%i.dot -o /tmp/dep-graph-%i.svg",print_count,print_count);
-    system(buff);
-    os << "<h1> Dependancy Selection: </h1><br/><img src=\"/tmp/dep-graph-" << print_count << ".svg\"\\>" << std::endl;
-#endif
-#if 1
-    sprintf(buff,"/tmp/dep-rgraph-%i.dot", print_count);
-    std::ofstream file3(buff);
-    file3 << "digraph G {" << std::endl;
-    for(size_t i = 1; i< depends_recursive.size();i++){
-        auto o = (*pool)[i];
-        for (SetVarGlbValues j(depends_recursive[i]); j(); ++j){
-            //if(j.val() < ID_START && !full) continue;
-            file3 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\";" << std::endl;
-        }
-        for (SetVarUnknownValues j(depends_recursive[i]); j(); ++j){
-            file3 <<  "\t\"" << o->getName() << "\" -> \""  <<  (*pool)[j.val()]->getName() << "\"[color=yellow];" << std::endl;
-        }
-    }
-    file3 << "}" << std::endl;
-    file3.close();
-    sprintf(buff,"dot -Tsvg /tmp/dep-rgraph-%i.dot -o /tmp/dep-rgraph-%i.svg",print_count,print_count);
-    system(buff);
-    os << "<h1> Recursive dependancy Selection: </h1><br/><img src=\"/tmp/dep-rgraph-" << print_count << ".svg\"\\>" << std::endl;
-#endif
-
-
-    print_count++;
-
-#endif
 }
 
 void InstanceSolution::printToStream(std::ostream& os, bool full) const
@@ -710,28 +538,77 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
     }
 }
 
-InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr graph)
+graph_analysis::Vertex::Ptr InstanceSolution::getConfiguredComponent(graph_analysis::Vertex::Ptr vertex)
 {
+    auto id = graph->getVertexId(vertex);
+
+    // Search for the lowest id for a interleaving, the lowest id if the component we use
+    for (size_t i = 0; i < verticies_in_tree; i++) {
+        if (interleaved[id + (i * verticies_in_tree)].val()) {
+            if (i < id) {
+                id = i;
+            }
+        }
+    }
+
+    // Never created yet such Configured Component, let's create one
+    if (configured_component_helper.find(id) == configured_component_helper.end()) {
+        auto helper = boost::static_pointer_cast<ComponentInstanceHelper>(vertex).get()->component.get();
+        assert(helper);
+        auto component = dynamic_cast<Component*>(helper);
+        assert(component);
+        auto s = string_config[id];
+        auto i = int_config[id];
+        auto b = bool_config[id];
+        auto f = float_config[id];
+        configured_component_helper[id] = graph_analysis::Vertex::Ptr(new ConfiguredComponent(component, f, b, i, s, string_helper));
+    }
+
+    assert(configured_component_helper[id].get());
+    return configured_component_helper[id];
+}
+
+void InstanceSolution::build_tree(graph_analysis::BaseGraph::Ptr erg, graph_analysis::Vertex::Ptr parent)
+{
+    // If we are on level 0 (e.g need the root_knot
+    if (parent.get() == 0) {
+        parent = getRoot(graph);
+    }
+    for (auto child : graph->outEdges(parent)) {
+        graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+        e->setSourceVertex(getConfiguredComponent(parent));
+        e->setTargetVertex(getConfiguredComponent(child->getTargetVertex()));
+        erg->addEdge(e);
+        build_tree(erg, child->getTargetVertex());
+    }
+}
+
+std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr input_graph)
+{
+    std::vector<graph_analysis::BaseGraph::Ptr> erg;
     // Initial situation
-    InstanceSolution* so = new InstanceSolution(graph);
+    InstanceSolution* so = new InstanceSolution(input_graph);
     // BAB search engine
     // BAB<InstanceSolution> e(so);
     BAB<InstanceSolution> e(so);
     // DFS<InstanceSolution> e(so);
     // search
     InstanceSolution* best = NULL;
-    unsigned int cnt = 0;
     while (InstanceSolution* s = e.next()) {
         if (best != NULL) {
             delete best;
             best = 0;
         }
-        ++cnt;
-        std::stringstream filename;
-        filename << "Instance-" << cnt << ".dot";
-        graph_analysis::io::GraphIO::write(filename.str(), s->graph, graph_analysis::representation::GRAPHVIZ);
+        //++cnt;
+        // std::stringstream filename;
+        // filename << "Instance-" << cnt << ".dot";
+        // graph_analysis::io::GraphIO::write(filename.str(), s->graph, graph_analysis::representation::GRAPHVIZ);
+
+        graph_analysis::BaseGraph::Ptr out_graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+        s->build_tree(out_graph, graph_analysis::Vertex::Ptr());
+        erg.push_back(out_graph);
         // Save current solution as best
-        std::cout << "############ Solution " << cnt << " ############################" << std::endl;
+        // std::cout << "############ Solution " << cnt << " ############################" << std::endl;
         // s->rprint();
         // std::cout <<
         // "------------------------------------------------------------------------------------------"
@@ -748,14 +625,18 @@ InstanceSolution* InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr gra
         throw std::runtime_error("InstanceSolution babSearch: No solutions");
     }
     delete so;
+    delete best;
+    /*
     std::cout << "#####################################################" << std::endl;
     std::cout << "Found " << cnt << " instance solutions" << std::endl;
     std::cout << "#####################################################" << std::endl;
     graph_analysis::io::GraphIO::write("instance-erg.dot", best->graph, graph_analysis::representation::GRAPHVIZ);
-    return best;
+    */
+    return erg;
 }
 
-InstanceSolution* InstanceSolution::gistBaBSeach(graph_analysis::BaseGraph::Ptr graph)
+#if 0
+std::vector<graph_analysis::BaseGraph::Ptr>  InstanceSolution::gistBaBSeach(graph_analysis::BaseGraph::Ptr graph)
 {
     InstanceSolution* m = new InstanceSolution(graph);
     Gist::Print<InstanceSolution> printer("Print solution");
@@ -769,5 +650,6 @@ InstanceSolution* InstanceSolution::gistBaBSeach(graph_analysis::BaseGraph::Ptr 
     Gist::bab(m, o);
     return m;
 }
+#endif
 
 }  // end namespace constrained_based_networks

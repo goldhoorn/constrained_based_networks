@@ -56,9 +56,10 @@ int main(int argc, char* argv[]) {
     //Start to create our graph based on the imported graph
     for (auto node : graph_imported->getAllEdges()) {
         graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+#if 0
         std::cout << "from " << node->getSourceVertex()->getLabel() << std::endl;
         std::cout << "to  " << node->getSourceVertex()->getLabel() << std::endl;
-
+#endif
         const auto &v1 = pool->getComponent(node->getSourceVertex()->getLabel());
         const auto &v2 = pool->getComponent(node->getTargetVertex()->getLabel());
         assert(v1->getPtr());
@@ -71,8 +72,12 @@ int main(int argc, char* argv[]) {
 
 
     auto is = InstanceSolution::babSearch(graph);
-    (void)is;
-//    is->rprint();
-
+    size_t cnt=0;
+    for(auto solution : is){
+        std::stringstream filename;
+        filename << "instance-solution-" << cnt++ << ".dot";
+        graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GRAPHVIZ);
+    }
+    std::cout << "Found overall " << cnt << " solutions" << std::endl;
     return 0;
 }
