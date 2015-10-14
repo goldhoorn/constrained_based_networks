@@ -39,11 +39,14 @@ class ConfiguredComponent : public graph_analysis::Vertex
         }
         for (auto e : s) {
             std::string config_value = "ERR: N/A";
-            auto id = e.second.val();
-            for (auto v : *sh) {
-                if (v.second == id) {
-                    config_value = v.first;
-                    break;
+            //TODO check unassigned values
+            if(e.second.assigned()){
+                auto id = e.second.val();
+                for (auto v : *sh) {
+                    if (v.second == id) {
+                        config_value = v.first;
+                        break;
+                    }
                 }
             }
             string_config.push_back({e.first, config_value});
