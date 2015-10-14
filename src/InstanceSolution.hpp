@@ -10,18 +10,33 @@
 
 namespace constrained_based_networks
 {
+
 class ConfiguredComponent : public graph_analysis::Vertex
 {
    public:
+
+    template <typename T>
+    struct Config
+    {
+        T min;
+        T max;
+        std::string name;
+    };
+
     ConfiguredComponent(Component* underlaying_component, std::map<std::string, Gecode::FloatVar> f, std::map<std::string, Gecode::BoolVar> b, std::map<std::string, Gecode::IntVar> i,
                         std::map<std::string, Gecode::IntVar> s, std::shared_ptr<std::map<std::string, unsigned int>> sh)
         : component(underlaying_component)
     {
-        // TODO fasthack, the gecode variabled could not be save, introduce own structure to keep them
-        string_name << component->toString() << std::endl;
-        for (auto e : f) string_name << e.first << " " << e.second << std::endl;
-        for (auto e : b) string_name << e.first << " " << e.second << std::endl;
-        for (auto e : i) string_name << e.first << " " << e.second << std::endl;
+        //string_name << component->toString() << std::endl;
+        for (auto j : i) {
+            int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
+        }
+        for (auto j : f) {
+            double_config.push_back(Config<double>{j.second.min(), j.second.max(), j.first});
+        }
+        for (auto j : b) {
+            bool_config.push_back(Config<bool>{(bool)j.second.min(),(bool)j.second.max(), j.first});
+        }
         for (auto e : s) {
             std::string config_value = "ERR: N/A";
             auto id = e.second.val();
@@ -31,34 +46,47 @@ class ConfiguredComponent : public graph_analysis::Vertex
                     break;
                 }
             }
-            string_name << e.first << " " << config_value << std::endl;
+            string_config.push_back({e.first, config_value});
         }
     }
 
     std::string toString() const
     {
-        return string_name.str();
-    }
-#if 0
-    std::string getStringConfig(unsigned int id) const{
-        for(auto v : *string_helper){
-            if(v.second == id){
-                return v.first;
+        std::stringstream str;
+        str << component->toString() << std::endl;
+        for(auto i:int_config){
+            if(i.min == i.max){
+                str << i.name << ": " << i.min << std::endl;
+            }else{
+                str << i.name << ": " << i.min << "..." << i.max << std::endl;
             }
         }
-        throw std::runtime_error("Could not find string in database");
+        for(auto i:bool_config){
+            if(i.min == i.max){
+                str << i.name << ": " << i.min << std::endl;
+            }else{
+                str << i.name << ": " << i.min << "..." << i.max << std::endl;
+            }
+        }
+        for(auto i:double_config){
+            if(i.min == i.max){
+                str << i.name << ": " << i.min << std::endl;
+            }else{
+                str << i.name << ": " << i.min << "..." << i.max << std::endl;
+            }
+        }
+        for(auto i:string_config){
+                str << i.first<< ": " << i.second << std::endl;
+        }
+        return str.str();
     }
-#endif
 
-    std::stringstream string_name;
-    /*
-    std::map<std::string, Gecode::FloatVar> float_config;
-    std::map<std::string, Gecode::BoolVar> bool_config;
-    std::map<std::string, Gecode::IntVar> int_config;
-    std::map<std::string, Gecode::IntVar> string_config;
-    std::shared_ptr<std::map<std::string, unsigned int>> string_helper;
-    */
+    std::vector<Config<int>> int_config;
+    std::vector<Config<double>> double_config;
+    std::vector<std::pair<std::string, std::string>> string_config;
+    std::vector<Config<bool>> bool_config;
     Component* component;
+
 };
 
 class ComponentInstanceHelper : public graph_analysis::Vertex
