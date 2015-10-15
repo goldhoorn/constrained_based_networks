@@ -20,14 +20,12 @@ Composition::Composition(std::string name) : Component(Pool::getInstance())
 
 Forwards Composition::getArgumentForwards(Component *child)
 {
-//    return argument_forwards[child];
-    return Forwards();
+    return argument_forwards[child];
 }
 
 Forwards Composition::getEventForwards(Component *child)
 {
- //   return event_forwards[child];
-    return Forwards();
+    return event_forwards[child];
 }
 
 bool Composition::operator==(const Composition &comp) const
@@ -39,7 +37,7 @@ void Composition::addArgumentForwards(std::string child, std::string source, std
 {
     try{
         auto &c = children.at(child);
-        argument_forwards[c].push_back({source, target});
+        argument_forwards[c][source] = target;
     }catch(std::out_of_range e){
         std::cerr << "Could not find child \""<< child << "\"" << std::endl;
         std::cerr << "Possible children are: " << std::endl;
@@ -53,7 +51,7 @@ void Composition::addArgumentForwards(std::string child, std::string source, std
 
 void Composition::addEventForwards(std::string child, std::string source, std::string target)
 {
-    event_forwards[children[child]].push_back({source, target});
+    event_forwards[children[child]][source] =  target;
 }
 
 std::string Composition::toString() const
@@ -101,6 +99,13 @@ void Composition::addChild(Component *c, std::string name)
 {
     if (isIgnored()) return;
     children[name] = c;
+
+    //Creating default forwards, this can be overridden by addEventForwards
+    addEventForwards(name,"failed","failed");
+    addEventForwards(name,"success","failed");
+    addEventForwards(name,"aborted","failed");
+    addEventForwards(name,"internal_error","failed");
+    addEventForwards(name,"fatal_error","failed");
 }
 
 void Composition::addConstraint(std::string child, std::string target)

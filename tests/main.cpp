@@ -172,9 +172,12 @@ int main(int argc, char* argv[]) {
     for(auto graph : resolve(pool->getComponent(name),resolve_nonresolveable,debug)){
         std::cout << "Finished calculuation of ClassSolution number" << cnt << std::endl;
         std::stringstream s;
-        s << folder.str() << "output-" << std::setw(4) << std::setfill('0') << cnt++;
+        s << folder.str() << "output-" << std::setw(4) << std::setfill('0') << cnt;
         graph_analysis::io::GraphIO::write(s.str(), graph, graph_analysis::representation::GEXF);
-        std::cout << "End dump" << std::endl;
+        std::stringstream s2;
+        s2 << folder.str() << "graph-" << std::setw(4) << std::setfill('0') << cnt;
+        graph_analysis::io::GraphIO::write(s2.str(), graph, graph_analysis::representation::GRAPHVIZ);
+        ++c;
     }
 #if 0
 //        InstanceSolution::gistBaBSeach(s);

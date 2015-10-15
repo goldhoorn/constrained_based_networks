@@ -14,7 +14,7 @@
 namespace constrained_based_networks
 {
 
-typedef std::vector<std::pair<std::string, std::string>> Forwards;
+typedef std::map<std::string, std::string> Forwards;
 
 /**
  * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,

@@ -11,6 +11,7 @@ set(SOURCES
    StateMachine.cpp
    InstanceSolution.cpp
    Logger.cpp
+   EventModelHandler.cpp
    #  Import.cpp
 )
 
@@ -27,6 +28,7 @@ set(HEADERS
    InstanceSolution.hpp
    SpecializedComponent.hpp
    Logger.hpp
+   EventModelHandler.hpp
    #   Import.hpp
 )
 

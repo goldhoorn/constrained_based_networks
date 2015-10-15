@@ -18,6 +18,7 @@
 using namespace Gecode;
 
 #define REMOVE_REC
+#define CLEANUP_CLASS_SOLUTION
 
 namespace constrained_based_networks
 {
@@ -49,7 +50,6 @@ void ClassSolution::markInactiveAsInactive()
 #ifdef REMOVE_REC
         rel(*this, !active[c->getID()] >> (depends_recursive[c->getID()] == IntSet::empty));
 #endif
-
         if (c->getID() != ID_ROOT_KNOT) {
             rel(*this, expr(*this, active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
             rel(*this, expr(*this, active[cmp_id] == 1) << (depends[cmp_id] != IntSet::empty));

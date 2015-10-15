@@ -7,6 +7,7 @@
 #include <constrained_based_networks/SpecializedComponent.hpp>
 #include <graph_analysis/GraphIO.hpp>
 #include "tests.hpp"
+#include <constrained_based_networks/EventModelHandler.hpp>
 
 using namespace constrained_based_networks;
 
@@ -77,6 +78,8 @@ int main(int argc, char* argv[]) {
         std::stringstream filename;
         filename << "instance-solution-" << cnt++ << ".dot";
         graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GRAPHVIZ);
+
+        auto trigger_events = EventModelHandler::calculateTrigger(solution);
     }
     std::cout << "Found overall " << cnt << " solutions" << std::endl;
     return 0;
