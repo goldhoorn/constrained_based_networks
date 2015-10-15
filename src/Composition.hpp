@@ -73,7 +73,7 @@ class Composition : public constrained_based_networks::Component, public constra
     void addArgumentForwards(std::string child, std::string source, std::string target);
     void addEventForwards(std::string child, std::string source, std::string target);
 
-    std::vector<std::pair<std::string, Component *>> getChildren();
+    virtual std::vector<std::pair<std::string, Component *>> getChildren();
     // std::list<Component*> getChildren();
 
     /**

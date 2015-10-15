@@ -351,12 +351,12 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             auto c = (*pool)[id];
 
             graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
-            auto a = pool->getItems<Composition*>()[cmp_id];
-            auto b = (pool->getItems<Composition*>()[cmp_id]->getPtr());
-            std::string aa = (dynamic_cast<SpecializedComponentBase*>(a) == 0) ? "true" : "false";
-            std::string bb = (dynamic_cast<SpecializedComponentBase*>(b.get()) == 0) ? "true" : "false";
-            std::cout << "Must equal: " << aa << " vs. " << bb << " " << a->getName() << "(" << a->getID() << ")" << std::endl;
-            std::cout << "pointer in CS: " << a << " | " << dynamic_cast<SpecializedComponentBase*>(a) << std::endl;
+            //auto a = pool->getItems<Composition*>()[cmp_id];
+            //auto b = (pool->getItems<Composition*>()[cmp_id]->getPtr());
+            //std::string aa = (dynamic_cast<SpecializedComponentBase*>(a) == 0) ? "true" : "false";
+            //std::string bb = (dynamic_cast<SpecializedComponentBase*>(b.get()) == 0) ? "true" : "false";
+            //std::cout << "Must equal: " << aa << " vs. " << bb << " " << a->getName() << "(" << a->getID() << ")" << std::endl;
+            //std::cout << "pointer in CS: " << a << " | " << dynamic_cast<SpecializedComponentBase*>(a) << std::endl;
             e->setSourceVertex((pool->getItems<Composition*>()[cmp_id]->getPtr()));
             e->setTargetVertex(c->getPtr());
             g->addEdge(e);
@@ -940,6 +940,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
     // BAB search engine
     // BAB<ClassSolution> e(so);
     BAB<ClassSolution> e(so);
+
     // DFS<ClassSolution> e(so);
     // search
     ClassSolution* best = NULL;
@@ -952,6 +953,10 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
         graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
         s->build_tree(graph, 0);
         erg.push_back(graph);
+    
+        //Got a solution print statistics
+        auto c = e.statistics();
+        std::cout << "Fail: " << c.fail<< " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: "<< c.node << std::endl;
 
         // Save current solution as best
         // s->rprint();

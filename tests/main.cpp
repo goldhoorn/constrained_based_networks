@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
         std::stringstream s2;
         s2 << folder.str() << "graph-" << std::setw(4) << std::setfill('0') << cnt;
         graph_analysis::io::GraphIO::write(s2.str(), graph, graph_analysis::representation::GRAPHVIZ);
-        ++c;
+        ++cnt;
     }
 #if 0
 //        InstanceSolution::gistBaBSeach(s);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Component.hpp"
+#include "Composition.hpp"
 #include <vector>
 
 namespace constrained_based_networks {
@@ -22,7 +22,7 @@ namespace constrained_based_networks {
         std::string event;
     };
 
-    class StateMachine : public Component{
+    class StateMachine : public Composition{
         public:
             StateMachine(std::string name, Pool *pool);
             ~StateMachine();
@@ -35,7 +35,7 @@ namespace constrained_based_networks {
             void addTransition(Component *source,  SpecializedComponentBase *target, Component *event_source, std::string ev);
             void addTransition(SpecializedComponentBase *source,  Component *target, Component *event_source, std::string ev);
             void setStart(std::string name);
-            void setStart(const Component *c);
+            void setStart(Component *c);
             void setStart(SpecializedComponentBase *c);
             bool abstract() const{return false;}
             virtual std::string getClassName() const { return "constrained_based_networks::StateMachine"; }
@@ -67,9 +67,12 @@ namespace constrained_based_networks {
 
             std::vector<Component*> getStates();
 
+            //Inherited from Composition
+            virtual std::vector<std::pair<std::string, Component *>> getChildren();
+
         protected:
             std::vector<Transition> transitions;
-            const Component *start;
+            Component *start;
             Component* searchCorresponding(Component *c, Pool *pool);
 
     };
