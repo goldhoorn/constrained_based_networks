@@ -69,31 +69,14 @@ void InstanceSolution::gatherAllStringConfigs()
 
 void InstanceSolution::buildInstanceGraph(graph_analysis::Vertex::Ptr parent_orig, graph_analysis::DirectedGraphInterface& orig, graph_analysis::Vertex::Ptr parent)
 {
-    // Only for testing
-    // if(!orig.getOutEdgeIterator(parent_orig)->next()){
-    //    return;
-    //}
-    // static int i=0;
-    //++i;
-    // std::cout << "------------ " << i << " OUT EDGES of " << parent_orig->toString() << "-----------" << std::endl;
     for (auto v : orig.outEdges(parent_orig)) {
         auto target = ComponentInstanceHelper::make(v->getTargetVertex());
         graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
         e->setSourceVertex(parent);
         e->setTargetVertex(target);
         graph->addEdge(e);
-        //    std::cout << i << " Jeha from " << parent_orig->toString() << " -> " << v->getTargetVertex()->toString() << std::endl;
         buildInstanceGraph(v->getTargetVertex(), orig, target);
     }
-
-    // std::cout << "------------ " << i << " OUT EDGES END -------------" << std::endl;
-    //--i;
-}
-
-void InstanceSolution::buildStructure(graph_analysis::Vertex::Ptr parent)
-{
-    //    for(auto v : orig.outEdges(parent)){
-    //    }
 }
 
 graph_analysis::Vertex::Ptr InstanceSolution::getRoot(const graph_analysis::BaseGraph::Ptr& _graph)
@@ -588,10 +571,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
     std::vector<graph_analysis::BaseGraph::Ptr> erg;
     // Initial situation
     InstanceSolution* so = new InstanceSolution(input_graph);
-    // BAB search engine
-    // BAB<InstanceSolution> e(so);
     BAB<InstanceSolution> e(so);
-    // DFS<InstanceSolution> e(so);
     // search
     InstanceSolution* best = NULL;
     while (InstanceSolution* s = e.next()) {
@@ -599,57 +579,20 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
             delete best;
             best = 0;
         }
-        //++cnt;
-        // std::stringstream filename;
-        // filename << "Instance-" << cnt << ".dot";
-        // graph_analysis::io::GraphIO::write(filename.str(), s->graph, graph_analysis::representation::GRAPHVIZ);
-
         graph_analysis::BaseGraph::Ptr out_graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
         s->build_tree(out_graph, graph_analysis::Vertex::Ptr());
         erg.push_back(out_graph);
-        // Save current solution as best
-        // std::cout << "############ Solution " << cnt << " ############################" << std::endl;
-        // s->rprint();
-        // std::cout <<
-        // "------------------------------------------------------------------------------------------"
-        // << std::endl;
-        // std::cout <<
-        // "------------------------------------------------------------------------------------------"
-        // << std::endl;
         best = s;
     }
 
-    // throw exception if there is no solution
     if (best == NULL) {
         delete so;
         throw std::runtime_error("InstanceSolution babSearch: No solutions");
     }
     delete so;
     delete best;
-    /*
-    std::cout << "#####################################################" << std::endl;
-    std::cout << "Found " << cnt << " instance solutions" << std::endl;
-    std::cout << "#####################################################" << std::endl;
-    graph_analysis::io::GraphIO::write("instance-erg.dot", best->graph, graph_analysis::representation::GRAPHVIZ);
-    */
     return erg;
 }
 
-#if 0
-std::vector<graph_analysis::BaseGraph::Ptr>  InstanceSolution::gistBaBSeach(graph_analysis::BaseGraph::Ptr graph)
-{
-    InstanceSolution* m = new InstanceSolution(graph);
-    Gist::Print<InstanceSolution> printer("Print solution");
-    Gist::VarComparator<InstanceSolution> c("Compare nodes");
-    Gist::Options o;
-    o.c_d = 2;
-    o.a_d = 10;
-    o.threads = 4;
-    o.inspect.click(&printer);
-    o.inspect.compare(&c);
-    Gist::bab(m, o);
-    return m;
-}
-#endif
 
 }  // end namespace constrained_based_networks

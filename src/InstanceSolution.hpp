@@ -137,9 +137,6 @@ class InstanceSolution : public Gecode::Space
 
     // Some helper-static constructors which also rxecures the search
     static std::vector<graph_analysis::BaseGraph::Ptr> babSearch(graph_analysis::BaseGraph::Ptr graph);
-#if 0
-    static std::vector<graph_analysis::BaseGraph::Ptr> gistBaBSeach(graph_analysis::BaseGraph::Ptr graph);
-#endif
 
     // helper methods for gist
     virtual Gecode::Space* copy(bool share);
@@ -171,8 +168,6 @@ class InstanceSolution : public Gecode::Space
     size_t verticies_in_tree;
     graph_analysis::DirectedGraphInterface::Ptr graph;
     static graph_analysis::Vertex::Ptr getRoot(const graph_analysis::BaseGraph::Ptr& graph);
-
-    void buildStructure(graph_analysis::Vertex::Ptr parent);
 
     void gatherAllStringConfigs();
     void buildInstanceGraph(graph_analysis::Vertex::Ptr orig_parent, graph_analysis::DirectedGraphInterface& orig, graph_analysis::Vertex::Ptr parent);
