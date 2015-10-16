@@ -79,7 +79,9 @@ int main(int argc, char* argv[]) {
         filename << "instance-solution-" << cnt++ << ".dot";
         graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GRAPHVIZ);
 
-        auto trigger_events = EventModelHandler::calculateTrigger(solution);
+        Pool *p = pool;
+        graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
+        auto trigger_events = EventModelHandler(p,g);
     }
     std::cout << "Found overall " << cnt << " solutions" << std::endl;
     return 0;

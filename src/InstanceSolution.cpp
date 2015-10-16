@@ -83,14 +83,33 @@ graph_analysis::Vertex::Ptr InstanceSolution::getRoot(const graph_analysis::Base
 {
     graph_analysis::Vertex::Ptr root;
     for (auto v : _graph->getAllVertices()) {
-        if (v->toString() == "root-knot") {
-            root = v;
-            break;
+        auto component = dynamic_cast<Component*>(v.get());
+        auto spec = dynamic_cast<ConfiguredComponent*>(v.get());
+        if(spec){
+            std::cout << "Got a configures component " << spec->toString() << std::endl;
+            component = spec->component;
         }
+        if(!component){
+            if (v->toString() == "root-knot") {
+                root = v;
+                break;
+            }
+        }else{
+            if (component->getName() == "root-knot") {
+                root = v;
+                break;
+            }
+        }
+    }
+    /*
+    std::cerr << "Error output:" << std::endl;
+    for (auto v : _graph->getAllVertices()) {
+        std::cerr << "Got " << v->toString() <<  std::endl;
     }
     if (!root) {
         throw std::runtime_error("Could not get the root knot of the graph");
     }
+    */
     return root;
 }
 
