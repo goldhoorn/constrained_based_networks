@@ -32,9 +32,12 @@ std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
         if (spec->configuration.find("current_state") != spec->configuration.end()) {
             auto current_state = atoi(spec->configuration["current_state"].c_str());
             auto states = getStates();
-            assert(0 <= current_state < states.size());
-            auto s = getStates()[current_state];
+            std::cout << "Current State should be: " << current_state << " and we have " << states.size() << std::endl;
+            assert(0 <= current_state);
+            assert(current_state < transitions.size());
+            auto s = transitions[current_state].target;
             assert(s);
+            std::cout << "New child is: " << s->getName() << std::endl;
             res.push_back({"main", s});
         } else {
             if (!start) {

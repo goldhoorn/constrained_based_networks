@@ -51,9 +51,11 @@ class EventModelHandler
     std::list<TransitionTrigger> getTrigger();
 
    private:
+    void getFollowRequirements(Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target);
     std::map<unsigned int, std::map<std::string, std::set<EventWithSource>>> event_propagation_table;
     // std::map<EventWithSource, std::vector<EventWithSource>> event_propagation_table;
     Pool *initial_pool;
     graph_analysis::DirectedGraphInterface::Ptr instancitaed_network;
+    graph_analysis::Vertex::Ptr root;
 };
 };

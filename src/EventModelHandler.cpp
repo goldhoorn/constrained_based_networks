@@ -1,6 +1,7 @@
 #include "EventModelHandler.hpp"
 #include "InstanceSolution.hpp"
 #include "Composition.hpp"
+#include "SpecializedComponent.hpp"
 
 using namespace graph_analysis;
 using namespace constrained_based_networks;
@@ -9,7 +10,7 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
     : initial_pool(_initial_pool)
     , instancitaed_network(_instanciated_network)
 {
-    auto root = InstanceSolution::getRoot(instancitaed_network);
+    root = InstanceSolution::getRoot(instancitaed_network);
     generateDBRecursive(root);
 
     // Flatten the Databse until everyting is done
@@ -86,34 +87,56 @@ Pool *EventModelHandler::getFollowRequirements(unsigned int causing_component, s
 {
     // First we have to check if a state-machine is affected by this change.
     // Otherwise... TODO
-    std::cout << __LINE__ << std::endl;
     for (auto affected : event_propagation_table[causing_component][causing_event]) {
         auto affected_event = affected.event;
         auto affected_component_id = affected.component_graph_id;
         auto affected_component = dynamic_cast<StateMachine *>(instancitaed_network->getVertex(affected_component_id).get());
-        
-        std::cout << __LINE__ << std::endl;
         if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(affected_component_id).get())) affected_component = dynamic_cast<StateMachine *>(c->component);
-        std::cout << __LINE__ << std::endl;
 
         // Ok we found a state-machine which is affected no we have to search for the followup state of it
         if (affected_component) {
+            Pool *p = new Pool();
+            initial_pool->dupFunction(p);
+            getFollowRequirements(p, root, instancitaed_network->getVertex(affected_component_id));
             std::cout << "Got a affected statemachine, the event is: " << causing_event << " -> " << affected_event << std::endl;
+            return p;
         }
     }
 
     return 0;
-#if 0
-    Pool *p = new Pool();
-    initial_pool->dupFunction(p);
-    auto conf = dynamic_cast<ConfiguredComponent*>(instancitaed_network->getVertex(causing_component).get());
-    assert(conf);
+}
 
-
-    if(auto state_machine  = dynamic_cast<StateMachine*>(conf->component)){
-        if(state_machine->getNewState(
+void EventModelHandler::getFollowRequirements(Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target)
+{
+    //If we are at level 0 of our new graph
+    if(root == current){
+        for(auto root_req : instancitaed_network->outEdges(root)){
+            auto component = dynamic_cast<Component*>(root_req->getTargetVertex().get());
+            if (auto c = dynamic_cast<ConfiguredComponent *>(root_req->getTargetVertex().get())) component = dynamic_cast<Component*>(c->component);
+            
+            assert(component);
+            auto c = pool->getComponent(component->getName());
+            assert(c);
+            c->setActive(true);
+        }
     }
-#endif
+    for(auto edge : instancitaed_network->outEdges(current) ){
+        if(edge->getTargetVertex() != target){
+            //TODO we have to somehow build up the graph with new components
+            getFollowRequirements(pool,edge->getTargetVertex(),target);
+        }else{
+            auto component = dynamic_cast<StateMachine *>(edge->getTargetVertex().get());
+            if (auto c = dynamic_cast<ConfiguredComponent *>(edge->getTargetVertex().get())) component = dynamic_cast<StateMachine *>(c->component);
+            component = dynamic_cast<StateMachine*>(pool->getComponent(component->getName()));
+            assert(component);
+            //auto spec = dynamic_cast<SpecializedComponent<StateMachine>*> (component->getSpecialized());
+            auto spec = (component->getSpecialized());
+            assert(spec);
+            //TODO pass the followup ID to here
+            spec->addConfig("current_state","0");
+            spec->setActive(true);
+        }
+    }
 }
 
 void EventModelHandler::generateDBRecursive(graph_analysis::Vertex::Ptr current_node)
