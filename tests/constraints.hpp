@@ -1,7 +1,6 @@
 #include "state_machines.hpp"
-void load_constraints(){
+void load_constraints(constrained_based_networks::Pool *pool){
 using namespace constrained_based_networks;
-auto pool = Pool::getInstance();
 	{
 	auto c = pool->getComponent("AuvControl::DepthFusionCmp");
 	if(auto cmp = dynamic_cast<Composition*>(c)){
@@ -92,5 +91,5 @@ auto pool = Pool::getInstance();
 		cmp->addConstraint("orientation_with_z","AuvControl::DepthFusionCmp");
 	}else{ std::cerr << "FATAL cannot cast to composition" << std::endl;}
 	}
-load_state_machines();
+load_state_machines(pool);
 }

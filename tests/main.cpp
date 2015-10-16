@@ -86,7 +86,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
         std::vector<graph_analysis::BaseGraph::Ptr> erg;
         if(debug){
             //TODO
-            ClassSolution::gistBaBSeach();
+            ClassSolution::gistBaBSeach(pool);
         }else{
             erg = ClassSolution::babSearch(pool);
         }

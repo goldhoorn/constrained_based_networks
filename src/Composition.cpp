@@ -7,11 +7,11 @@
 namespace constrained_based_networks
 {
 
-Composition::Composition() : Component(Pool::getInstance())
+Composition::Composition(Pool *pool) : Component(pool)
 {
 }
 
-Composition::Composition(std::string name) : Component(Pool::getInstance())
+Composition::Composition(std::string name, Pool *pool) : Component(pool)
 {
     this->name = name;
     //cmp_id = pool->getItems<Composition *>().size() - 1;
@@ -132,7 +132,7 @@ void Composition::addConstraint(std::string child, std::string target)
 std::vector<std::string> Composition::unsolveableChildren()
 {
     std::vector<std::string> res;
-    Pool *pool = Pool::getInstance();
+    //Pool *pool = Pool::getInstance();
 
     for (auto child : children) {
         bool valid = false;

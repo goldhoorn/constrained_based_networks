@@ -6,7 +6,7 @@
 
 namespace constrained_based_networks {
 
-Task::Task(): Component(Pool::getInstance()) {}
+Task::Task(Pool *pool): Component(pool) {}
 
 Task::Task(Pool *pool, std::string name)
     : Component(pool)
@@ -15,8 +15,8 @@ Task::Task(Pool *pool, std::string name)
     addFullfillment(name);
 }
 
-Task::Task(std::string name)
-    : Component(Pool::getInstance())
+Task::Task(std::string name, Pool *pool)
+    : Component(pool)
 {
     this->name = name;
     addFullfillment(name);

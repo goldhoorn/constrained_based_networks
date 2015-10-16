@@ -1,6 +1,5 @@
-void load_state_machines(){
+void load_state_machines(constrained_based_networks::Pool *pool){
 using namespace constrained_based_networks;
-auto pool = Pool::getInstance();
 	try{
 	auto sm = new StateMachine("Main::LawnMoverOverPipe",pool);
 	auto start_state = pool->getComponent("AuvControl::SimplePosMove")->getSpecialized();
@@ -20,12 +19,6 @@ sm->setStart(start_state);
 	 source->addConfig("x","-5");
 	 source->addConfig("y","0");
 	auto target = pool->getComponent("AuvControl::SimplePosMove")->getSpecialized();
-        /*
-        printf("1 Hallo state from target: %s\n",(pool->getComponent("AuvControl::SimplePosMove")->getName().c_str()));
-        printf("2 Hallo state from target: %s\n",(target)->getName().c_str());
-        printf("2.5 Hallo state from target: %s\n",(target->foo()->getName().c_str()));
-        printf("3 Hallo state from target: %s\n",(dynamic_cast<Component*>(target))->getName().c_str());
-        */
 	 target->addConfig("finish_when_reached","true");
 	 target->addConfig("heading","1.5707963267948966");
 	 target->addConfig("depth","-4");

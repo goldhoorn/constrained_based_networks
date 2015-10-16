@@ -9,6 +9,7 @@
 namespace constrained_based_networks
 {
 
+/*
 Pool *Pool::pool = 0;
 
 Pool *Pool::getInstance()
@@ -21,6 +22,7 @@ Pool *Pool::getInstance()
     }
     return pool;
 }
+*/
 
 /*
 void Pool::updateLookups(){
@@ -33,6 +35,9 @@ void Pool::updateLookups(){
 
 Pool::Pool()
 {
+    new Task(this, "NIL-Task");
+    auto c = new Composition("root-knot",this);
+    c->setActive(true);
 }
 
 Component *Pool::getComponent(std::string name)
@@ -66,8 +71,8 @@ void Pool::mergeDoubles()
                 }
 
                 if (name_equals) {
-                    //auto cmp = dynamic_cast<SpecializedComponent<Composition> *>(existing);
-                    auto cmp = dynamic_cast<SpecializedComponentBase*>(existing);
+                    // auto cmp = dynamic_cast<SpecializedComponent<Composition> *>(existing);
+                    auto cmp = dynamic_cast<SpecializedComponentBase *>(existing);
                     if (!cmp) {
                         std::cout << "Got base component" << std::endl;
                         base = existing;
@@ -79,17 +84,17 @@ void Pool::mergeDoubles()
                                 existing->setActive(true);
                             }
                             valid = false;
-//                            break;
+                            //                            break;
                         }
                     }
                 }
             }
             if (valid) {
-                if(base){
+                if (base) {
                     auto spec_new = base->getSpecialized();
                     spec_new->configuration = spec->configuration;
-                    new_components.push_back(dynamic_cast<Component*>(spec_new));
-                }else{
+                    new_components.push_back(dynamic_cast<Component *>(spec_new));
+                } else {
                     throw std::runtime_error("Cannot re-add new component, base-class is unknown");
                 }
             }
@@ -129,11 +134,12 @@ void Pool::mergeDoubles()
         }
     }
 
-    //Sainitry check, should not needed after update the SMs
+    // Sainitry check, should not needed after update the SMs
     setDirty();
 }
 
-void Pool::setDirty(){
+void Pool::setDirty()
+{
     component_helper.clear();
     component_names.clear();
     component_ids.clear();

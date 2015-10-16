@@ -7,13 +7,13 @@
 
 namespace constrained_based_networks {
 
-DataService::DataService(): Component(Pool::getInstance()) {}
+DataService::DataService(Pool *pool): Component(pool) {}
 
-DataService::DataService(std::string name)
-    : Component(Pool::getInstance())
+DataService::DataService(std::string name, Pool *pool)
+    : Component(pool)
 {
     this->name = name;
-    auto c = new Composition(name + "_cmp");
+    auto c = new Composition(name + "_cmp", pool);
     c->addChild(this,"virtual_main_child");
 }
 

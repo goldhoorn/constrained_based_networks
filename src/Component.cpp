@@ -6,6 +6,7 @@
 using namespace constrained_based_networks;
 
 Component::Component(Pool *_pool) : pool(_pool) {
+  assert(pool);
   pool->addComponent(this);
   active = false;
 }
@@ -21,8 +22,9 @@ const std::string& Component::getName() const { return name; }
 void Component::setActive(bool a) {
   active = a;
   if (a && id != ID_ROOT_KNOT) {  // ID for the root-knot-composition
-    dynamic_cast<Composition *>((*pool)[1])
-        ->addChild(this, "child_" + getName());
+    auto root = dynamic_cast<Composition *>((*pool)[1]);
+    assert(root);
+    root->addChild(this, "child_" + getName());
   }
 }
 

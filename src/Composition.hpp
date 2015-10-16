@@ -46,12 +46,12 @@ class Composition : public constrained_based_networks::Component, public constra
     /**
      *Default constructor to be able to use components as map value type.
      */
-    Composition();
+    Composition(Pool *pool);
 
     /**
      * Construct component with type and name.
      */
-    Composition(std::string name);
+    Composition(std::string name, Pool *pool);
 
     Forwards getArgumentForwards(Component *child);
     Forwards getEventForwards(Component *child);

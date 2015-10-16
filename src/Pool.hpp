@@ -18,15 +18,16 @@ namespace constrained_based_networks {
 
 class Pool {
    public:
+    Pool();
     Pool(std::string filename) {
-        if (pool) throw std::runtime_error("Pool already created");
-        pool = this;
+        //if (pool) throw std::runtime_error("Pool already created");
+        //pool = this;
         load(filename);
     }
 
     size_t addComponent(Component* c);
 
-    static Pool* getInstance();
+//    static Pool* getInstance();
 
     template <typename T>
     unsigned int getCount() {
@@ -102,8 +103,7 @@ class Pool {
    private:
     std::vector<Component*> components;
     std::vector<StateMachine*> state_machines;
-    static Pool* pool;
-    Pool();
+    //static Pool* pool;
     friend class boost::serialization::access;
     void setDirty();
 

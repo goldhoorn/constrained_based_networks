@@ -66,7 +66,7 @@ public:
     /**
      * Construct a solution with an initial situation to search.
      */
-    ClassSolution(Pool *pool = Pool::getInstance());
+    ClassSolution(Pool *pool);
 
 #ifdef CONSTRAIN
     /*
@@ -118,7 +118,7 @@ public:
      */
 //    static ClassSolution* babSearch2();
     static std::vector<graph_analysis::BaseGraph::Ptr> babSearch(Pool *pool);
-    static ClassSolution* gistBaBSeach();
+    static ClassSolution* gistBaBSeach(Pool *pool);
 };
 
 } // end namespace constrained_based_networks

@@ -826,10 +826,10 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
         // os << "\t" << (*Pool::getInstance())[i]->getName() << "=";
         if (active[i].assigned()) {
             if (active[i].val() || full) {
-                os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
+                os << "\t" << (*pool)[i]->getName() << "=" << active[i] << std::endl;
             }
         } else {
-            os << "\t" << (*Pool::getInstance())[i]->getName() << "=" << active[i] << std::endl;
+            os << "\t" << (*pool)[i]->getName() << "=" << active[i] << std::endl;
         }
         //        os << ", "<< std::endl;
     }
@@ -956,7 +956,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
     
         //Got a solution print statistics
         auto c = e.statistics();
-        std::cout << "Fail: " << c.fail<< " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: "<< c.node << std::endl;
+        std::cout << "Fail: " << c.fail<< " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << "node: "<< c.node << std::endl;
 
         // Save current solution as best
         // s->rprint();
@@ -975,9 +975,9 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
     return erg;
 }
 
-ClassSolution* ClassSolution::gistBaBSeach()
+ClassSolution* ClassSolution::gistBaBSeach(Pool *pool)
 {
-    ClassSolution* m = new ClassSolution(Pool::getInstance());
+    ClassSolution* m = new ClassSolution(pool);
     // ClassSolution* m = ClassSolution::babSearch(Pool::getInstance());
     Gist::Print<ClassSolution> printer("Print solution");
     Gist::VarComparator<ClassSolution> c("Compare nodes");

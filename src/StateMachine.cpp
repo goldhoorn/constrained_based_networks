@@ -5,7 +5,7 @@
 
 using namespace constrained_based_networks;
 
-StateMachine::StateMachine(std::string name, Pool *pool) : Composition(name)
+StateMachine::StateMachine(std::string name, Pool *pool) : Composition(name, pool)
 {
     addProperty("current_state", ConfigurationModel::INT);
 }

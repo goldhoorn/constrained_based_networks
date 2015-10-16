@@ -33,13 +33,13 @@ public:
     /**
      *Default constructor to be able to use components as map value type.
      */
-    Task();
+    Task(Pool *pool);
     Task(Pool *pool, std::string name);
 
     /**
      * Construct component with type and name.
      */
-    Task(std::string name) ;
+    Task(std::string name, Pool *pool) ;
 
     SpecializedComponentBase* getSpecialized();
 /*

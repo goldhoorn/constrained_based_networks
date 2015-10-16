@@ -46,12 +46,12 @@ public:
     /**
      *Default constructor to be able to use components as map value type.
      */
-    DataService();
+    DataService(Pool *pool);
 
     /**
      * Construct component with type and name.
      */
-    DataService(std::string name) ;
+    DataService(std::string name, Pool *pool) ;
 
     void addConfig(std::string name, std::string value){
         if(auto c = dynamic_cast<DataService*>(this)){
