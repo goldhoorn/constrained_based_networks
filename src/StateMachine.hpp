@@ -8,7 +8,7 @@ namespace constrained_based_networks {
     class Pool;
 
     struct Transition{
-        Transition(Component *_target, Component *_source, Component *_event_source, std::string _event):
+        Transition(Component *_source, Component *_target, Component *_event_source, std::string _event):
             target(_target),
             source(_source),
             event_source(_event_source),
@@ -39,6 +39,7 @@ namespace constrained_based_networks {
             void setStart(SpecializedComponentBase *c);
             bool abstract() const{return false;}
             virtual std::string getClassName() const { return "constrained_based_networks::StateMachine"; }
+            virtual Forwards getEventForwards(Component *child);
 
             /*
              * This is a ugly part again, we need to update out internal components
@@ -66,6 +67,7 @@ namespace constrained_based_networks {
             */
 
             std::vector<Component*> getStates();
+            int getNewState(Component *child, std::string event);
 
             //Inherited from Composition
             virtual std::vector<std::pair<std::string, Component *>> getChildren();

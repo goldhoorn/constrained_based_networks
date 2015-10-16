@@ -103,6 +103,37 @@ SpecializedComponentBase *StateMachine::getSpecialized()
     return new SpecializedComponent<StateMachine>(this, pool);
 }
 
+int StateMachine::getNewState(Component *child, std::string event)
+{
+    for (size_t i = 0; i < transitions.size(); i++) {
+        auto t = transitions[i];
+        if (t.event_source == child && t.event == event) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+Forwards StateMachine::getEventForwards(Component *child)
+{
+    auto forwards = Composition::getEventForwards(child);
+    for (size_t i = 0; i < transitions.size(); i++) {
+        auto t = transitions[i];
+        // We only support this so far:
+        if(t.event_source != t.source){
+            std::cout << "Error we only support the source-state as a source for events" << std::endl;
+            std::cout << "The was:" << t.event_source->getName() << " and " << t.source->getName() << std::endl;
+            assert(false);
+        }
+        if (t.event_source == child) {
+            std::stringstream s;
+            s << "transision-" << i;
+            forwards[t.event] = s.str();  // This overloads the normal propagation
+        }
+    }
+    return forwards;
+}
+
 std::vector<Component *> StateMachine::getStates()
 {
     std::vector<Component *> erg;

@@ -25,6 +25,8 @@ class Pool {
         load(filename);
     }
 
+    std::string (*dupFunction)(constrained_based_networks::Pool*);
+
     size_t addComponent(Component* c);
 
 //    static Pool* getInstance();

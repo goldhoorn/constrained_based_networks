@@ -48,12 +48,12 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
                         for (auto h3 : event_propagation_table[resulting_component_id][resulting_event]) {
                             auto new_target = h3.component_graph_id;
                             auto new_target_event = h3.event;
-                            std::cout << "Debug: " << new_target_event << std::endl;
+                            //                            std::cout << "Debug: " << new_target_event << std::endl;
                             if (event_propagation_table[causing_component_id][causing_event].find({new_target, new_target_event}) ==
                                 event_propagation_table[causing_component_id][causing_event].end()) {
                                 event_propagation_table[causing_component_id][causing_event].insert({new_target, new_target_event});
                                 done = false;
-                                std::cout << "############# WE ARE NOT DONE ################";
+                                //                               std::cout << "############# WE ARE NOT DONE ################";
                             }
                         }
                     }
@@ -72,7 +72,7 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
             auto causing_event = h2.first;
             std::cout << "\t -Event: " << causing_event << std::endl;
             for (auto cause : h2.second) {
-                auto resulting_component = dynamic_cast<Component*>(instancitaed_network->getVertex(cause.component_graph_id).get());
+                auto resulting_component = dynamic_cast<Component *>(instancitaed_network->getVertex(cause.component_graph_id).get());
                 if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(cause.component_graph_id).get())) resulting_component = c->component;
                 std::cout << "\t\t -- " << resulting_component->getName() << " event " << cause.event << std::endl;
             }
@@ -80,6 +80,40 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
     }
 
     std::cout << "Jeha i'm done" << std::endl;
+}
+
+Pool *EventModelHandler::getFollowRequirements(unsigned int causing_component, std::string causing_event)
+{
+    // First we have to check if a state-machine is affected by this change.
+    // Otherwise... TODO
+    std::cout << __LINE__ << std::endl;
+    for (auto affected : event_propagation_table[causing_component][causing_event]) {
+        auto affected_event = affected.event;
+        auto affected_component_id = affected.component_graph_id;
+        auto affected_component = dynamic_cast<StateMachine *>(instancitaed_network->getVertex(affected_component_id).get());
+        
+        std::cout << __LINE__ << std::endl;
+        if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(affected_component_id).get())) affected_component = dynamic_cast<StateMachine *>(c->component);
+        std::cout << __LINE__ << std::endl;
+
+        // Ok we found a state-machine which is affected no we have to search for the followup state of it
+        if (affected_component) {
+            std::cout << "Got a affected statemachine, the event is: " << causing_event << " -> " << affected_event << std::endl;
+        }
+    }
+
+    return 0;
+#if 0
+    Pool *p = new Pool();
+    initial_pool->dupFunction(p);
+    auto conf = dynamic_cast<ConfiguredComponent*>(instancitaed_network->getVertex(causing_component).get());
+    assert(conf);
+
+
+    if(auto state_machine  = dynamic_cast<StateMachine*>(conf->component)){
+        if(state_machine->getNewState(
+    }
+#endif
 }
 
 void EventModelHandler::generateDBRecursive(graph_analysis::Vertex::Ptr current_node)
@@ -105,25 +139,16 @@ void EventModelHandler::generateDBRecursive(graph_analysis::Vertex::Ptr current_
     }
 }
 
-#if 0
-std::list<TransitionTrigger> EventModelHandler::gatherEventsForComponent(graph_analysis::DirectedGraphInterface::Ptr graph, graph_analysis::BaseGraph::Vertex::Ptr node){
-
-}
-
-std::list<TransitionTrigger> EventModelHandler::calculateTrigger(graph_analysis::DirectedGraphInterface::Ptr graph)
+std::list<TransitionTrigger> EventModelHandler::getTrigger()
 {
     std::list<TransitionTrigger> res;
-    for(auto vertex : graph->vertices()){
-        auto cc = dynamic_cast<ConfiguredComponent*>(vertex.get());
-        assert(cc);
-        auto component = cc->component;
-        std::cout << "Component events for: " << component->getName() << std::endl;
-        for(auto event : component->getEvents()){
-            std::cout << "- " << event << std::endl;
+    for (auto component : event_propagation_table) {
+        for (auto event : component.second) {
+            auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(component.first).get());
+            if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(component.first).get())) causing_component = c->component;
+            auto p = getFollowRequirements(component.first, event.first);
+            if (p) res.push_back({causing_component, event.first, {p}});
         }
     }
-
-
     return res;
 }
-#endif

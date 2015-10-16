@@ -40,13 +40,15 @@ struct EventPropagation
     std::vector<EventWithSource> causes;
 };
 
+
 class EventModelHandler
 {
    public:
     EventModelHandler(Pool *initial_pool, graph_analysis::DirectedGraphInterface::Ptr instancitaed_network);
     void generateDBRecursive(graph_analysis::Vertex::Ptr current_node);
+    Pool* getFollowRequirements(unsigned int causing_component, std::string causing_event);
 
-    //       static std::list<TransitionTrigger> calculateTrigger(graph_analysis::BaseGraph::Ptr graph);
+    std::list<TransitionTrigger> getTrigger();
 
    private:
     std::map<unsigned int, std::map<std::string, std::set<EventWithSource>>> event_propagation_table;

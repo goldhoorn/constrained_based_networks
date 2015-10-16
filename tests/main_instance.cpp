@@ -73,15 +73,17 @@ int main(int argc, char* argv[]) {
 
 
     auto is = InstanceSolution::babSearch(graph);
+    std::cout << "All instance solutions are calculated" << std::endl;
     size_t cnt=0;
     for(auto solution : is){
         std::stringstream filename;
-        filename << "instance-solution-" << cnt++ << ".dot";
+        filename << file <<"-instance-" << cnt++ << ".dot";
         graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GRAPHVIZ);
 
         Pool *p = pool;
         graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(p,g);
+        auto erg = trigger_events.getTrigger();
     }
     std::cout << "Found overall " << cnt << " solutions" << std::endl;
     return 0;

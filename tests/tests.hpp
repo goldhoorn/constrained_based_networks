@@ -217,6 +217,27 @@ std::string test_possible_loop_unused2(constrained_based_networks::Pool* pool){
     return "A";
 }
 
+std::string test_state_machine(constrained_based_networks::Pool* pool){
+    auto a1 = new Composition("pipe_detector",pool);
+    auto t1 = new Task("pipe-cam-task",pool);
+    a1->addChild(t1,"cam-detekt");
+    t1->addEvent("pipe-end");
+    a1->addEvent("fertig");
+    a1->addEventForwards("cam-detekt","pipe-end","fertig");
+
+    auto a2 = new Composition("wall-servoing",pool);
+    auto t2 = new Task("wall-task",pool);
+    a2->addChild(t2,"wall-detector-child");
+
+
+    auto sm = new StateMachine("SM1",pool);
+
+    sm->addTransition(a1,a2,a1,"fertig");
+    sm->setStart(a1);
+
+    return "SM1";
+}
+
 
 std::string test_ambigious_configs(constrained_based_networks::Pool* pool){
     std::cout << "Testing " << __FUNCTION__ << std::endl;
@@ -247,6 +268,7 @@ std::string test_ambigious_configs(constrained_based_networks::Pool* pool){
         {test_possible_loop_unused,""},
         {test_possible_loop_unused2,""},
         {test_ambigious_configs,""},
+        {test_state_machine,""},
         {create_model,"AuvControl::DepthFusionCmp"},
         {create_model,"Pipeline::Follower"},
         {create_model,"Buoy::DetectorNewCmp"},
@@ -263,12 +285,15 @@ std::string load_test(int nr=-1){
     if(nr==-1){
         printf("Creating model from export\n");
         create_model(pool);
+        pool->dupFunction = create_model;
     }else{
         //printf("Running test: %i\n",nr);
         if(tests[nr].name == ""){
             name = tests[nr].v(pool);
+            pool->dupFunction = tests[nr].v;
         }else{
             tests[nr].v(pool);
+            pool->dupFunction = tests[nr].v;
             name = tests[nr].name;
         }
         printf("Running test with name: %s\n",name.c_str());

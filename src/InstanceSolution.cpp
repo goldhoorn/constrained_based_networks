@@ -598,6 +598,10 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
             delete best;
             best = 0;
         }
+        //Got a solution print statistics
+        auto c = e.statistics();
+        std::cout << "Fail: " << c.fail<< " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: "<< c.node << std::endl;
+
         graph_analysis::BaseGraph::Ptr out_graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
         s->build_tree(out_graph, graph_analysis::Vertex::Ptr());
         erg.push_back(out_graph);
