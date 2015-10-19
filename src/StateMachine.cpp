@@ -8,6 +8,7 @@ using namespace constrained_based_networks;
 StateMachine::StateMachine(std::string name, Pool *pool) : Composition(name, pool)
 {
     addProperty("current_state", ConfigurationModel::INT);
+    transitions.push_back(Transition(this,this,this,"no_start_state"));
 }
 
 StateMachine::~StateMachine()
@@ -22,22 +23,23 @@ void StateMachine::setStart(std::string name)
 void StateMachine::setStart(Component *c)
 {
     start = c;
+    transitions[0] = Transition(this,start,this,"start");
 }
 
 std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
 {
     std::vector<std::pair<std::string, Component *>> res;
     if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
-        std::cout << "Have a specialized StateMachine " << getName() << std::endl;
+//        std::cout << "Have a specialized StateMachine " << getName() << std::endl;
         if (spec->configuration.find("current_state") != spec->configuration.end()) {
             auto current_state = atoi(spec->configuration["current_state"].c_str());
             auto states = getStates();
-            std::cout << "Current State should be: " << current_state << " and we have " << states.size() << std::endl;
+//            std::cout << "Current State should be: " << current_state << " and we have " << states.size() << std::endl;
             assert(0 <= current_state);
             assert(current_state < transitions.size());
             auto s = transitions[current_state].target;
             assert(s);
-            std::cout << "New child is: " << s->getName() << std::endl;
+//            std::cout << "New child is: " << s->getName() << std::endl;
             res.push_back({"main", s});
         } else {
             if (!start) {
@@ -79,11 +81,14 @@ Component *StateMachine::searchCorresponding(Component *c, Pool *pool)
 void StateMachine::updateInternals(Pool *pool)
 {
     for (auto &t : transitions) {
-        std::cout << "Was sourcesource: " << t.source->getName() << std::endl;
-        t.source = searchCorresponding(t.source, pool);
-        std::cout << "Found for source: " << t.source->getName() << std::endl;
-        t.target = searchCorresponding(t.target, pool);
-        t.event_source = searchCorresponding(t.event_source, pool);
+        //If t.source == 0 then this is the invalid stating-state
+//        if(t.source == this){
+//            std::cout << "Was sourcesource: " << t.source->getName() << std::endl;
+            t.source = searchCorresponding(t.source, pool);
+//            std::cout << "Found for source: " << t.source->getName() << std::endl;
+            t.target = searchCorresponding(t.target, pool);
+            t.event_source = searchCorresponding(t.event_source, pool);
+//        }
     }
 }
 
@@ -130,7 +135,7 @@ Forwards StateMachine::getEventForwards(Component *child)
         }
         if (t.event_source == child) {
             std::stringstream s;
-            s << "transision-" << i;
+            s << "transition-" << i;
             forwards[t.event] = s.str();  // This overloads the normal propagation
         }
     }

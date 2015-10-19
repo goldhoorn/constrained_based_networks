@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
     // Start to create our graph based on the imported graph
     for (auto node : graph_imported->getAllEdges()) {
-        graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+        graph_analysis::Edge::Ptr e(new graph_analysis::Edge(node->getLabel()));
 #if 0
         std::cout << "from " << node->getSourceVertex()->getLabel() << std::endl;
         std::cout << "to  " << node->getSourceVertex()->getLabel() << std::endl;
@@ -82,13 +82,16 @@ int main(int argc, char *argv[])
         graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(p, g);
         auto erg = trigger_events.getTrigger();
+        size_t cnt2=0;
         for (auto p : erg) {
             // Restarting search
             if (p.resulting_requirement.pool) {
                 auto erg = ClassSolution::babSearch(p.resulting_requirement.pool);
                 for (auto graph : erg) {
+                    std::stringstream filename2;
+                    filename2 << file << "-follow-network-"<< cnt2++ << ".dot";
                     std::cout << "Found a follow-network for a solution" << std::endl;
-                    graph_analysis::io::GraphIO::write("NEW-RESULT.dot", g, graph_analysis::representation::GRAPHVIZ);
+                    graph_analysis::io::GraphIO::write(filename2.str(), graph, graph_analysis::representation::GRAPHVIZ);
                 }
             }
         }

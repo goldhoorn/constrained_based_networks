@@ -79,19 +79,19 @@ class SpecializedComponent : public SpecializedComponentBase, public T
 
     virtual bool isActive()
     {
-        std::cerr << "Is Active on specialized called " << active << " on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
+//        std::cerr << "Is Active on specialized called " << active << " on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
         return active;
     };
 
     virtual void setActive(bool active = true)
     {
-        std::cerr << "----------------############ Set active on specialized called " << active << std::endl;
-        std::cerr << "on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
+ //       std::cerr << "----------------############ Set active on specialized called " << active << std::endl;
+  //      std::cerr << "on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
         this->active = active;
         if (active && id != ID_ROOT_KNOT) {  // ID for the root-knot-composition
             dynamic_cast<Composition*>((*pool)[1])->addChild(this, "child_" + getName());
         }
-        std::cerr << " " << active << " " << this->active << " " << T::active  << std::endl;
+//        std::cerr << " " << active << " " << this->active << " " << T::active  << std::endl;
     }
 
     virtual ~SpecializedComponent() {};

@@ -74,7 +74,7 @@ void Pool::mergeDoubles()
                     // auto cmp = dynamic_cast<SpecializedComponent<Composition> *>(existing);
                     auto cmp = dynamic_cast<SpecializedComponentBase *>(existing);
                     if (!cmp) {
-                        std::cout << "Got base component" << std::endl;
+//                        std::cout << "Got base component" << std::endl;
                         base = existing;
                         // We found the base-class of this specialized one
                     } else {

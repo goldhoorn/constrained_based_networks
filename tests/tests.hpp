@@ -275,6 +275,7 @@ std::string test_ambigious_configs(constrained_based_networks::Pool* pool){
         {create_model,"Wall::Follower"},
         {create_model,"Main::LawnMoverOverPipe"},
         {create_model,"AuvControl::SimpleMove"},
+        {create_model,"Main::Win"},
         {0,""}
     };
 

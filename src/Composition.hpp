@@ -59,6 +59,7 @@ class Composition : public constrained_based_networks::Component, public constra
     virtual std::string getClassName() const { return "constrained_based_networks::Composition"; }
 
     SpecializedComponentBase *getSpecialized();
+#if 0
     void addConfig(std::string name, std::string value)
     {
         if (auto c = dynamic_cast<Composition *>(this)) {
@@ -67,6 +68,7 @@ class Composition : public constrained_based_networks::Component, public constra
             throw std::runtime_error("Called addConfig on invalid class");
         }
     }
+#endif
 
     Gecode::IntVarArray getPossibleTaskAssignments(Gecode::Space *space);
 
@@ -114,6 +116,7 @@ class Composition : public constrained_based_networks::Component, public constra
      * Push back an incoming port
      */
     void addChild(Component *child, std::string name);
+    void replaceChild(Component *child, std::string name);
 
     bool abstract() const
     {

@@ -71,7 +71,7 @@ void InstanceSolution::buildInstanceGraph(graph_analysis::Vertex::Ptr parent_ori
 {
     for (auto v : orig.outEdges(parent_orig)) {
         auto target = ComponentInstanceHelper::make(v->getTargetVertex());
-        graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+        graph_analysis::Edge::Ptr e(new graph_analysis::Edge(v->getLabel()));
         e->setSourceVertex(parent);
         e->setTargetVertex(target);
         graph->addEdge(e);
@@ -577,7 +577,7 @@ void InstanceSolution::build_tree(graph_analysis::BaseGraph::Ptr erg, graph_anal
         parent = getRoot(graph);
     }
     for (auto child : graph->outEdges(parent)) {
-        graph_analysis::Edge::Ptr e(new graph_analysis::Edge());
+        graph_analysis::Edge::Ptr e(new graph_analysis::Edge(child->getLabel()));
         e->setSourceVertex(getConfiguredComponent(parent));
         e->setTargetVertex(getConfiguredComponent(child->getTargetVertex()));
         erg->addEdge(e);

@@ -95,6 +95,15 @@ void Composition::setConfiguration(const std::vector<std::string>& configuration
 }
 #endif
 
+void Composition::replaceChild(Component *c, std::string name)
+{
+    if (isIgnored()) return;
+    if(children.find(name) == children.end()){
+        throw std::runtime_error("Cannot replace child, the requested child does not exist so far: " + name);
+    }
+    children[name] = c;
+}
+
 void Composition::addChild(Component *c, std::string name)
 {
     if (isIgnored()) return;

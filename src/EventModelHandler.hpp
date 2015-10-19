@@ -3,6 +3,7 @@
 #include <graph_analysis/Graph.hpp>
 #include <list>
 #include "Component.hpp"
+#include "InstanceSolution.hpp"
 
 namespace constrained_based_networks
 {
@@ -50,8 +51,16 @@ class EventModelHandler
 
     std::list<TransitionTrigger> getTrigger();
 
+    template<typename C>
+    static C* get(graph_analysis::Vertex::Ptr v){
+        auto component = dynamic_cast<C *>(v.get());
+        if (auto c = dynamic_cast<ConfiguredComponent *>(v.get())) component = dynamic_cast<C *>(c->component);
+        return component;
+    }
+
    private:
-    void getFollowRequirements(Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target);
+    bool isOnPath(graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target);
+    void getFollowRequirements(Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target,unsigned int transition);
     std::map<unsigned int, std::map<std::string, std::set<EventWithSource>>> event_propagation_table;
     // std::map<EventWithSource, std::vector<EventWithSource>> event_propagation_table;
     Pool *initial_pool;
