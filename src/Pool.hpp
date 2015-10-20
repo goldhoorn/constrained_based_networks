@@ -43,6 +43,8 @@ class Pool {
         return cnt;
     }
 
+    void checkConsistency();
+
     unsigned int size() const { return components.size(); }
 
     void mergeDoubles();

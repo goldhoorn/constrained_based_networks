@@ -6,15 +6,17 @@
 #include <constrained_based_networks/InstanceSolution.hpp>
 #include <constrained_based_networks/SpecializedComponent.hpp>
 #include <graph_analysis/GraphIO.hpp>
-#include  <sys/stat.h>
+#include <sys/stat.h>
 
 #include "tests.hpp"
 using namespace constrained_based_networks;
 
+bool debug = false;
+bool resolve_nonresolveable = false;
 
-
-//void resolve(std::string name, bool res, bool debug = false){
-std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool debug = false){
+// void resolve(std::string name, bool res, bool debug = false){
+std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool debug = false)
+{
     /*
         std::cout << "Resolving for component: " <<  c->getName() << " (" << c->getID() << ")" << std::endl;
         //Checking check check
@@ -26,12 +28,12 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
             throw std::runtime_error("1 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
         }
 */
-    //Check again
-    for(auto co: pool->getItems<Component*>()){
-        if(co != pool->operator[](co->getID())){
+    // Check again
+    for (auto co : pool->getItems<Component *>()) {
+        if (co != pool->operator[](co->getID())) {
             std::cout << "Check in resolve for the following component failed: " << c->getName() << std::endl;
             std::cout << "Failig id: " << co->getID() << " for component with name: " << co->getName() << std::endl;
-            if(auto spec = dynamic_cast<SpecializedComponentBase*>(co)){
+            if (auto spec = dynamic_cast<SpecializedComponentBase *>(co)) {
                 std::cout << "It is a specialized one: " << spec->getID() << " and base id: " << spec->getComponent()->getID() << std::endl;
             }
             throw std::runtime_error("Pool is inconsistent to IDs");
@@ -52,44 +54,45 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
     */
 
     c->setActive(true);
-/*
-    if(!dynamic_cast<SpecializedComponentBase *>(c)){
-        throw std::runtime_error("I currently want a specialized\n");
-    }else{
-        std::cout << "starte: \n";
-        std::cout << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getName() << ": " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getID() << std::endl;
-        std::cout << "pointer in main: " << c  << " | " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent() << std::endl;
-        std::cout << "Pool in main: " << pool << std::endl;
-//        std::cout << "pointer in vector in main: " << pool->operator[](360)  << std::endl;
-
-    }
-*/
-/**
-        if(c != pool->operator[](c->getID())){
-            std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
-            if(auto spec = dynamic_cast<SpecializedComponentBase *>(c)){
-                std::cout << "It is a specialized one, bsae id: " << spec->getOrginal()->getID() << std::endl;
-            }
-            throw std::runtime_error("2 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
-        }
-        */
-
-/*
-    for(auto c : pool->getItems<Component*>()){
-        auto d = dynamic_cast<SpecializedComponentBase*>(c);
-        if(d){
-            std::cout << "test 2: \n";
-            std::cout << d->getComponent()->getName() << ": " << d->getComponent()->getID() << std::endl;
-            std::cout << "pointer in main: " << d  << " | " << dynamic_cast<SpecializedComponentBase *>(d)->getComponent() << std::endl;
-        }
-    }
-*/
-    try{
-        std::vector<graph_analysis::BaseGraph::Ptr> erg;
-        if(debug){
-            //TODO
-            ClassSolution::gistBaBSeach(pool);
+    /*
+        if(!dynamic_cast<SpecializedComponentBase *>(c)){
+            throw std::runtime_error("I currently want a specialized\n");
         }else{
+            std::cout << "starte: \n";
+            std::cout << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getName() << ": " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getID() << std::endl;
+            std::cout << "pointer in main: " << c  << " | " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent() << std::endl;
+            std::cout << "Pool in main: " << pool << std::endl;
+    //        std::cout << "pointer in vector in main: " << pool->operator[](360)  << std::endl;
+
+        }
+    */
+    /**
+            if(c != pool->operator[](c->getID())){
+                std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
+                if(auto spec = dynamic_cast<SpecializedComponentBase *>(c)){
+                    std::cout << "It is a specialized one, bsae id: " << spec->getOrginal()->getID() << std::endl;
+                }
+                throw std::runtime_error("2 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
+            }
+            */
+
+    /*
+        for(auto c : pool->getItems<Component*>()){
+            auto d = dynamic_cast<SpecializedComponentBase*>(c);
+            if(d){
+                std::cout << "test 2: \n";
+                std::cout << d->getComponent()->getName() << ": " << d->getComponent()->getID() << std::endl;
+                std::cout << "pointer in main: " << d  << " | " << dynamic_cast<SpecializedComponentBase *>(d)->getComponent() << std::endl;
+            }
+        }
+    */
+    try
+    {
+        std::vector<graph_analysis::BaseGraph::Ptr> erg;
+        if (debug) {
+            // TODO
+            ClassSolution::gistBaBSeach(pool);
+        } else {
             erg = ClassSolution::babSearch(pool);
         }
 
@@ -99,26 +102,42 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
         std::cout << "End ClassSolution " << c->getName() << std::endl;
 #endif
         return erg;
-
-    }catch(std::runtime_error e){
+    }
+    catch (std::runtime_error e)
+    {
         std::cout << "!!!!! UN-Solveable: " << c->getName() << " " << e.what() << " " << std::endl;
-        if(res){
+        std::cerr << "Active components: " << std::endl;
+        for(auto component : pool->getItems<Component*>()){
+            if(component->isActive()){
+                std::cerr << "\t- " << component->getName() << std::endl;
+            }
+        }
+        std::cerr << "Children are: " << std::endl;
+        if(Composition *comp = dynamic_cast<Composition *>(c)){
+            for(auto child : comp->getChildren()){
+            std::cerr << "\t- " << child.second->getName() << " (" << child.first << ")" << std::endl;
+            }
+        }else{
+            std::cerr << "\t IS NO COMPOSITION" << std::endl;
+        }
+
+        if (res) {
             c->setActive(false);
-            Composition *comp = dynamic_cast<Composition*>(c);
-            if(!comp){
+            Composition *comp = dynamic_cast<Composition *>(c);
+            if (!comp) {
                 std::cerr << c->getName() << " is No compositon FATAL" << std::endl;
                 return std::vector<graph_analysis::BaseGraph::Ptr>();
             }
-            for(auto child : comp->getChildren()){
-                if(child.second->abstract()){
-                    if(c->getName() == (child.second->getName() + "_cmp")){
-                        std::cerr << "Cannot finally solve " <<  c->getName() << std::endl;
+            for (auto child : comp->getChildren()) {
+                if (child.second->abstract()) {
+                    if (c->getName() == (child.second->getName() + "_cmp")) {
+                        std::cerr << "Cannot finally solve " << c->getName() << std::endl;
                         return std::vector<graph_analysis::BaseGraph::Ptr>();
                     }
-                    //TODO fix here specializations got lost
-                    return resolve(pool->getComponent(child.second->getName() + "_cmp"),res,debug);
-                }else{
-                    return resolve(child.second,res, debug);
+                    // TODO fix here specializations got lost
+                    return resolve(pool->getComponent(child.second->getName() + "_cmp"), res, debug);
+                } else {
+                    return resolve(child.second, res, debug);
                 }
             }
         }
@@ -126,40 +145,16 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
     }
 }
 
-// main test function
-int main(int argc, char* argv[]) {
-    bool debug = false;
-    bool resolve_nonresolveable = false;
-    int test_id =0;
 
-    char c;
-    while((c=getopt(argc,argv,"dr")) != -1){
-        switch(c){
-            case 'd':
-                debug = true;
-                break;
-            case 'r':
-                resolve_nonresolveable=true;
-                break;
-            default:
-                printf("On default block\n");
-        }
-    }
+void runTest(std::string name){
 
-    if(optind == argc){
-        std::cerr << "please pass testname" << std::endl;
-        exit(-1);
-    }
-    test_id = atoi(argv[optind]);
-    std::string name = load_test(test_id);
-
-    //try{
+    // try{
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
 
-    for(auto c: pool->getItems<Component*>()){
-        if(c != pool->operator[](c->getID())){
+    for (auto c : pool->getItems<Component *>()) {
+        if (c != pool->operator[](c->getID())) {
             std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
-            if(auto spec = dynamic_cast<SpecializedComponentBase*>(c)){
+            if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
                 std::cout << "It is a specialized one: " << spec->getID() << " and base id: " << spec->getComponent()->getID() << std::endl;
             }
             throw std::runtime_error("Pool is inconsistent to IDs");
@@ -167,11 +162,11 @@ int main(int argc, char* argv[]) {
     }
 
     std::stringstream folder;
-    folder << "result-" << test_id << "/";
+    folder << "result-" << name << "/";
 
-    mkdir(folder.str().c_str(),0755);
-    unsigned int cnt=0;
-    for(auto graph : resolve(pool->getComponent(name),resolve_nonresolveable,debug)){
+    mkdir(folder.str().c_str(), 0755);
+    unsigned int cnt = 0;
+    for (auto graph : resolve(pool->getComponent(name), resolve_nonresolveable, debug)) {
         std::cout << "Finished calculuation of ClassSolution number" << cnt << std::endl;
         std::stringstream s;
         s << folder.str() << "output-" << std::setw(4) << std::setfill('0') << cnt;
@@ -194,11 +189,73 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-
     //}catch(...){
     //    std::cerr << " Got maybe a out of mem error" << std::endl;
     //}
-//    ClassSolution* s = ClassSolution::babSearch(pool);
-//    s->rprint();
+    //    ClassSolution* s = ClassSolution::babSearch(pool);
+    //    s->rprint();
+}
+
+void runTest(int test_id){
+    std::string name = load_test(test_id);
+    runTest(name);
+}
+
+// main test function
+int main(int argc, char *argv[])
+{
+    int test_id = -1;
+    bool all = false;
+    char c;
+    char *testname = 0;
+
+    while ((c = getopt(argc, argv, "adrt:n:")) != -1) {
+        switch (c) {
+            case 'n':
+                testname = optarg;
+                break;
+            case 'a':
+                all = true;
+                break;
+            case 'd':
+                debug = true;
+                break;
+            case 't':
+                test_id = atoi(optarg);
+                ;
+                break;
+            case 'r':
+                resolve_nonresolveable = true;
+                break;
+            default:
+                printf("On default block\n");
+        }
+    }
+    if (test_id == -1 && !all && !testname) {
+        std::cerr << "please pass testname with -t <id>" << std::endl;
+        exit(-1);
+    }
+
+
+    if(all){
+        size_t test_count = (sizeof(tests)/sizeof(Tests))-1;
+        std::cout << "Have " << sizeof(tests)/sizeof(Tests) << std::endl;
+        for(size_t i=0;i<test_count-1;i++){
+            runTest(i);
+        }
+        delete pool;
+    }else{
+        if(testname){
+            //Load the default test
+            load_test(-1);
+            runTest(testname);
+        }else{
+            runTest(test_id);
+        }
+        delete pool;
+    }
+
+    std::cout << "Finished" << std::endl;
     return 0;
 }
+

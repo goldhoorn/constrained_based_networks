@@ -33,16 +33,43 @@ void Pool::updateLookups(){
 }
 */
 
+void Pool::checkConsistency()
+{
+    std::string cmp_name;
+    std::string child_name;
+    try
+    {
+        for (auto c : components) {
+            if (auto cmp = dynamic_cast<Composition *>(c)) {
+                cmp_name = cmp->getName();
+                for (auto child : cmp->getChildren()) {
+                    child_name = child.second->getName();
+                    // This line would throw a runtime error if it cannot be found
+                    auto result = getComponent(child.second->getName());
+                    (void)result;
+                }
+            }
+        }
+    }
+    catch (std::invalid_argument e)
+    {
+        std::cout << "Composition: " << cmp_name << std::endl;
+        std::cout << "\tChild: " << child_name  << std::endl;
+        throw std::runtime_error("Pool is inconsistent");
+    }
+}
+
 Pool::Pool()
 {
     new Task(this, "NIL-Task");
-    auto c = new Composition("root-knot",this);
+    auto c = new Composition("root-knot", this);
     c->setActive(true);
 }
 
 Component *Pool::getComponent(std::string name)
 {
     for (auto v : components) {
+        // std::cout << "Have component wirh name: " << v->getName() << std::endl;
         if (v->getName() == name) {
             return v;
         }
@@ -52,6 +79,8 @@ Component *Pool::getComponent(std::string name)
 
 void Pool::mergeDoubles()
 {
+    checkConsistency();
+
     std::vector<Component *> new_components;
     for (size_t i = 0; i < components.size(); i++) {
         auto &c = components[i];
@@ -74,7 +103,7 @@ void Pool::mergeDoubles()
                     // auto cmp = dynamic_cast<SpecializedComponent<Composition> *>(existing);
                     auto cmp = dynamic_cast<SpecializedComponentBase *>(existing);
                     if (!cmp) {
-//                        std::cout << "Got base component" << std::endl;
+                        //                        std::cout << "Got base component" << std::endl;
                         base = existing;
                         // We found the base-class of this specialized one
                     } else {
@@ -128,14 +157,15 @@ void Pool::mergeDoubles()
     setDirty();
 
     // Cleanup orginal pointer of state-machines
-    for (size_t i = 0; i < new_components.size(); i++) {
-        if (auto sm = dynamic_cast<StateMachine *>(new_components[i])) {
+    for (size_t i = 0; i < components.size(); i++) {
+        if (auto sm = dynamic_cast<StateMachine *>(components[i])) {
             sm->updateInternals(this);
         }
     }
 
     // Sainitry check, should not needed after update the SMs
     setDirty();
+    checkConsistency();
 }
 
 void Pool::setDirty()

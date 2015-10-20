@@ -266,7 +266,15 @@ sm->setStart(start_state);
 	sm->addTransition(source,target,trigger,"success");
 }
 	}catch(...){printf("cannot (2) get AuvCont::MoveCmp");}
-	new StateMachine("Main::IntelligentFollowPipe",pool);
+	try{
+	auto sm = new StateMachine("Main::IntelligentFollowPipe",pool);
+	auto start_state = pool->getComponent("Pipeline::Follower")->getSpecialized();
+	 start_state->addConfig("heading","var:initial_heading");
+	 start_state->addConfig("speed_x","0.5");
+	 start_state->addConfig("turn_dir","var:turn_dir");
+	 start_state->addConfig("timeout","120");
+sm->setStart(start_state);
+	}catch(...){printf("cannot (2) get Pipeline::Follower");}
 	try{
 	auto sm = new StateMachine("Main::FollowPipeATurnAtEOfPipe",pool);
 	auto start_state = pool->getComponent("Main::IntelligentFollowPipe")->getSpecialized();
@@ -546,7 +554,11 @@ sm->setStart(start_state);
 	sm->addTransition(source,target,trigger,"success");
 }
 	}catch(...){printf("cannot (2) get AuvControl::SimplePosMove");}
-	new StateMachine("Main::FixMapHack",pool);
+	try{
+	auto sm = new StateMachine("Main::FixMapHack",pool);
+	auto start_state = pool->getComponent("Localization::FixMapHack");
+sm->setStart(start_state);
+	}catch(...){printf("cannot (2) get Localization::FixMapHack");}
 	try{
 	auto sm = new StateMachine("Main::SearchBlackbox",pool);
 	auto start_state = pool->getComponent("AuvCont::MoveCmp")->getSpecialized();
@@ -3232,6 +3244,7 @@ sm->setStart(start_state);
 {
 	auto source = pool->getComponent("Main::WallAndBuoy");
 	auto target = pool->getComponent("AuvControl::SimpleMove")->getSpecialized();
+        std::cout << "One specialized component: " << target->getName() << std::endl;
 	 target->addConfig("x_speed","0");
 	 target->addConfig("y_speed","0");
 	 target->addConfig("timeout","5");

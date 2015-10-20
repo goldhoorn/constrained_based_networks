@@ -22,8 +22,7 @@ void StateMachine::setStart(std::string name)
 
 void StateMachine::setStart(Component *c)
 {
-    start = c;
-    transitions[0] = Transition(this,start,this,"start");
+    transitions[0] = Transition(this,c,this,"start");
 }
 
 std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
@@ -42,17 +41,17 @@ std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
 //            std::cout << "New child is: " << s->getName() << std::endl;
             res.push_back({"main", s});
         } else {
-            if (!start) {
+            if (!transitions[0].target) {
                 std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
             } else {
-                res.push_back({"main", start});
+                res.push_back({"main", transitions[0].target});
             }
         }
     } else {
-        if (!start) {
+        if (!transitions[0].target) {
             std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
         } else {
-            res.push_back({"main", start});
+            res.push_back({"main", transitions[0].target});
         }
     }
     return res;
@@ -68,18 +67,25 @@ Component *StateMachine::searchCorresponding(Component *c, Pool *pool)
                     //                            std::cout << "pc: " << pc << " pci: " << pci << std::endl;
                     //                            std::cout << "pc: " << sizeof(*pc) << " pci: " << sizeof(*pci)  << " " << std::abs((long int)pc-(long int)pci) << std::endl;
                     //                            throw std::runtime_error("bla");
+
+                    //This check should not be needed
+                    assert(pool->getComponent(pci->getName()) == pci);
                     return pci;
                 }
             }
         }
         throw std::runtime_error("Could not find compatible component in pool");
     } else {
+
+        //Sainity check would rase a error otherwise
+        assert(pool->getComponent(c->getName()) == c);
         return c;
     }
 }
 
 void StateMachine::updateInternals(Pool *pool)
 {
+//    std::cout << "Update Internals for SM: " << this->getName() << std::endl;
     for (auto &t : transitions) {
         //If t.source == 0 then this is the invalid stating-state
 //        if(t.source == this){
@@ -90,6 +96,13 @@ void StateMachine::updateInternals(Pool *pool)
             t.event_source = searchCorresponding(t.event_source, pool);
 //        }
     }
+#if 1 //Testing
+    for (auto t : transitions) {
+        pool->getComponent(t.source->getName());
+        pool->getComponent(t.target->getName());
+        pool->getComponent(t.event_source->getName());
+    }
+#endif
 }
 
 void StateMachine::addTransition(std::string s, std::string t, std::string event_s, std::string event_name)

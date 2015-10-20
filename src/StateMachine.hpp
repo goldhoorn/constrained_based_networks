@@ -74,7 +74,6 @@ namespace constrained_based_networks {
 
         protected:
             std::vector<Transition> transitions;
-            Component *start;
             Component* searchCorresponding(Component *c, Pool *pool);
 
     };

@@ -254,6 +254,26 @@ std::string test_ambigious_configs(constrained_based_networks::Pool* pool){
     return "A1";
 }
 
+std::string load_specialied_simple_move(constrained_based_networks::Pool* pool){
+    create_model(pool);
+    pool->mergeDoubles();
+    for(auto component : pool->getItems<Component*>()){
+        if(component->getName().find("AuvControl::SimpleMove_") != std::string::npos ){
+            std::cout << "Got " << component->getName() << std::endl;
+            return component->getName();
+        }
+    }
+    throw std::runtime_error("Cannot get specialized simple move component");
+}
+
+std::string test_lawn_mower_child(constrained_based_networks::Pool* pool){
+    std::cout << "Testing for lawn-mower child" << std::endl;
+    create_model(pool);
+    pool->mergeDoubles();
+    auto c = dynamic_cast<Composition*>(pool->getComponent("Main::LawnMoverOverPipe"));
+    return c->getChildren()[0].second->getName();
+}
+
     Tests tests[] = {
         {test_cmp_recursion, ""},
         {test_cmp_recursion_w_unused_CS,""},
@@ -275,6 +295,8 @@ std::string test_ambigious_configs(constrained_based_networks::Pool* pool){
         {create_model,"Wall::Follower"},
         {create_model,"Main::LawnMoverOverPipe"},
         {create_model,"AuvControl::SimpleMove"},
+        {load_specialied_simple_move,""},
+        {test_lawn_mower_child,""},
         {create_model,"Main::Win"},
         {0,""}
     };
@@ -287,6 +309,7 @@ std::string load_test(int nr=-1){
         printf("Creating model from export\n");
         create_model(pool);
         pool->dupFunction = create_model;
+        pool->mergeDoubles();
     }else{
         //printf("Running test: %i\n",nr);
         if(tests[nr].name == ""){
@@ -296,11 +319,11 @@ std::string load_test(int nr=-1){
             tests[nr].v(pool);
             pool->dupFunction = tests[nr].v;
             name = tests[nr].name;
+            pool->mergeDoubles();
         }
         printf("Running test with name: %s\n",name.c_str());
     }
 
-    pool->mergeDoubles();
 
     return name;
 

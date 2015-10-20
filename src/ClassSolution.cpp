@@ -18,10 +18,10 @@
 using namespace Gecode;
 
 #define REMOVE_REC
-#define CLEANUP_CLASS_SOLUTION
 
 namespace constrained_based_networks
 {
+
 
 void ClassSolution::markInactiveAsInactive()
 {
@@ -748,6 +748,9 @@ void ClassSolution::printToDot(std::ostream& os) const
                     // os <<  " (" << ir_assignments[cmp_id][child_id] << ")" << std::endl;
                 }
             } else {
+
+                file << "\t\"" << composition->getName() << "\" -> \"" << "?" << "\"[color=red,label=\"" << child.first << "\"];" << std::endl;
+                /*
                 for (IntVarValues j(ir_assignments[cmp_id][child_id]); j(); ++j) {
                     // file << "\t\"" << composition->getName() << "\" -> \"!" << ir_assignments[cmp_id][child_id] << "\"[color=red];" << std::endl;
                     // file << "\t\"!" << ir_assignments[cmp_id][child_id] << "\"[color=red];" << std::endl;
@@ -764,6 +767,7 @@ void ClassSolution::printToDot(std::ostream& os) const
                         file << "\t\"" << (*pool)[j.val()]->getName() << "\"[style=filled,fillcolor=yellow];" << std::endl;
                     }
                 }
+                */
                 //                os << "\t" << composition->getName() << "." << child.first << "=" << ir_assignments[cmp_id][child_id] << std::endl;
             }
             child_id++;
@@ -775,7 +779,7 @@ void ClassSolution::printToDot(std::ostream& os) const
     system(buff);
     os << "<h1> Child Selection: </h1><br/><img src=\"/tmp/dep-" << print_count << ".svg\"\\>" << std::endl;
 
-#if 1
+#if 0
     sprintf(buff, "/tmp/dep-graph-%i.dot", print_count);
     std::ofstream file2(buff);
     file2 << "digraph G {" << std::endl;
@@ -796,7 +800,7 @@ void ClassSolution::printToDot(std::ostream& os) const
     system(buff);
     os << "<h1> Dependancy Selection: </h1><br/><img src=\"/tmp/dep-graph-" << print_count << ".svg\"\\>" << std::endl;
 #endif
-#if 1
+#if 0
     sprintf(buff, "/tmp/dep-rgraph-%i.dot", print_count);
     std::ofstream file3(buff);
     file3 << "digraph G {" << std::endl;
@@ -970,6 +974,9 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
 
     // throw exception if there is no solution
     if (best == NULL) {
+        std::cout << "Unsolveable, generated debug: " << std::endl;
+        so->printToDot(std::cout);
+        //so->printToStream(std::cout,true);
         delete so;
         throw std::runtime_error("ClassSolution babSearch: No solutions");
     }
