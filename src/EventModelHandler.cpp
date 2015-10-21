@@ -98,15 +98,20 @@ Pool *EventModelHandler::getFollowRequirements(unsigned int causing_component, s
         if (affected_component) {
             Pool *p = new Pool();
             initial_pool->dupFunction(p);
+            initial_pool->mergeDoubles();
+            if(affected_event == "failed"){
+                std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
+                return p;
+            }
             unsigned int current_transition;
             int parsed = sscanf(affected_event.c_str(), "transition-%u", &current_transition);
             if (parsed != 1) {
-                std::cerr << "Cannot parse arg: " << parsed << " " << affected_event << " == " << current_transition << std::endl;
+                std::cerr << "Cannot parse arg: '" << parsed << "' '" << affected_event << "' == '" << current_transition << "'" << std::endl;
                 // TODO figuring out the actual transition is a bit ugly here and should be done on basis of the causing evetns
                 throw std::runtime_error("Cannot get the current transition of a statemachine");
             }
             std::cout << "Got a affected statemachine " << affected_component->getName() << " the event is: " << causing_event << " -> " << affected_event << std::endl;
-            std::cout << "DEBUG:::::::::::::::::::: " << instancitaed_network->getVertex(affected_component_id)->toString() << std::endl;
+            // std::cout << "DEBUG:::::::::::::::::::: " << instancitaed_network->getVertex(affected_component_id)->toString() << std::endl;
             getFollowRequirements(p, root, instancitaed_network->getVertex(affected_component_id), current_transition);
             return p;
         }
@@ -130,78 +135,44 @@ bool EventModelHandler::isOnPath(graph_analysis::Vertex::Ptr current, graph_anal
 
 void EventModelHandler::getFollowRequirements(Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target, unsigned int transition)
 {
-#if 0
-    // If we are at level 0 of our new graph
-    if (root == current) {
-        for (auto root_req : instancitaed_network->outEdges(root)) {
-            auto component = dynamic_cast<Component *>(root_req->getTargetVertex().get());
-            if (auto c = dynamic_cast<ConfiguredComponent *>(root_req->getTargetVertex().get())) component = dynamic_cast<Component *>(c->component);
-            assert(component);
-            auto c = pool->getComponent(component->getName());
-            assert(c);
-
-            if (isOnPath(root_req->getTargetVertex(), target)) {
-                // TODO add only fitting component
-                auto spec = c->getSpecialized();
-                if (auto cmp = dynamic_cast<Composition *>(spec)) {
-                    for (auto child_and_name : cmp->getChildren()) {
-                    }
-                }
-                spec->setActive(true);
-            } else {
-                c->setActive(true);
-            }
-        }
-    }
-#endif
-    // for (auto edge : instancitaed_network->outEdges(current)) {
-
     if (isOnPath(current, target)) {
-        /*
-        // This should mean we have a Composition here
-        auto composition = EventModelHandler::get<Composition>(edge->getTargetVertex());
-        assert(composition);
-        auto new_composition = dynamic_cast<Composition *>(pool->getComponent(component->getName()));
-        assert(new_composition);
-        */
-
         // Searching each child of the composition, becasue we have to fix this
         // for a sub-solution. This prevents a generation of all requiremetns that could fit.
         // We only want to generate only solutions that are really close to out previous one.
         for (auto c : instancitaed_network->outEdges(current)) {
-            auto c_ = EventModelHandler::get<Component>(c->getTargetVertex());
-            auto new_child = pool->getComponent(c_->getName());
-            auto new_composition = dynamic_cast<Composition *>(pool->getComponent(c_->getName()));
-            assert(new_composition);
-            // std::cout << "FUSEL DUESEL: " << new_child->getName() << " <-> " << c_->getName() << std::endl;
-            assert(new_child);
-            // if (edge->getTargetVertex() != target) {
+            // TODO not sure if we need a orginal child here to read the config from it
+
+            //            auto new_child = pool->getComponent(EventModelHandler::get<Component>(c->getTargetVertex())->getName());
+            //            auto orginal_child = dynamic_cast<Composition*>(EventModelHandler::get<Component>(c->getTargetVertex()));
+            auto parent = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(c->getSourceVertex())->getName()));
+            auto child = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(c->getTargetVertex())->getName()));
+            assert(parent);
+            assert(child);
+
             if (c->getTargetVertex() != target) {
-                std::cout << "Replace child for: " << new_composition->getName() << "with name: " << c->getLabel() << std::endl;
-                new_composition->replaceChild(new_child, c->getLabel());
+                std::cout << "Replace child for: " << parent->getName() << "with name: " << c->getLabel() << " to " << child->getName() << std::endl;
+                if (current == root) {
+                    child->setActive(true);
+                } else {
+                    parent->replaceChild(child, c->getLabel());
+                }
+
                 // We branch here a level deeper, we need only to do this if we are on the path
                 // becasue everything else we dont care in general
                 getFollowRequirements(pool, c->getTargetVertex(), target, transition);
             } else {
-                auto spec = dynamic_cast<SpecializedComponent<StateMachine> *>(new_child->getSpecialized());
-                // auto spec = dynamic_cast<StateMachine*>(new_child->getSpecialized());
-                /*
-                if(!spec){
-                    std::cout << "DEBUG2:::::::::::::::::::: " << target->toString() << " " << c_->getName() << std::endl;
-                    std::cout << "Got a invalid specialized child with name: " << new_child->getName() << std::endl;
-                }
-                */
+                auto spec = dynamic_cast<SpecializedComponent<StateMachine> *>(child->getSpecialized());
                 assert(spec);
                 std::stringstream str;
                 str << transition;
                 spec->addConfig("current_state", str.str());
 
-                if(current == root){
-                    //Special case state-machine itself was a root-requirement
-                    //we need to activate it before
+                if (current == root) {
+                    // Special case state-machine itself was a root-requirement
+                    // we need to activate it before
                     spec->setActive(true);
-                }else{
-                    new_composition->replaceChild(spec, c->getLabel());
+                } else {
+                    parent->replaceChild(spec, c->getLabel());
                 }
             }
         }
@@ -217,7 +188,7 @@ void EventModelHandler::getFollowRequirements(Pool *pool, graph_analysis::Vertex
     }
 
     // TODO we have to somehow build up the graph with new components
-    //getFollowRequirements(pool, edge->getTargetVertex(), target, transition);
+    // getFollowRequirements(pool, edge->getTargetVertex(), target, transition);
 }
 #if 0
     else
@@ -267,8 +238,10 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
         for (auto event : component.second) {
             auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(component.first).get());
             if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(component.first).get())) causing_component = c->component;
-            auto p = getFollowRequirements(component.first, event.first);
-            if (p) res.push_back({causing_component, event.first, {p}});
+            if (auto task = dynamic_cast<Task *>(causing_component)) {
+                auto p = getFollowRequirements(component.first, event.first);
+                if (p) res.push_back({causing_component, event.first, {p}});
+            }
         }
     }
     return res;

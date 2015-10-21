@@ -25,8 +25,7 @@ void StateMachine::setStart(Component *c)
     transitions[0] = Transition(this,c,this,"start");
 }
 
-std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
-{
+unsigned int StateMachine::getCurrentTransition(){
     std::vector<std::pair<std::string, Component *>> res;
     if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
 //        std::cout << "Have a specialized StateMachine " << getName() << std::endl;
@@ -38,22 +37,33 @@ std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
             assert(current_state < transitions.size());
             auto s = transitions[current_state].target;
             assert(s);
+            return current_state;
 //            std::cout << "New child is: " << s->getName() << std::endl;
             res.push_back({"main", s});
         } else {
             if (!transitions[0].target) {
                 std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
             } else {
+                return 0;
                 res.push_back({"main", transitions[0].target});
             }
         }
     } else {
         if (!transitions[0].target) {
+            return 0;
             std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
         } else {
+            return 0;
             res.push_back({"main", transitions[0].target});
         }
     }
+    throw std::runtime_error("Unknown error in getCurrentTransition()");
+}
+
+std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
+{
+    std::vector<std::pair<std::string, Component *>> res;
+    res.push_back({"main", transitions[getCurrentTransition()].target});
     return res;
 }
 
@@ -138,6 +148,12 @@ int StateMachine::getNewState(Component *child, std::string event)
 Forwards StateMachine::getEventForwards(Component *child)
 {
     auto forwards = Composition::getEventForwards(child);
+    forwards["failed"] = "failed";
+    forwards["success"] = "failed";
+    forwards["aborted"] = "failed";
+    forwards["internal_error"] = "failed";
+    forwards["fatal_error"] = "failed";
+
     for (size_t i = 0; i < transitions.size(); i++) {
         auto t = transitions[i];
         // We only support this so far:
@@ -173,6 +189,11 @@ std::vector<Component *> StateMachine::getStates()
         }
     }
     return erg;
+}
+    
+void StateMachine::replaceChild(Component *child, std::string name){
+    std::cerr << "TODO IMPLEMENT ME StateMachine::replaceChild:" << std::endl;
+    std::cerr << "Replacing: " << name << child->getName() << std::endl;
 }
 
 void StateMachine::addTransition(SpecializedComponentBase *source, SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev)

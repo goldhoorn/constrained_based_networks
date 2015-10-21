@@ -116,7 +116,7 @@ class Composition : public constrained_based_networks::Component, public constra
      * Push back an incoming port
      */
     void addChild(Component *child, std::string name);
-    void replaceChild(Component *child, std::string name);
+    virtual void replaceChild(Component *child, std::string name);
 
     bool abstract() const
     {

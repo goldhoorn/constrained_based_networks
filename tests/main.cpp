@@ -17,18 +17,7 @@ bool resolve_nonresolveable = false;
 // void resolve(std::string name, bool res, bool debug = false){
 std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool debug = false)
 {
-    /*
-        std::cout << "Resolving for component: " <<  c->getName() << " (" << c->getID() << ")" << std::endl;
-        //Checking check check
-        if(c != pool->operator[](c->getID())){
-            std::cout << "Failig id in step 1: " << c->getID() << " for component with name: " << c->getName() << std::endl;
-            if(auto spec = dynamic_cast<SpecializedComponentBase *>(c)){
-                std::cout << "It is a specialized one, bsae id: " << spec->getOrginal()->getID() << std::endl;
-            }
-            throw std::runtime_error("1 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
-        }
-*/
-    // Check again
+    //Check pool consitency
     for (auto co : pool->getItems<Component *>()) {
         if (co != pool->operator[](co->getID())) {
             std::cout << "Check in resolve for the following component failed: " << c->getName() << std::endl;
@@ -40,52 +29,10 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
         }
     }
 
-    /*
-    if(auto sm =  dynamic_cast<StateMachine*>(c)){
-        for(auto state : sm->getStates()){
-            printf("??????????????      ClassSolution for statemachien %s, for task %s ??????????????????????????\n",sm->getName().c_str(),state->getName().c_str());
-            if(dynamic_cast<SpecializedComponentBase *>(state)){
-                std::cout << "Habe specialized component" << std::endl;
-            }
-            return resolve(state,res,debug);
-            printf("??????????????      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ??????????????????????????\n");
-        }
+    if(c){
+        c->setActive(true);
     }
-    */
 
-    c->setActive(true);
-    /*
-        if(!dynamic_cast<SpecializedComponentBase *>(c)){
-            throw std::runtime_error("I currently want a specialized\n");
-        }else{
-            std::cout << "starte: \n";
-            std::cout << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getName() << ": " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent()->getID() << std::endl;
-            std::cout << "pointer in main: " << c  << " | " << dynamic_cast<SpecializedComponentBase *>(c)->getComponent() << std::endl;
-            std::cout << "Pool in main: " << pool << std::endl;
-    //        std::cout << "pointer in vector in main: " << pool->operator[](360)  << std::endl;
-
-        }
-    */
-    /**
-            if(c != pool->operator[](c->getID())){
-                std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
-                if(auto spec = dynamic_cast<SpecializedComponentBase *>(c)){
-                    std::cout << "It is a specialized one, bsae id: " << spec->getOrginal()->getID() << std::endl;
-                }
-                throw std::runtime_error("2 WHAAAAAAAAARRRRRRRRRRRRRRRRRRRR            Pool is inconsistent to IDs");
-            }
-            */
-
-    /*
-        for(auto c : pool->getItems<Component*>()){
-            auto d = dynamic_cast<SpecializedComponentBase*>(c);
-            if(d){
-                std::cout << "test 2: \n";
-                std::cout << d->getComponent()->getName() << ": " << d->getComponent()->getID() << std::endl;
-                std::cout << "pointer in main: " << d  << " | " << dynamic_cast<SpecializedComponentBase *>(d)->getComponent() << std::endl;
-            }
-        }
-    */
     try
     {
         std::vector<graph_analysis::BaseGraph::Ptr> erg;
@@ -151,22 +98,17 @@ void runTest(std::string name){
     // try{
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
 
-    for (auto c : pool->getItems<Component *>()) {
-        if (c != pool->operator[](c->getID())) {
-            std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
-            if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
-                std::cout << "It is a specialized one: " << spec->getID() << " and base id: " << spec->getComponent()->getID() << std::endl;
-            }
-            throw std::runtime_error("Pool is inconsistent to IDs");
-        }
-    }
 
     std::stringstream folder;
     folder << "result-" << name << "/";
 
     mkdir(folder.str().c_str(), 0755);
     unsigned int cnt = 0;
-    for (auto graph : resolve(pool->getComponent(name), resolve_nonresolveable, debug)) {
+    Component *c=0;
+    if(!name.empty()){
+        c = pool->getComponent(name);
+    }
+    for (auto graph : resolve(c, resolve_nonresolveable, debug)) {
         std::cout << "Finished calculuation of ClassSolution number" << cnt << std::endl;
         std::stringstream s;
         s << folder.str() << "output-" << std::setw(4) << std::setfill('0') << cnt;

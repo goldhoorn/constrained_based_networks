@@ -35,6 +35,16 @@ void Pool::updateLookups(){
 
 void Pool::checkConsistency()
 {
+    for (auto c : getItems<Component *>()) {
+        if (c != operator[](c->getID())) {
+            std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
+            if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
+                std::cout << "It is a specialized one: " << spec->getID() << " and base id: " << spec->getComponent()->getID() << std::endl;
+            }
+            throw std::runtime_error("Pool is inconsistent to IDs");
+        }
+    }
+
     std::string cmp_name;
     std::string child_name;
     try

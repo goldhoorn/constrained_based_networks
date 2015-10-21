@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
     bool resolve_nonresolveable = false;
     int test_id = -1;
     char *file = 0;
+    bool follow_reqs = true;
 
     char c;
     while ((c = getopt(argc, argv, "drt:f:")) != -1) {
@@ -36,7 +37,9 @@ int main(int argc, char *argv[])
                 file = optarg;
                 ;
                 break;
-
+            case 'n':
+                follow_reqs = false;
+                break;
             default:
                 printf("On default block\n");
         }
@@ -75,26 +78,36 @@ int main(int argc, char *argv[])
     size_t cnt = 0;
     for (auto solution : is) {
         std::stringstream filename;
-        filename << file << "-instance-" << cnt++ << ".dot";
+        filename << file << "-instance-" << cnt << ".dot";
         graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GRAPHVIZ);
 
         Pool *p = pool;
         graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(p, g);
-        auto erg = trigger_events.getTrigger();
-        size_t cnt2=0;
-        for (auto p : erg) {
-            // Restarting search
-            if (p.resulting_requirement.pool) {
-                auto erg = ClassSolution::babSearch(p.resulting_requirement.pool);
-                for (auto graph : erg) {
-                    std::stringstream filename2;
-                    filename2 << file << "-follow-network-"<< cnt2++ << ".dot";
-                    std::cout << "Found a follow-network for a solution" << std::endl;
-                    graph_analysis::io::GraphIO::write(filename2.str(), graph, graph_analysis::representation::GRAPHVIZ);
+        if (follow_reqs) {
+            auto erg = trigger_events.getTrigger();
+            for (auto p : erg) {
+                // Restarting search
+                size_t cnt2 = 0;
+                if (p.resulting_requirement.pool) {
+                    auto erg2 = ClassSolution::babSearch(p.resulting_requirement.pool);
+                    for (auto graph : erg2) {
+                        std::stringstream filename2;
+                        filename2 << file << "-instance-" << cnt << "-follow-network-" << cnt2 << "-" << p.causing_component->getName() << "-" << p.causing_event << ".dot";
+                        std::cout << "Found a follow-network for a solution, verticies:" << graph->size() << std::endl;
+                        if (graph->size() == 0) {
+                            auto v = graph_analysis::Vertex::Ptr(new graph_analysis::Vertex("Empty"));
+                            graph->addVertex(v);
+                        }
+                        graph_analysis::io::GraphIO::write(filename2.str(), graph, graph_analysis::representation::GRAPHVIZ);
+                        cnt2++;
+                    }
                 }
             }
+            cnt++;
         }
+        //Debug TODO
+        break;
     }
     std::cout << "Found overall " << cnt << " solutions" << std::endl;
     return 0;

@@ -99,6 +99,10 @@ void Composition::replaceChild(Component *c, std::string name)
 {
     if (isIgnored()) return;
     if(children.find(name) == children.end()){
+        std::cout << "Availilble children: " << std::endl;
+        for(auto c: children){
+            std::cout << "\t-" << c.first << std::endl;
+        }
         throw std::runtime_error("Cannot replace child, the requested child does not exist so far: " + name);
     }
     children[name] = c;

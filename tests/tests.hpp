@@ -238,6 +238,64 @@ std::string test_state_machine(constrained_based_networks::Pool* pool){
     return "SM1";
 }
 
+std::string test_state_machine2(constrained_based_networks::Pool* pool){
+    auto p = new Composition("parent_cmp",pool);
+
+    auto a1 = new Composition("pipe_detector",pool);
+    auto t1 = new Task("pipe-cam-task",pool);
+    a1->addChild(t1,"cam-detekt");
+    t1->addEvent("pipe-end");
+    a1->addEvent("fertig");
+    a1->addEventForwards("cam-detekt","pipe-end","fertig");
+
+    auto a2 = new Composition("wall-servoing",pool);
+    auto t2 = new Task("wall-task",pool);
+    a2->addChild(t2,"wall-detector-child");
+
+
+    auto sm = new StateMachine("SM1",pool);
+
+    sm->addTransition(a1,a2,a1,"fertig");
+    sm->setStart(a1);
+
+    p->addChild(sm,"only");
+
+    return "parent_cmp";
+}
+
+std::string test_state_machine3(constrained_based_networks::Pool* pool){
+    auto psm = new StateMachine("parent_sm",pool);
+
+    auto p = new Composition("parent_cmp",pool);
+
+    auto a1 = new Composition("pipe_detector",pool);
+    auto t1 = new Task("pipe-cam-task",pool);
+    a1->addChild(t1,"cam-detekt");
+    t1->addEvent("pipe-end");
+    a1->addEvent("fertig");
+    a1->addEventForwards("cam-detekt","pipe-end","fertig");
+
+    auto a2 = new Composition("wall-servoing",pool);
+    auto t2 = new Task("wall-task",pool);
+
+    auto f = new Task("final-task",pool);
+
+    a2->addChild(t2,"wall-detector-child");
+
+    psm->setStart(p);
+    psm->addTransition(p,f,p,"success");
+
+
+    auto sm = new StateMachine("SM1",pool);
+
+    sm->addTransition(a1,a2,a1,"fertig");
+    sm->setStart(a1);
+
+    p->addChild(sm,"only");
+    p->addEventForwards("only", "success", "success");
+
+    return "parent_sm";
+}
 
 std::string test_ambigious_configs(constrained_based_networks::Pool* pool){
     std::cout << "Testing " << __FUNCTION__ << std::endl;
@@ -275,20 +333,23 @@ std::string test_lawn_mower_child(constrained_based_networks::Pool* pool){
 }
 
     Tests tests[] = {
-        {test_cmp_recursion, ""},
-        {test_cmp_recursion_w_unused_CS,""},
-        {test_cmp_recursion_w_unused_DS,""},
-        {test_cmp_recursion_w_unused_DS2,""},
-        {test_cmp_recursion_w_used_DS,""},
-        {test_ds,""},
-        {test_ambigious_ds,""},
-        {test_cmp_recursion_w_more_used,""},
-        {test_cmp_recursion_child2_time,""},
-        {test_cmp_recursion_child2_time_abstract,""},
-        {test_possible_loop_unused,""},
-        {test_possible_loop_unused2,""},
-        {test_ambigious_configs,""},
-        {test_state_machine,""},
+        {test_cmp_recursion, ""},                   //0
+        {test_cmp_recursion_w_unused_CS,""},        //1
+        {test_cmp_recursion_w_unused_DS,""},        //2
+        {test_cmp_recursion_w_unused_DS2,""},       //3
+        {test_cmp_recursion_w_used_DS,""},          //4
+        {test_ds,""},                               //5
+        {test_ambigious_ds,""},                     //6
+        {test_cmp_recursion_w_more_used,""},        //7
+        {test_cmp_recursion_child2_time,""},        //8
+        {test_cmp_recursion_child2_time_abstract,""},//9
+        {test_possible_loop_unused,""},             //10
+        {test_possible_loop_unused2,""},            //11
+        {test_ambigious_configs,""},                //12
+        {test_state_machine,""},                    //13
+        {test_state_machine2,""},                   //14
+        {test_state_machine3,""},                   //15
+        {create_model,""}, //Trivial test empty (VALID!) solution
         {create_model,"AuvControl::DepthFusionCmp"},
         {create_model,"Pipeline::Follower"},
         {create_model,"Buoy::DetectorNewCmp"},
