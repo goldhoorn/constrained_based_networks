@@ -3244,7 +3244,6 @@ sm->setStart(start_state);
 {
 	auto source = pool->getComponent("Main::WallAndBuoy");
 	auto target = pool->getComponent("AuvControl::SimpleMove")->getSpecialized();
-        std::cout << "One specialized component: " << target->getName() << std::endl;
 	 target->addConfig("x_speed","0");
 	 target->addConfig("y_speed","0");
 	 target->addConfig("timeout","5");

@@ -145,9 +145,10 @@ int StateMachine::getNewState(Component *child, std::string event)
     return -1;
 }
 
-Forwards StateMachine::getEventForwards(Component *child)
+Forwards StateMachine::getEventForwards(Component *child, std::string name)
 {
-    auto forwards = Composition::getEventForwards(child);
+    Forwards forwards;
+//    auto forwards = Composition::getEventForwards(child, name);
     forwards["failed"] = "failed";
     forwards["success"] = "failed";
     forwards["aborted"] = "failed";

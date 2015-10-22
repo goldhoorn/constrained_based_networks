@@ -32,6 +32,7 @@ class Composition : public constrained_based_networks::Component, public constra
    private:
     std::map<Component *, Forwards> argument_forwards;
     std::map<Component *, Forwards> event_forwards;
+    std::list<std::string> emitations;
 
 //    size_t cmp_id;
 
@@ -54,7 +55,8 @@ class Composition : public constrained_based_networks::Component, public constra
     Composition(std::string name, Pool *pool);
 
     virtual Forwards getArgumentForwards(Component *child);
-    virtual Forwards getEventForwards(Component *child);
+    virtual Forwards getEventForwards(Component *child, std::string name);
+    bool hasChild(Component *child);
 
     virtual std::string getClassName() const { return "constrained_based_networks::Composition"; }
 
@@ -117,6 +119,14 @@ class Composition : public constrained_based_networks::Component, public constra
      */
     void addChild(Component *child, std::string name);
     virtual void replaceChild(Component *child, std::string name);
+
+    std::list<std::string> getEmitations(){
+        return emitations;
+    }
+
+    void addSelfEmitations(std::string name){
+        emitations.push_back(name);
+    }
 
     bool abstract() const
     {

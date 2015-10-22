@@ -48,7 +48,7 @@ class StateMachine : public Composition
     {
         return "constrained_based_networks::StateMachine";
     }
-    virtual Forwards getEventForwards(Component *child);
+    virtual Forwards getEventForwards(Component *child, std::string name);
 
     /*
      * This is a ugly part again, we need to update out internal components

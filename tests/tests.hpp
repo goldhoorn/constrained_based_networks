@@ -349,12 +349,12 @@ std::string test_lawn_mower_child(constrained_based_networks::Pool* pool){
         {test_state_machine,""},                    //13
         {test_state_machine2,""},                   //14
         {test_state_machine3,""},                   //15
-        {create_model,""}, //Trivial test empty (VALID!) solution
-        {create_model,"AuvControl::DepthFusionCmp"},
-        {create_model,"Pipeline::Follower"},
-        {create_model,"Buoy::DetectorNewCmp"},
-        {create_model,"Wall::Follower"},
-        {create_model,"Main::LawnMoverOverPipe"},
+        {create_model,""}, //Trivial test empty (VALID!) solution //16
+        {create_model,"AuvControl::DepthFusionCmp"},  //17
+        {create_model,"Pipeline::Follower"},  //18
+        {create_model,"Buoy::DetectorNewCmp"}, //19 
+        {create_model,"Wall::Follower"}, //20
+        {create_model,"Main::LawnMoverOverPipe"}, //21
         {create_model,"AuvControl::SimpleMove"},
         {load_specialied_simple_move,""},
         {test_lawn_mower_child,""},

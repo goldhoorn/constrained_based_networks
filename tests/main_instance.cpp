@@ -85,11 +85,17 @@ int main(int argc, char *argv[])
         graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(p, g);
         if (follow_reqs) {
+        std::stringstream filename2;
+            filename2 << file << "-instance-" << cnt << "-follows.txt";
+            std::ofstream ofs(filename2.str());
             auto erg = trigger_events.getTrigger();
             for (auto p : erg) {
                 // Restarting search
                 size_t cnt2 = 0;
                 if (p.resulting_requirement.pool) {
+                    ofs << p.causing_component->getName() << " " << p.causing_event;
+                    //TODO export network
+
                     auto erg2 = ClassSolution::babSearch(p.resulting_requirement.pool);
                     for (auto graph : erg2) {
                         std::stringstream filename2;

@@ -23,8 +23,40 @@ Forwards Composition::getArgumentForwards(Component *child)
     return argument_forwards[child];
 }
 
-Forwards Composition::getEventForwards(Component *child)
+bool Composition::hasChild(Component *child){
+    std::cout << this->getName() << "<->" << child->getName() << std::endl;
+    Component *c = child;
+    while(auto spec =  dynamic_cast<SpecializedComponentBase*>(c)){
+        c = spec->getOrginal();
+    }
+
+    for(auto ch: getChildren()){
+        std::cout << "\t Child: " << ch.second->getName() << std::endl;
+        if(ch.second == c || (ch.second == child)){
+            return true;
+        }
+    }
+    return false;
+}
+
+Forwards Composition::getEventForwards(Component *child, std::string name)
 {
+    if(children.find(name) == children.end()){
+        std::cerr << "This is really bad !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        return Forwards();
+    }
+    child = children[name];
+
+    std::cout << "Forwards for " << this->getName() << " and child " << child->getName() << std::endl;
+    for(auto e : event_forwards[child]){
+        std::cout << "-\t" << e.first << " to " << e.second << std::endl;
+    }
+    if(!hasChild(child)){
+        std::cout << "THIS IS BADDDDDDDDDDDDDDDDDDDDDDDD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+    }else{
+        std::cout << "THIS IS GOOOOOOOOOOOOOOOOODDDDDDDDD" << std::endl;
+    }
+
     return event_forwards[child];
 }
 

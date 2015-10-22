@@ -86,13 +86,14 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
 
 Pool *EventModelHandler::getFollowRequirements(unsigned int causing_component, std::string causing_event)
 {
+    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+
     // First we have to check if a state-machine is affected by this change.
     // Otherwise... TODO
     for (auto affected : event_propagation_table[causing_component][causing_event]) {
         auto affected_event = affected.event;
         auto affected_component_id = affected.component_graph_id;
-        auto affected_component = dynamic_cast<StateMachine *>(instancitaed_network->getVertex(affected_component_id).get());
-        if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(affected_component_id).get())) affected_component = dynamic_cast<StateMachine *>(c->component);
+        auto affected_component = EventModelHandler::get<StateMachine>(instancitaed_network->getVertex(affected_component_id));
 
         // Ok we found a state-machine which is affected no we have to search for the followup state of it
         if (affected_component) {
@@ -215,16 +216,16 @@ void EventModelHandler::generateDBRecursive(graph_analysis::Vertex::Ptr current_
     for (auto _child : instancitaed_network->outEdges(current_node)) {
         auto child = dynamic_cast<Component *>(_child->getTargetVertex().get());
         if (auto spec = dynamic_cast<ConfiguredComponent *>(_child->getTargetVertex().get())) {
-            std::cout << "Got a configured component" << std::endl;
             child = spec->component;
         }
         assert(child);
+        std::string role = _child->getLabel();
 
         // This should be a composition because it has children
         auto composition = dynamic_cast<Composition *>(cc->component);
         assert(composition);
 
-        for (auto forwards : composition->getEventForwards(child)) {
+        for (auto forwards : composition->getEventForwards(child, role)) {
             event_propagation_table[instancitaed_network->getVertexId(_child->getTargetVertex())][forwards.first].insert({instancitaed_network->getVertexId(current_node), forwards.second});
         }
         generateDBRecursive(_child->getTargetVertex());
@@ -238,7 +239,13 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
         for (auto event : component.second) {
             auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(component.first).get());
             if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(component.first).get())) causing_component = c->component;
-            if (auto task = dynamic_cast<Task *>(causing_component)) {
+            bool valid = dynamic_cast<Task *>(causing_component);
+            if (auto c = dynamic_cast<Composition*>(causing_component)){
+                //TODO maybe be more precise here
+                valid = valid || (c->getEmitations().size() != 0);
+            };
+
+            if (valid || true) {
                 auto p = getFollowRequirements(component.first, event.first);
                 if (p) res.push_back({causing_component, event.first, {p}});
             }
