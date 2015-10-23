@@ -96,7 +96,7 @@ class Composition : public constrained_based_networks::Component, public constra
     /**
      * String representation of a component
      */
-    std::string toString() const;
+    //std::string toString() const;
 
     /**
      * Get the type

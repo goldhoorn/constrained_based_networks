@@ -27,8 +27,8 @@ void InstanceSolution::gatherAllStringConfigs()
     std::set<std::string> strings;
     strings.insert("");
     for (const auto& v : graph->getAllVertices()) {
-        auto helper_node = boost::static_pointer_cast<ComponentInstanceHelper>(v);
-        auto component = dynamic_cast<Component*>(helper_node->component.get());
+        auto current_graph_vertex = boost::static_pointer_cast<ComponentInstanceHelper>(v);
+        auto component = dynamic_cast<Component*>(current_graph_vertex->component.get());
         if (!component) throw std::runtime_error("Cannot get component from graph");
         auto spec_component = dynamic_cast<SpecializedComponentBase*>(component);
 
@@ -135,9 +135,9 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     }
     std::cout << "New graph has: " << graph->getAllVertices().size() << std::endl;
     for(auto v : graph->vertices()){
-        auto helper_node2 = boost::static_pointer_cast<ComponentInstanceHelper>(v);
-        auto c = InstanceSolution::get<Component>(helper_node2->component);
-        auto s = InstanceSolution::get<SpecializedComponentBase>(helper_node2->component);
+        auto current_graph_component = boost::static_pointer_cast<ComponentInstanceHelper>(v);
+        auto c = InstanceSolution::get<Component>(current_graph_component->component);
+        auto s = InstanceSolution::get<SpecializedComponentBase>(current_graph_component->component);
         if(s){
             std::cout << "Spec (3): " << s->getName() << std::endl;
         }else if(c){
@@ -164,64 +164,74 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     // In case we have a specialized component, this is the only case
     // (currently) where a configuiration is actually filled
     // with values. Later a extension based on configurations is needed
-    for (auto helper_node : graph->getAllVertices()) {
-        auto helper_node2 = boost::static_pointer_cast<ComponentInstanceHelper>(helper_node);
-        auto component = dynamic_cast<Component*>(helper_node2->component.get());
-        if (!component) throw std::runtime_error("Cannot get component from graph");
+    for (auto current_graph_vertex : graph->getAllVertices()) {
+        auto current_graph_component = dynamic_cast<Component*>(boost::static_pointer_cast<ComponentInstanceHelper>(current_graph_vertex)->component.get());
+        if (!current_graph_component) throw std::runtime_error("Cannot get component from graph");
 
         // We need only to separate between this types, al other types should not occur anymore in the graph
-        // Like DataServices are replaced with actual task-contexts
-        auto cmp = dynamic_cast<Composition*>(component);
-        auto task = dynamic_cast<Task*>(component);
-        auto spec_cmp = dynamic_cast<SpecializedComponentBase*>(component);
-        if (!task && !cmp) throw std::runtime_error("We have some unresolved or unknown elements within the graph");
+        // Like DataServices are replaced with actual current_graph_task-contexts
+        auto current_graph_composition = dynamic_cast<Composition*>(current_graph_component);
+        auto current_graph_task = dynamic_cast<Task*>(current_graph_component);
+        auto current_graph_specialized = dynamic_cast<SpecializedComponentBase*>(current_graph_component);
+        if (!current_graph_task && !current_graph_composition) throw std::runtime_error("We have some unresolved or unknown elements within the graph");
 
-        if (cmp) {
-            setupProperties(cmp, helper_node2, graph);
+        if (current_graph_composition) {
+            setupProperties(current_graph_composition, current_graph_vertex, graph);
 
             // So we need to propagate all entries here
-            auto edges = graph->getEdgeIterator(helper_node2);
-            while (edges->next()) {
+            // This meanc we are walking throught all edges of this compoennt which must be a compotiiosn (otherwise it would have no children)
+            for(auto edge : graph->outEdges(current_graph_vertex)){
+                assert(current_graph_composition);
+                auto child_vertex = boost::static_pointer_cast<ComponentInstanceHelper>(edge->getTargetVertex());
+                auto child_component = dynamic_cast<Component*>(child_vertex->component.get());
+                assert(child_component);
 
-                // If our task is a child and we are NOT a specialized component
+                // If our current_graph_task is a child and we are NOT a specialized component
                 // (which would assume that we are not support this?, maybe we we would set a specific configuration then?!
-                auto task = dynamic_cast<Task*>(edges->current()->getTargetVertex().get());
-                auto specialized_task = dynamic_cast<SpecializedComponentBase*>(edges->current()->getTargetVertex().get());
+                auto child_task = dynamic_cast<Task*>(child_component);
+                auto child_specialized = dynamic_cast<SpecializedComponentBase*>(child_component);
 
-                if (task && specialized_task) {
-                    throw std::runtime_error("We got a specialized task as child, this is not (Yet) supported");
+
+                if (child_task && child_specialized) {
+                    throw std::runtime_error("We got a specialized current_graph_task as child, this is not (Yet) supported");
                 }
+/*
+                if(!child_task){
+                    std::cout << "Got a non task child: " << child_component->getName() << " in " << current_graph_composition->getName() << std::endl;
+                }
+*/
 
-                if (task) {
+                if (child_task) {
+                    std::cout << "Got a current_graph_task " << child_task->getName() << " in " << current_graph_composition->getName() << std::endl;
+                    std::cout << "One Component is: " << current_graph_component->getName() << " specialized: " << (current_graph_specialized!=0) << std::endl;
                     // Okay we start to use a default config for not
                     // TODO this must be extended later to load instead of the default-configs somthing which
                     // can be set by somehting like a with_conf call within the compositions
 
                     // Make sure the properties exist
-                    setupProperties(task, edges->current()->getTargetVertex(), graph);
+                    setupProperties(child_task, child_vertex, graph);
 
-                    for (auto prop : task->getProperties()) {
+                    for (auto prop : child_task->getProperties()) {
                         switch (prop.t) {
                             case(constrained_based_networks::ConfigurationModel::INT) : {
                                 try
                                 {
-                                    rel(*this, int_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, atoi(task->getConfFileProperty("default", prop.name).c_str()));
+                                    rel(*this, int_config[graph->getVertexId(child_vertex)][prop.name], IRT_EQ, atoi(child_task->getConfFileProperty("default", prop.name).c_str()));
                                 }
                                 catch (std::out_of_range e)
                                 {
                                     int val = 0;
-                                    if (spec_cmp) {
-
-                                        auto it = spec_cmp->configuration.find(prop.name);
-                                        if (it != spec_cmp->configuration.end()) {
+                                    if (current_graph_specialized) {
+                                        auto it = current_graph_specialized->configuration.find(prop.name);
+                                        if (it != current_graph_specialized->configuration.end()) {
                                             val = atoi(it->second.c_str());
                                         } else {
-                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0" << std::endl;
+                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << child_task->getName() << "Assuming 0" << std::endl;
                                         }
                                     } else {
-                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0" << std::endl;
+                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << child_task->getName() << "Assuming 0" << std::endl;
                                     }
-                                    rel(*this, int_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, val);
+                                    rel(*this, int_config[graph->getVertexId(child_vertex)][prop.name], IRT_EQ, val);
                                 }
                                 break;
                             }
@@ -229,21 +239,21 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                                 try
                                 {
                                     // This can fail
-                                    std::string str = task->getConfFileProperty("default", prop.name);
+                                    std::string str = child_task->getConfFileProperty("default", prop.name);
                                     unsigned int id = 0;
                                     if (string_helper->find(str) == string_helper->end()) {
                                         throw std::runtime_error("String helper does not contain the needed string this should not happen");
                                     } else {
                                         id = string_helper->at(str);
                                     }
-                                    rel(*this, string_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, id);
+                                    rel(*this, string_config[graph->getVertexId(child_vertex)][prop.name], IRT_EQ, id);
                                 }
                                 catch (std::out_of_range e)
                                 {
                                     int id = 0;
-                                    if (spec_cmp) {
-                                        auto it = spec_cmp->configuration.find(prop.name);
-                                        if (it != spec_cmp->configuration.end()) {
+                                    if (current_graph_specialized) {
+                                        auto it = current_graph_specialized->configuration.find(prop.name);
+                                        if (it != current_graph_specialized->configuration.end()) {
                                             std::string str;
                                             if (string_helper->find(str) == string_helper->end()) {
                                                 throw std::runtime_error("String helper does not contain the needed string this should not happen");
@@ -251,35 +261,35 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                                                 id = string_helper->at(str);
                                             }
                                         } else {
-                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming empty string" << std::endl;
+                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << child_task->getName() << "Assuming empty string" << std::endl;
                                         }
                                     } else {
-                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming empty string" << std::endl;
+                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << child_task->getName() << "Assuming empty string" << std::endl;
                                     }
-                                    rel(*this, string_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, id);
+                                    rel(*this, string_config[graph->getVertexId(child_vertex)][prop.name], IRT_EQ, id);
                                 }
                                 break;
                             }
                             case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
                                 try
                                 {
-                                    const float val = atof(task->getConfFileProperty("default", prop.name).c_str());
-                                    rel(*this, float_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], FRT_EQ, val);
+                                    const float val = atof(child_task->getConfFileProperty("default", prop.name).c_str());
+                                    rel(*this, float_config[graph->getVertexId(child_vertex)][prop.name], FRT_EQ, val);
                                 }
                                 catch (std::out_of_range e)
                                 {
                                     double val = 0;
-                                    if (spec_cmp) {
-                                        auto it = spec_cmp->configuration.find(prop.name);
-                                        if (it != spec_cmp->configuration.end()) {
+                                    if (current_graph_specialized) {
+                                        auto it = current_graph_specialized->configuration.find(prop.name);
+                                        if (it != current_graph_specialized->configuration.end()) {
                                             val = atof(it->second.c_str());
                                         } else {
-                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0.0" << std::endl;
+                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << child_task->getName() << "Assuming 0.0" << std::endl;
                                         }
                                     } else {
-                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming 0.0" << std::endl;
+                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << child_task->getName() << "Assuming 0.0" << std::endl;
                                     }
-                                    rel(*this, float_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], FRT_EQ, val);
+                                    rel(*this, float_config[graph->getVertexId(child_vertex)][prop.name], FRT_EQ, val);
                                 }
                                 break;
                             }
@@ -287,22 +297,22 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                                 try
                                 {
 
-                                    rel(*this, bool_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, atoi(task->getConfFileProperty("default", prop.name).c_str()));
+                                    rel(*this, bool_config[graph->getVertexId(child_vertex)][prop.name], IRT_EQ, atoi(child_task->getConfFileProperty("default", prop.name).c_str()));
                                 }
                                 catch (std::out_of_range e)
                                 {
                                     bool val = false;
-                                    if (spec_cmp) {
-                                        auto it = spec_cmp->configuration.find(prop.name);
-                                        if (it != spec_cmp->configuration.end()) {
+                                    if (current_graph_specialized) {
+                                        auto it = current_graph_specialized->configuration.find(prop.name);
+                                        if (it != current_graph_specialized->configuration.end()) {
                                             val = atoi(it->second.c_str());
                                         } else {
-                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming false" << std::endl;
+                                            std::cerr << "Cannot get configuration " << prop.name << " for Task " << child_task->getName() << "Assuming false" << std::endl;
                                         }
                                     } else {
-                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << task->getName() << "Assuming false" << std::endl;
+                                        std::cerr << "Cannot get configuration " << prop.name << " for Task " << child_task->getName() << "Assuming false" << std::endl;
                                     }
-                                    rel(*this, bool_config[graph->getVertexId(edges->current()->getTargetVertex())][prop.name], IRT_EQ, val);
+                                    rel(*this, bool_config[graph->getVertexId(child_vertex)][prop.name], IRT_EQ, val);
                                 }
                                 break;
                             }
@@ -310,53 +320,53 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                     }
                 }
 
-                auto child = dynamic_cast<Component*>(edges->current()->getTargetVertex().get());
-                for (auto forward : cmp->getArgumentForwards(child)) {
+                auto child = child_component;;
+                for (auto forward : current_graph_composition->getArgumentForwards(child)) {
 
-                    if (child->getProperty(forward.second) != cmp->getProperty(forward.first)) {
+                    if (child->getProperty(forward.second) != current_graph_composition->getProperty(forward.first)) {
                         throw std::runtime_error("The properties of child and parend differ in type");
                     }
                     // Dont care which type we choose check is done before
                     switch (child->getProperty(forward.second)) {
                         case(constrained_based_networks::ConfigurationModel::INT) : {
-                            auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
-                            int_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
-                            auto var_source = int_config[graph->getVertexId(helper_node2)][forward.first];
-                            rel(*this, var, IRT_EQ, var_source);
+                            auto &var_source = int_config[graph->getVertexId(child_vertex)][forward.second];
+                            auto &var_target = int_config[graph->getVertexId(current_graph_vertex)][forward.first];
+                            rel(*this, var_source, IRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::STRING) : {
-                            auto var = Gecode::IntVar(*this, 0, Gecode::Int::Limits::max);
-                            string_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
-                            auto var_source = string_config[graph->getVertexId(helper_node2)][forward.first];
-                            rel(*this, var, IRT_EQ, var_source);
+                            auto &var_source = string_config[graph->getVertexId(child_vertex)][forward.second];
+                            auto &var_target = string_config[graph->getVertexId(current_graph_vertex)][forward.first];
+                            rel(*this, var_source, IRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
-                            auto var = Gecode::FloatVar(*this, 0, Gecode::Float::Limits::max);
-                            float_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
-                            auto var_source = float_config[graph->getVertexId(helper_node2)][forward.first];
-                            rel(*this, var, FRT_EQ, var_source);
+                            auto &var_source = float_config[graph->getVertexId(child_vertex)][forward.second];
+                            auto &var_target = float_config[graph->getVertexId(current_graph_vertex)][forward.first];
+                            rel(*this, var_source, FRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::BOOL) : {
-                            auto var = Gecode::BoolVar(*this, 0, 1);
-                            bool_config[graph->getVertexId(edges->current()->getTargetVertex())][forward.second] = var;
-                            auto var_source = bool_config[graph->getVertexId(helper_node2)][forward.first];
-                            rel(*this, var, IRT_EQ, var_source);
+                            auto &var_source = bool_config[graph->getVertexId(child_vertex)][forward.second];
+                            auto &var_target = bool_config[graph->getVertexId(current_graph_vertex)][forward.first];
+                            rel(*this, var_source, IRT_EQ, var_target);
                             break;
                         }
                     };
                 }
             }
         }
-        if (task) {
-            setupProperties(task, helper_node2, graph);
+        if (current_graph_task) {
+            setupProperties(current_graph_task, current_graph_vertex, graph);
+        }
+
+        //We have a configuration request here on our own setting this
+        if(current_graph_specialized){
         }
     }
 
     // Handle the interlaaving, means if a component should be the same than another one in the real instanciation
-    // This is maybe the most important part of this class to idntify single and double-tasks
+    // This is maybe the most important part of this class to idntify single and double-current_graph_tasks
     interleaved = Gecode::BoolVarArray(*this, verticies_in_tree * verticies_in_tree, 0, 1);
     for (auto _n1 : graph->vertices()) {
         auto i = graph->getVertexId(_n1);
@@ -422,7 +432,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
         }
     }
 
-    // Setup the branching for ALL task-context here, this could
+    // Setup the branching for ALL current_graph_task-context here, this could
     // be done within the previous loop to save effienfy, but to have the code
     // more strutured do this explicitly and separeated here
     for (auto node : graph->getAllVertices()) {
@@ -511,8 +521,8 @@ void InstanceSolution::printToDot(std::ostream& os) const
                 std::cout << c.first.c_str() << std::endl;
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
-        } else if (auto task = dynamic_cast<Task*>(component)) {
-            os << task->getName() << std::endl;
+        } else if (auto current_graph_task = dynamic_cast<Task*>(component)) {
+            os << current_graph_task->getName() << std::endl;
             for (auto c : float_config[graph->getVertexId(node)]) {
                 std::cout << c.first.c_str() << std::endl;
                 os << "-- " << c.first << ": " << c.second << std::endl;
@@ -541,9 +551,9 @@ void InstanceSolution::printToStream(std::ostream& os, bool full) const
         auto node = boost::reinterpret_pointer_cast<ComponentInstanceHelper>(_node);
         auto component = dynamic_cast<Component*>(node->component.get());
         std::cout << "- " << component->toString() << std::endl;
-        if (auto task = dynamic_cast<Task*>(component)) {
-            (void)task;
-            //            os << task->getName() << std::endl;
+        if (auto current_graph_task = dynamic_cast<Task*>(component)) {
+            (void)current_graph_task;
+            //            os << current_graph_task->getName() << std::endl;
             for (auto c : int_config[graph->getVertexId(node)]) {
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }

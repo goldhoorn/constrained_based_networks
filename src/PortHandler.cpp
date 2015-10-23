@@ -22,6 +22,7 @@ bool PortHandler::operator ==( const PortHandler &comp ) const
     return false;
 }
 
+#if 0
 std::string PortHandler::toString() const
 {
     std::ostringstream ss;
@@ -52,6 +53,7 @@ std::string PortHandler::toString() const
 
     return ss.str();
 }
+#endif
 
 const std::vector<InputPort*>& PortHandler::getInPorts() const
 {

@@ -61,7 +61,7 @@ public:
     /**
      * String representation of a component
      */
-    std::string toString() const;
+//    std::string toString() const;
 
     virtual std::string getClassName() const { return "constrained_based_networks::Task"; }
 

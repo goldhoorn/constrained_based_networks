@@ -27,6 +27,7 @@ bool Task::operator ==( const Task &comp ) const
     return name == comp.name;
 }
 
+#if 0
 std::string Task::toString() const
 {
     std::ostringstream ss;
@@ -41,6 +42,8 @@ std::string Task::toString() const
 */
     return ss.str();
 }
+#endif
+
 /*
 int Task::getType() const
 {

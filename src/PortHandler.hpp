@@ -64,7 +64,7 @@ public:
     /**
      * String representation of a component
      */
-    std::string toString() const;
+//    std::string toString() const;
 
     /**
      * Get the incoming ports

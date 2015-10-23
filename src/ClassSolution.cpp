@@ -410,6 +410,8 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             e->setTargetVertex(c->getPtr());
 
             std::cout << e->getTargetVertex()->toString() << " vs. " <<  c->toString() << " vs. " << c->getName() << std::endl;
+            std::cout << "Label:" << std::endl;
+            std::cout << e->getTargetVertex()->getLabel() << " vs. " <<  c->getLabel() << " vs. " << c->getLabel() << std::endl;
             g->addEdge(e);
 
             if (auto cmp = dynamic_cast<Composition*>(c)) {

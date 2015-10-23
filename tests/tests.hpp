@@ -325,12 +325,15 @@ std::string test_config(constrained_based_networks::Pool* pool)
 {
     auto cmp = new Composition("ConfigurableComposition",pool);
     cmp->addProperty("composition_config", constrained_based_networks::ConfigurationModel::INT);
+    auto t1 = new Task("T1", pool);
+    t1->addProperty("task_config", constrained_based_networks::ConfigurationModel::INT);
+    cmp->addChild(t1,"task");
+    cmp->addArgumentForwards("task","composition_config", "task_config");
+
     auto cmp2 = cmp->getSpecialized();
     cmp2->addConfig("composition_config", "5");
 
 
-    auto t1 = new Task("T1", pool);
-    cmp->addChild(t1,"task");
 
     //t1->addProperty("int_config", constrained_based_networks::ConfigurationModel::INT);
     //auto t2 = t1->getSpecialized();

@@ -31,7 +31,7 @@ namespace constrained_based_networks {
             }
             return datatype < port.datatype;
         }
-
+#if 0
         std::string toString() const
         {
             std::ostringstream ss;
@@ -48,6 +48,7 @@ namespace constrained_based_networks {
             ar & outgoingConnections;
             */
         };
+#endif
     };
 
     /**

@@ -50,10 +50,12 @@ class Component : public graph_analysis::Vertex
     virtual bool isActive();
     virtual void setActive(bool active = true);
     virtual const std::string &getName() const;
+
     std::string toString() const
     {
         return getName();
     }
+
 
     virtual std::string getClassName() const
     {

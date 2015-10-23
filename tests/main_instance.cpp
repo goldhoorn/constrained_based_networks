@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     bool follow_reqs = true;
 
     char c;
-    while ((c = getopt(argc, argv, "hdrt:f:")) != -1) {
+    while ((c = getopt(argc, argv, "nhdrt:f:")) != -1) {
         switch (c) {
             case 'd':
                 debug = true;

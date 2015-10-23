@@ -22,6 +22,7 @@ bool DataService::operator ==( const DataService &comp ) const
     return name == comp.name;
 }
 
+#if 0
 std::string DataService::toString() const
 {
     std::ostringstream ss;
@@ -36,6 +37,8 @@ std::string DataService::toString() const
   */
     return ss.str();
 }
+#endif
+
 /*
 int DataService::getType() const
 {

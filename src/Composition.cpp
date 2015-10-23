@@ -88,6 +88,7 @@ void Composition::addEventForwards(std::string child, std::string source, std::s
     event_forwards[children[child]][source] =  target;
 }
 
+#if 0
 std::string Composition::toString() const
 {
     std::ostringstream ss;
@@ -104,6 +105,7 @@ std::string Composition::toString() const
     */
     return ss.str();
 }
+#endif
 
 /*
 size_t Composition::getCmpID() const
