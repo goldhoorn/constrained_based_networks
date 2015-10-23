@@ -453,6 +453,7 @@ void printTests()
     for (int i = 0; tests[i].v; i++) {
         std::cout << "Test " << i << ": ";
         std::cout << demangle(backtrace_symbols((void * const*)&tests[i].v, 1)[0]);
+        std::cout << "\t\t" << tests[i].name;
         std::cout << std::endl;
     }
 }

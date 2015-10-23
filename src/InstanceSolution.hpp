@@ -35,7 +35,6 @@ class ConfiguredComponent : public graph_analysis::Vertex
     }
 
     std::string serializeConfig(){
-        std::cout << "Serialize is calles" << std::endl;
         std::stringstream str;
         str << int_config.size() << " ";
         for (auto j : int_config) {
@@ -52,6 +51,23 @@ class ConfiguredComponent : public graph_analysis::Vertex
         str << string_config.size() << " ";
         for (auto j : string_config) {
             str << j.first << " " << j.second << " ";
+        }
+        return str.str();
+    }
+
+    std::string printConfig(){
+        std::stringstream str;
+        for (auto j : int_config) {
+            str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;;
+        }
+        for (auto j : double_config) {
+            str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+        }
+        for (auto j : bool_config) {
+            str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+        }
+        for (auto j : string_config) {
+            str << j.first << ": " << j.second << " " << std::endl;
         }
         return str.str();
     }

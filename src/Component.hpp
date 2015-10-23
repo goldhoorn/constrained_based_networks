@@ -89,7 +89,7 @@ class Component : public graph_analysis::Vertex
                 return p.t;
             }
         }
-        throw std::runtime_error("Could not find property on underlaying task");
+        throw std::runtime_error("Could not find property on underlaying task: " + _name + " on task " + getName());
     }
     const std::vector<ConfigurationModel> &getProperties() const
     {

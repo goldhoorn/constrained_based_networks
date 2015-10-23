@@ -5535,7 +5535,7 @@ c->addChild(pool->getComponent("AvalonControl::FakeWriter"),"controller");
 c->addChild(pool->getComponent("Base::ControlledSystemSrv"),"controlled_system");
 c->addChild(pool->getComponent("Base::OrientationWithZSrv"),"reading");
 c->addArgumentForwards("controller", "heading", "heading");
-c->addArgumentForwards("controller", "depth", "depth");
+c->addArgumentForwards("controller", "depth", "Z");
 c->addArgumentForwards("controller", "speed_x", "speed_x");
 c->addArgumentForwards("controller", "speed_y", "speed_y");
 c->addSelfEmitations("success");

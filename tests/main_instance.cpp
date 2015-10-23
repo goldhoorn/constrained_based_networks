@@ -16,7 +16,7 @@ void initializeExporter(){
     graph_analysis::VertexTypeManager *vManager = graph_analysis::VertexTypeManager::getInstance();
     graph_analysis::Vertex::Ptr cc = graph_analysis::Vertex::Ptr(new ConfiguredComponent());
     vManager->registerType(cc);
-    vManager->registerAttribute(cc->getClassName(),"config",(graph_analysis::VertexTypeManager::serializeFunc_t)&ConfiguredComponent::serializeConfig, (graph_analysis::VertexTypeManager::deserializeFunc_t)&ConfiguredComponent::deSerializeConfig, (graph_analysis::VertexTypeManager::printFunc_t)&ConfiguredComponent::serializeConfig);
+    vManager->registerAttribute(cc->getClassName(),"config",(graph_analysis::VertexTypeManager::serializeFunc_t)&ConfiguredComponent::serializeConfig, (graph_analysis::VertexTypeManager::deserializeFunc_t)&ConfiguredComponent::deSerializeConfig, (graph_analysis::VertexTypeManager::printFunc_t)&ConfiguredComponent::printConfig);
 }
 
 
