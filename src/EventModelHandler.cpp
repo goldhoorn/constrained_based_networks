@@ -172,6 +172,11 @@ void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr gra
                 str << transition;
                 spec->addConfig("current_state", str.str());
 
+#warning CONINUE HERE
+                //TODO continue work here, we have specialized components to export into the graph which is not yet supported
+                //by the tooling. The specialized component must then later after the orgiginal model is loaded  re-linked to the model in the space
+                //The best way would be to re-create the specialized components on import maybe
+
                 {
                     graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge(c->getLabel()));
                     e->setSourceVertex(current);
