@@ -84,12 +84,12 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
     std::cout << "Jeha i'm done" << std::endl;
 }
 
-Pool *EventModelHandler::getFollowRequirements(unsigned int causing_component, std::string causing_event)
+std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirements(unsigned int causing_component, std::string causing_event)
 {
-    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    std::vector<graph_analysis::BaseGraph::Ptr> res;
 
     // First we have to check if a state-machine is affected by this change.
-    // Otherwise... TODO
+    // Otherwise... TODO rething is this is sensful which affectec component we search
     for (auto affected : event_propagation_table[causing_component][causing_event]) {
         auto affected_event = affected.event;
         auto affected_component_id = affected.component_graph_id;
@@ -102,7 +102,9 @@ Pool *EventModelHandler::getFollowRequirements(unsigned int causing_component, s
             initial_pool->mergeDoubles();
             if(affected_event == "failed"){
                 std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
-                return p;
+                graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+                res.push_back(graph);
+                continue;
             }
             unsigned int current_transition;
             int parsed = sscanf(affected_event.c_str(), "transition-%u", &current_transition);
@@ -113,11 +115,12 @@ Pool *EventModelHandler::getFollowRequirements(unsigned int causing_component, s
             }
             std::cout << "Got a affected statemachine " << affected_component->getName() << " the event is: " << causing_event << " -> " << affected_event << std::endl;
             // std::cout << "DEBUG:::::::::::::::::::: " << instancitaed_network->getVertex(affected_component_id)->toString() << std::endl;
-            getFollowRequirements(p, root, instancitaed_network->getVertex(affected_component_id), current_transition);
-            return p;
+            graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+            getFollowRequirements(graph ,p, root, instancitaed_network->getVertex(affected_component_id), current_transition);
+            res.push_back(graph);
         }
     }
-    return 0;
+    return res;
 }
 
 bool EventModelHandler::isOnPath(graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target)
@@ -134,7 +137,7 @@ bool EventModelHandler::isOnPath(graph_analysis::Vertex::Ptr current, graph_anal
     return false;
 }
 
-void EventModelHandler::getFollowRequirements(Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target, unsigned int transition)
+void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target, unsigned int transition)
 {
     if (isOnPath(current, target)) {
         // Searching each child of the composition, becasue we have to fix this
@@ -157,16 +160,24 @@ void EventModelHandler::getFollowRequirements(Pool *pool, graph_analysis::Vertex
                 } else {
                     parent->replaceChild(child, c->getLabel());
                 }
+                graph->addEdge(c);
 
                 // We branch here a level deeper, we need only to do this if we are on the path
                 // becasue everything else we dont care in general
-                getFollowRequirements(pool, c->getTargetVertex(), target, transition);
+                getFollowRequirements(graph, pool, c->getTargetVertex(), target, transition);
             } else {
                 auto spec = dynamic_cast<SpecializedComponent<StateMachine> *>(child->getSpecialized());
                 assert(spec);
                 std::stringstream str;
                 str << transition;
                 spec->addConfig("current_state", str.str());
+
+                {
+                    graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge(c->getLabel()));
+                    e->setSourceVertex(current);
+                    e->setTargetVertex(spec->getPtr());
+                    graph->addEdge(e);
+                }
 
                 if (current == root) {
                     // Special case state-machine itself was a root-requirement
@@ -247,7 +258,7 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
 
             if (valid || true) {
                 auto p = getFollowRequirements(component.first, event.first);
-                if (p) res.push_back({causing_component, event.first, {p}});
+                res.push_back({causing_component, event.first, {p}});
             }
         }
     }

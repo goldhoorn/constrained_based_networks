@@ -23,12 +23,77 @@ class ConfiguredComponent : public graph_analysis::Vertex
         std::string name;
     };
 
+    /*Empty constructor should not be used, but needed for GraphClass */
+    ConfiguredComponent(){
+        component = 0;
+    }
+
+    //TODO warning does not really clone, it is needed to create a vertex without taking respect to it's content
+    virtual Vertex* getClone() const{
+        auto cc = new ConfiguredComponent();
+        return cc;
+    }
+
+    std::string serializeConfig(){
+        std::cout << "Serialize is calles" << std::endl;
+        std::stringstream str;
+        str << int_config.size() << " ";
+        for (auto j : int_config) {
+            str << j.name << " " << j.min << " " << j.max << " ";
+        }
+        str << double_config.size() << " ";
+        for (auto j : double_config) {
+            str << j.name << " " << j.min << " " << j.max << " ";
+        }
+        str << bool_config.size() << " ";
+        for (auto j : bool_config) {
+            str << j.name << " " << j.min << " " << j.max << " ";
+        }
+        str << string_config.size() << " ";
+        for (auto j : string_config) {
+            str << j.first << " " << j.second << " ";
+        }
+        return str.str();
+    }
+
+    void deSerializeConfig(std::string input){
+        std::stringstream ifs(input);
+        int count,min,max;
+        std::string name;
+        ifs >> count;
+        for(size_t i=0;i<count;++i){
+            ifs >> name;
+            ifs >> min;
+            ifs >> max;
+            int_config.push_back({min,max,name});
+        }
+        double dmin,dmax;
+        ifs >> count;
+        for(size_t i=0;i<count;++i){
+            ifs >> name;
+            ifs >> dmin;
+            ifs >> dmax;
+            double_config.push_back({dmin,dmax,name});
+        }
+        bool bMin,bMax;
+        ifs >> count;
+        for(size_t i=0;i<count;++i){
+            ifs >> name;
+            ifs >> bMin;
+            ifs >> bMax;
+            bool_config.push_back({bMin,bMax,name});
+        }
+       //TODO handle string
+    }
+
     ConfiguredComponent(Component* underlaying_component, std::map<std::string, Gecode::FloatVar> f, std::map<std::string, Gecode::BoolVar> b, std::map<std::string, Gecode::IntVar> i,
                         std::map<std::string, Gecode::IntVar> s, std::shared_ptr<std::map<std::string, unsigned int>> sh)
         : component(underlaying_component)
     {
+        std::cout << "Debug for " << underlaying_component->getName() << std::endl;
         //string_name << component->toString() << std::endl;
         for (auto j : i) {
+            std::cout << "\t-" << j.first << j.second << std::endl;
             int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
         }
         for (auto j : f) {
@@ -53,10 +118,22 @@ class ConfiguredComponent : public graph_analysis::Vertex
         }
     }
 
+    virtual std::string getClassName() const
+    {
+        return "constrained_based_networks::ConfiguredComponent";
+    }
+
     std::string toString() const
     {
         std::stringstream str;
+        if(component){
         str << component->toString() << std::endl;
+        }else{
+            str << "Empty-ConfiuredComponent" << std::endl;
+        }
+        return str.str();
+/*
+        
         for(auto i:int_config){
             if(i.min == i.max){
                 str << i.name << ": " << i.min << std::endl;
@@ -82,6 +159,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
                 str << i.first<< ": " << i.second << std::endl;
         }
         return str.str();
+        */
     }
 
     std::vector<Config<int>> int_config;
@@ -159,6 +237,13 @@ class InstanceSolution : public Gecode::Space
     void printToDot(std::ostream& os) const;
 
     static void print(const Space& home, const Gecode::BrancherHandle& bh, unsigned int a, Gecode::IntVar x, int i, const int& n, std::ostream& o);
+    
+    template<typename C>
+    static C* get(graph_analysis::Vertex::Ptr v){
+        auto component = dynamic_cast<C *>(v.get());
+        if (auto c = dynamic_cast<ConfiguredComponent *>(v.get())) component = dynamic_cast<C *>(c->component);
+        return component;
+    }
 
     static void print(const Space& home, const Gecode::BrancherHandle& bh, unsigned int a, Gecode::BoolVar x, int i, const int& n, std::ostream& o);
     static graph_analysis::Vertex::Ptr getRoot(const graph_analysis::BaseGraph::Ptr& graph);

@@ -42,7 +42,9 @@ bool Composition::hasChild(Component *child){
 Forwards Composition::getEventForwards(Component *child, std::string name)
 {
     if(children.find(name) == children.end()){
-        std::cerr << "This is really bad !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+        if(this->getName() != "root-knot"){
+            std::cerr << "This is really bad !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! could not find child " << name << std::endl;
+        }
         return Forwards();
     }
     child = children[name];

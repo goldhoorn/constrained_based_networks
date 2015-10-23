@@ -8,12 +8,22 @@
 #include <graph_analysis/GraphIO.hpp>
 #include "tests.hpp"
 #include <constrained_based_networks/EventModelHandler.hpp>
+#include <graph_analysis/VertexTypeManager.hpp>
 
 using namespace constrained_based_networks;
+
+void initializeExporter(){
+    graph_analysis::VertexTypeManager *vManager = graph_analysis::VertexTypeManager::getInstance();
+    graph_analysis::Vertex::Ptr cc = graph_analysis::Vertex::Ptr(new ConfiguredComponent());
+    vManager->registerType(cc);
+    vManager->registerAttribute(cc->getClassName(),"config",(graph_analysis::VertexTypeManager::serializeFunc_t)&ConfiguredComponent::serializeConfig, (graph_analysis::VertexTypeManager::deserializeFunc_t)&ConfiguredComponent::deSerializeConfig, (graph_analysis::VertexTypeManager::printFunc_t)&ConfiguredComponent::serializeConfig);
+}
+
 
 // main test function
 int main(int argc, char *argv[])
 {
+    initializeExporter();
     bool debug = false;
     bool resolve_nonresolveable = false;
     int test_id = -1;
@@ -21,7 +31,7 @@ int main(int argc, char *argv[])
     bool follow_reqs = true;
 
     char c;
-    while ((c = getopt(argc, argv, "drt:f:")) != -1) {
+    while ((c = getopt(argc, argv, "hdrt:f:")) != -1) {
         switch (c) {
             case 'd':
                 debug = true;
@@ -39,6 +49,10 @@ int main(int argc, char *argv[])
                 break;
             case 'n':
                 follow_reqs = false;
+                break;
+            case 'h':
+                printTests();
+                return 0;
                 break;
             default:
                 printf("On default block\n");
@@ -77,14 +91,16 @@ int main(int argc, char *argv[])
     std::cout << "All instance solutions are calculated" << std::endl;
     size_t cnt = 0;
     for (auto solution : is) {
+        std::cout << "Startinf to write" << std::endl;
         std::stringstream filename;
-        filename << file << "-instance-" << cnt << ".dot";
+        filename << file << "-instance-" << cnt;
         graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GRAPHVIZ);
-
+        graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GEXF);
+        std::cout << "Wrote " << filename.str() << std::endl;
+        if (follow_reqs) {
         Pool *p = pool;
         graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(p, g);
-        if (follow_reqs) {
         std::stringstream filename2;
             filename2 << file << "-instance-" << cnt << "-follows.txt";
             std::ofstream ofs(filename2.str());
@@ -92,10 +108,21 @@ int main(int argc, char *argv[])
             for (auto p : erg) {
                 // Restarting search
                 size_t cnt2 = 0;
-                if (p.resulting_requirement.pool) {
-                    ofs << p.causing_component->getName() << " " << p.causing_event;
-                    //TODO export network
+                for(auto n : p.resulting_requirement.network){
+//                if (p.resulting_requirement.pool) {
+                    std::stringstream filename3;
+                    filename3 << file << "-instance-" << cnt << "-follow-network-" << cnt2 << "-" << p.causing_component->getName() << "-" << p.causing_event << ".dot";
+                        if (n->size() == 0) {
+                            ofs << p.causing_component->getName() << " " << p.causing_event << " " << n->size() << std::endl;
+                            //auto v = graph_analysis::Vertex::Ptr(new graph_analysis::Vertex("Empty"));
+                            //n->addVertex(v);
+                        }else{
+                            ofs << p.causing_component->getName() << " " << p.causing_event << " " << filename3.str() << std::endl;
+                            graph_analysis::io::GraphIO::write(filename3.str(), n, graph_analysis::representation::GRAPHVIZ);
+                        }
+                    cnt2++;
 
+/* OLD CODE
                     auto erg2 = ClassSolution::babSearch(p.resulting_requirement.pool);
                     for (auto graph : erg2) {
                         std::stringstream filename2;
@@ -108,6 +135,7 @@ int main(int argc, char *argv[])
                         graph_analysis::io::GraphIO::write(filename2.str(), graph, graph_analysis::representation::GRAPHVIZ);
                         cnt2++;
                     }
+                    */
                 }
             }
             cnt++;

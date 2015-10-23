@@ -10,7 +10,7 @@ namespace constrained_based_networks
 
 struct Network
 {
-    Pool *pool;
+     std::vector<graph_analysis::BaseGraph::Ptr> network;
 };
 
 struct TransitionTrigger
@@ -47,7 +47,7 @@ class EventModelHandler
    public:
     EventModelHandler(Pool *initial_pool, graph_analysis::DirectedGraphInterface::Ptr instancitaed_network);
     void generateDBRecursive(graph_analysis::Vertex::Ptr current_node);
-    Pool* getFollowRequirements(unsigned int causing_component, std::string causing_event);
+     std::vector<graph_analysis::BaseGraph::Ptr> getFollowRequirements(unsigned int causing_component, std::string causing_event);
 
     std::list<TransitionTrigger> getTrigger();
 
@@ -60,7 +60,7 @@ class EventModelHandler
 
    private:
     bool isOnPath(graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target);
-    void getFollowRequirements(Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target,unsigned int transition);
+    void getFollowRequirements(graph_analysis::BaseGraph::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target,unsigned int transition);
     std::map<unsigned int, std::map<std::string, std::set<EventWithSource>>> event_propagation_table;
     // std::map<EventWithSource, std::vector<EventWithSource>> event_propagation_table;
     Pool *initial_pool;

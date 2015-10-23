@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
     char c;
     char *testname = 0;
 
-    while ((c = getopt(argc, argv, "adrt:n:")) != -1) {
+    while ((c = getopt(argc, argv, "hadrt:n:")) != -1) {
         switch (c) {
             case 'n':
                 testname = optarg;
@@ -169,6 +169,9 @@ int main(int argc, char *argv[])
             case 'r':
                 resolve_nonresolveable = true;
                 break;
+            case 'h':
+                printTests();
+                return 0;
             default:
                 printf("On default block\n");
         }

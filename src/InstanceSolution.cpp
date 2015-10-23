@@ -86,7 +86,7 @@ graph_analysis::Vertex::Ptr InstanceSolution::getRoot(const graph_analysis::Base
         auto component = dynamic_cast<Component*>(v.get());
         auto spec = dynamic_cast<ConfiguredComponent*>(v.get());
         if(spec){
-            std::cout << "Got a configures component " << spec->toString() << std::endl;
+            //std::cout << "Got a configures component " << spec->toString() << std::endl;
             component = spec->component;
         }
         if(!component){
@@ -122,6 +122,34 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     assert(orig);
 
     buildInstanceGraph(root, *orig, ComponentInstanceHelper::make(root));
+
+    for(auto v : _graph->vertices()){
+        if(auto s = dynamic_cast<SpecializedComponentBase*>(v.get())){
+            std::cout << "Spec (1): " << s->getName() << std::endl;
+        }
+    }
+    for(auto v : orig->vertices()){
+        if(auto s = dynamic_cast<SpecializedComponentBase*>(v.get())){
+            std::cout << "Spec (2): " << s->getName() << std::endl;
+        }
+    }
+    std::cout << "New graph has: " << graph->getAllVertices().size() << std::endl;
+    for(auto v : graph->vertices()){
+        auto helper_node2 = boost::static_pointer_cast<ComponentInstanceHelper>(v);
+        auto c = InstanceSolution::get<Component>(helper_node2->component);
+        auto s = InstanceSolution::get<SpecializedComponentBase>(helper_node2->component);
+        if(s){
+            std::cout << "Spec (3): " << s->getName() << std::endl;
+        }else if(c){
+            std::cout << "ERR(3): " << c->getName() << std::endl;
+        }else{
+            std::cout << "WFT(3): " << v->getClassName() << std::endl;
+            //assert(false);
+        }
+    }
+
+//    exit(0);
+
 
     gatherAllStringConfigs();
 
@@ -183,6 +211,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                                 {
                                     int val = 0;
                                     if (spec_cmp) {
+
                                         auto it = spec_cmp->configuration.find(prop.name);
                                         if (it != spec_cmp->configuration.end()) {
                                             val = atoi(it->second.c_str());

@@ -408,6 +408,8 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             // std::cout << "pointer in CS: " << a << " | " << dynamic_cast<SpecializedComponentBase*>(a) << std::endl;
             e->setSourceVertex((pool->getItems<Composition*>()[cmp_id]->getPtr()));
             e->setTargetVertex(c->getPtr());
+
+            std::cout << e->getTargetVertex()->toString() << " vs. " <<  c->toString() << " vs. " << c->getName() << std::endl;
             g->addEdge(e);
 
             if (auto cmp = dynamic_cast<Composition*>(c)) {

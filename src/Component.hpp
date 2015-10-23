@@ -54,6 +54,7 @@ class Component : public graph_analysis::Vertex
     {
         return getName();
     }
+
     virtual std::string getClassName() const
     {
         return "constrained_based_networks::Component";
