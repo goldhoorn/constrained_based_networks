@@ -15,8 +15,9 @@ using namespace constrained_based_networks;
 void initializeExporter(){
     graph_analysis::VertexTypeManager *vManager = graph_analysis::VertexTypeManager::getInstance();
     graph_analysis::Vertex::Ptr cc = graph_analysis::Vertex::Ptr(new ConfiguredComponent());
+    std::cout << "Saving type: " << cc->getClassName() << std::endl;
     vManager->registerType(cc);
-    vManager->registerAttribute(cc->getClassName(),"config",(graph_analysis::VertexTypeManager::serialize_func_t)&ConfiguredComponent::serializeConfig, (graph_analysis::VertexTypeManager::deserialize_func_t)&ConfiguredComponent::deSerializeConfig, (graph_analysis::VertexTypeManager::print_func_t)&ConfiguredComponent::printConfig);
+    vManager->registerAttribute(cc->getClassName(),"config",(graph_analysis::VertexTypeManager::serialize_func_t)&ConfiguredComponent::serializeConfig, (graph_analysis::VertexTypeManager::deserialize_func_t)&ConfiguredComponent::deSerializeConfig, (graph_analysis::VertexTypeManager::print_func_t)&ConfiguredComponent::serializeConfig);
 }
 
 
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
     bool follow_reqs = true;
 
     char c;
-    while ((c = getopt(argc, argv, "nhdrt:f:")) != -1) {
+    while ((c = getopt(argc, argv, "drt:f:")) != -1) {
         switch (c) {
             case 'd':
                 debug = true;
@@ -50,10 +51,6 @@ int main(int argc, char *argv[])
             case 'n':
                 follow_reqs = false;
                 break;
-            case 'h':
-                printTests();
-                return 0;
-                break;
             default:
                 printf("On default block\n");
         }
@@ -66,13 +63,29 @@ int main(int argc, char *argv[])
     std::string name = load_test(test_id);
 
     graph_analysis::BaseGraph::Ptr graph_imported = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-    //    graph_analysis::io::GraphIO::read("output.yml", graph_imported, graph_analysis::representation::YAML);
     graph_analysis::io::GraphIO::read(file, graph_imported, graph_analysis::representation::GEXF);
 
     // Start to create our graph based on the imported graph
     for (auto node : graph_imported->getAllEdges()) {
-        graph_analysis::Edge::Ptr e(new graph_analysis::Edge(node->getLabel()));
+        //std::cout << "Edge: " << node->getLabel() << std::endl;
+
+        if(auto n = dynamic_cast<ConfiguredComponent*>(node->getTargetVertex().get())){
+            std::cout << "Have a configured Component wirh name: " << n->getLabel();
+            for(auto ic : n->int_config){
+                std::cout << "Int Config " << ic.name << ": " << ic.min << " ... " << ic.max << std::endl;
+            }
+        }else{
+            if(node->getTargetVertex().get() == 0){
+                std::cerr << "WHAT empy vertex?" << std::endl;
+            }else{
+                std::cout << "Got a: " << node->getTargetVertex()->graph_analysis::GraphElement::getClassName()  << "For source from edge" << node->getLabel() << std::endl;
+                std::cout << "The toString: " << node->getTargetVertex()->toString() << std::endl;
+            }
+        }
+    }
+}
+
+#if 0
 #if 0
         std::cout << "from " << node->getSourceVertex()->getLabel() << std::endl;
         std::cout << "to  " << node->getSourceVertex()->getLabel() << std::endl;
@@ -146,3 +159,4 @@ int main(int argc, char *argv[])
     std::cout << "Found overall " << cnt << " solutions" << std::endl;
     return 0;
 }
+#endif
