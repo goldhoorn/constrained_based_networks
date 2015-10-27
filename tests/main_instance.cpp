@@ -17,6 +17,7 @@ void initializeExporter(){
     graph_analysis::Vertex::Ptr cc = graph_analysis::Vertex::Ptr(new ConfiguredComponent());
     vManager->registerType(cc);
     vManager->registerAttribute(cc->getClassName(),"config",(graph_analysis::VertexTypeManager::serialize_func_t)&ConfiguredComponent::serializeConfig, (graph_analysis::VertexTypeManager::deserialize_func_t)&ConfiguredComponent::deSerializeConfig, (graph_analysis::VertexTypeManager::print_func_t)&ConfiguredComponent::printConfig);
+    vManager->registerAttribute(cc->getClassName(),"underlaying_name",(graph_analysis::VertexTypeManager::serialize_func_t)&ConfiguredComponent::serializeName, (graph_analysis::VertexTypeManager::deserialize_func_t)&ConfiguredComponent::deserializeName, (graph_analysis::VertexTypeManager::print_func_t)&ConfiguredComponent::serializeName);
 }
 
 
@@ -94,11 +95,11 @@ int main(int argc, char *argv[])
         std::cout << "Startinf to write" << std::endl;
         std::stringstream filename;
         filename << file << "-instance-" << cnt;
-        graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GRAPHVIZ);
         graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GEXF);
         std::cout << "Wrote " << filename.str() << std::endl;
         if (follow_reqs) {
         Pool *p = pool;
+
         graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(p, g);
         std::stringstream filename2;
@@ -111,31 +112,16 @@ int main(int argc, char *argv[])
                 for(auto n : p.resulting_requirement.network){
 //                if (p.resulting_requirement.pool) {
                     std::stringstream filename3;
-                    filename3 << file << "-instance-" << cnt << "-follow-network-" << cnt2 << "-" << p.causing_component->getName() << "-" << p.causing_event << ".dot";
+                    filename3 << file << "-instance-" << cnt << "-follow-network-" << cnt2 << "-" << p.causing_component->getName() << "-" << p.causing_event;
                         if (n->size() == 0) {
                             ofs << p.causing_component->getName() << " " << p.causing_event << " " << n->size() << std::endl;
                             //auto v = graph_analysis::Vertex::Ptr(new graph_analysis::Vertex("Empty"));
                             //n->addVertex(v);
                         }else{
                             ofs << p.causing_component->getName() << " " << p.causing_event << " " << filename3.str() << std::endl;
-                            graph_analysis::io::GraphIO::write(filename3.str(), n, graph_analysis::representation::GRAPHVIZ);
+                            graph_analysis::io::GraphIO::write(filename3.str(), n, graph_analysis::representation::GEXF);
                         }
                     cnt2++;
-
-/* OLD CODE
-                    auto erg2 = ClassSolution::babSearch(p.resulting_requirement.pool);
-                    for (auto graph : erg2) {
-                        std::stringstream filename2;
-                        filename2 << file << "-instance-" << cnt << "-follow-network-" << cnt2 << "-" << p.causing_component->getName() << "-" << p.causing_event << ".dot";
-                        std::cout << "Found a follow-network for a solution, verticies:" << graph->size() << std::endl;
-                        if (graph->size() == 0) {
-                            auto v = graph_analysis::Vertex::Ptr(new graph_analysis::Vertex("Empty"));
-                            graph->addVertex(v);
-                        }
-                        graph_analysis::io::GraphIO::write(filename2.str(), graph, graph_analysis::representation::GRAPHVIZ);
-                        cnt2++;
-                    }
-                    */
                 }
             }
             cnt++;

@@ -14,20 +14,35 @@ using namespace constrained_based_networks;
 bool debug = false;
 bool resolve_nonresolveable = false;
 
-// void resolve(std::string name, bool res, bool debug = false){
+std::vector<graph_analysis::BaseGraph::Ptr> resolve(char *base_network_file, bool res, bool debug = false){
+    std::vector<graph_analysis::BaseGraph::Ptr> erg;
+    
+    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    graph_analysis::io::GraphIO::read(base_network_file, graph, graph_analysis::representation::GEXF);
+
+    // Start to create our graph based on the imported graph
+    for (auto node : graph->getAllEdges()) {
+        graph_analysis::Edge::Ptr e(new graph_analysis::Edge(node->getLabel()));
+#if 0
+        std::cout << "from " << node->getSourceVertex()->getLabel() << std::endl;
+        std::cout << "to  " << node->getSourceVertex()->getLabel() << std::endl;
+#endif
+        const auto &v1 = pool->getComponent(node->getSourceVertex()->getLabel());
+        const auto &v2 = pool->getComponent(node->getTargetVertex()->getLabel());
+        assert(v1->getPtr());
+        assert(v2->getPtr());
+
+        e->setSourceVertex(v1->getPtr());
+        e->setTargetVertex(v2->getPtr());
+        graph->addEdge(e);
+    }
+
+    return erg;
+}
+
 std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool debug = false)
 {
-    //Check pool consitency
-    for (auto co : pool->getItems<Component *>()) {
-        if (co != pool->operator[](co->getID())) {
-            std::cout << "Check in resolve for the following component failed: " << c->getName() << std::endl;
-            std::cout << "Failig id: " << co->getID() << " for component with name: " << co->getName() << std::endl;
-            if (auto spec = dynamic_cast<SpecializedComponentBase *>(co)) {
-                std::cout << "It is a specialized one: " << spec->getID() << " and base id: " << spec->getComponent()->getID() << std::endl;
-            }
-            throw std::runtime_error("Pool is inconsistent to IDs");
-        }
-    }
+    pool->checkConsistency();
 
     if(c){
         c->setActive(true);
@@ -37,17 +52,10 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
     {
         std::vector<graph_analysis::BaseGraph::Ptr> erg;
         if (debug) {
-            // TODO
             ClassSolution::gistBaBSeach(pool);
         } else {
             erg = ClassSolution::babSearch(pool);
         }
-
-#if 0
-        std::cout << "+++++ Is solveable: " << c->getName() << std::endl;
-        s->rprint();
-        std::cout << "End ClassSolution " << c->getName() << std::endl;
-#endif
         return erg;
     }
     catch (std::runtime_error e)
@@ -94,8 +102,6 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
 
 
 void runTest(std::string name){
-
-    // try{
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
 
 
@@ -113,29 +119,8 @@ void runTest(std::string name){
         std::stringstream s;
         s << folder.str() << "output-" << std::setw(4) << std::setfill('0') << cnt;
         graph_analysis::io::GraphIO::write(s.str(), graph, graph_analysis::representation::GEXF);
-        std::stringstream s2;
-        s2 << folder.str() << "graph-" << std::setw(4) << std::setfill('0') << cnt;
-        graph_analysis::io::GraphIO::write(s2.str(), graph, graph_analysis::representation::GRAPHVIZ);
         ++cnt;
     }
-#if 0
-//        InstanceSolution::gistBaBSeach(s);
-        std::cout << "Finished calculuation of Instance InstanceSolution, Solution is:" << std::endl;
-        std::cout << "################################################################################"<< std::endl;
-        std::cout << "################################################################################"<< std::endl;
-        std::cout << "################################################################################"<< std::endl;
-        auto is = InstanceSolution::babSearch(graph);
-        is->rprint();
-    }else{
-        std::cerr << "Cannot create instance solution, class resolution does not return" << std::endl;
-    }
-#endif
-
-    //}catch(...){
-    //    std::cerr << " Got maybe a out of mem error" << std::endl;
-    //}
-    //    ClassSolution* s = ClassSolution::babSearch(pool);
-    //    s->rprint();
 }
 
 void runTest(int test_id){
@@ -150,8 +135,9 @@ int main(int argc, char *argv[])
     bool all = false;
     char c;
     char *testname = 0;
+    char *base_network_file= 0;
 
-    while ((c = getopt(argc, argv, "hadrt:n:")) != -1) {
+    while ((c = getopt(argc, argv, "hadrt:n:f:")) != -1) {
         switch (c) {
             case 'n':
                 testname = optarg;
@@ -171,6 +157,9 @@ int main(int argc, char *argv[])
                 break;
             case 'h':
                 printTests();
+                return 0;
+            case 'f':
+                base_network_file = optarg;
                 return 0;
             default:
                 printf("On default block\n");

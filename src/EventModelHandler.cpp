@@ -154,25 +154,38 @@ void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr gra
             assert(child);
 
             if (c->getTargetVertex() != target) {
+                /*
                 std::cout << "Replace child for: " << parent->getName() << "with name: " << c->getLabel() << " to " << child->getName() << std::endl;
                 if (current == root) {
                     child->setActive(true);
                 } else {
                     parent->replaceChild(child, c->getLabel());
                 }
+                */
                 graph->addEdge(c);
 
                 // We branch here a level deeper, we need only to do this if we are on the path
                 // becasue everything else we dont care in general
                 getFollowRequirements(graph, pool, c->getTargetVertex(), target, transition);
             } else {
-                auto spec = dynamic_cast<SpecializedComponent<StateMachine> *>(child->getSpecialized());
-                assert(spec);
-                std::stringstream str;
-                str << transition;
-                spec->addConfig("current_state", str.str());
+                //auto spec = dynamic_cast<SpecializedComponent<StateMachine> *>(child->getSpecialized());
+                //assert(spec);
+                //std::stringstream str;
+                //str << transition;
+                //spec->addConfig("current_state", str.str());
+                auto new_child = Vertex::Ptr(c->getTargetVertex()->clone());
+                auto sm = dynamic_cast<ConfiguredComponent*>(new_child.get());
+                assert(sm);
+                bool success=false;
+                for(auto &c : sm->int_config){
+                    if(c.name == "current_state"){
+                        c.min = transition;
+                        c.max = transition;
+                        success=true;
+                    }
+                }
+                assert(success);
 
-#warning CONINUE HERE
                 //TODO continue work here, we have specialized components to export into the graph which is not yet supported
                 //by the tooling. The specialized component must then later after the orgiginal model is loaded  re-linked to the model in the space
                 //The best way would be to re-create the specialized components on import maybe
@@ -180,17 +193,19 @@ void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr gra
                 {
                     graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge(c->getLabel()));
                     e->setSourceVertex(current);
-                    e->setTargetVertex(spec->getPtr());
+                    e->setTargetVertex(new_child);
                     graph->addEdge(e);
                 }
 
+                /*
                 if (current == root) {
                     // Special case state-machine itself was a root-requirement
                     // we need to activate it before
-                    spec->setActive(true);
+                    sm->setActive(true);
                 } else {
-                    parent->replaceChild(spec, c->getLabel());
+                    parent->replaceChild(sm, c->getLabel());
                 }
+                */
             }
         }
     } else {

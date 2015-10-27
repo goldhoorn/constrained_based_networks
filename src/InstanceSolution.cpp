@@ -359,6 +359,12 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
             setupProperties(current_graph_task, current_graph_vertex, graph);
         }
 
+        //Special handling for StateMachines if they are unconfigured, we set the startin state-explicitly
+        //This could also be done by subclassing the state-machine by default, but we do this now here...
+        if(dynamic_cast<StateMachine*>(current_graph_component) && !current_graph_specialized){
+            rel(*this,int_config[graph->getVertexId(current_graph_vertex)]["current_state"], IRT_EQ , 0);
+        }
+
         // We have a configuration request here on our own setting this
         if (current_graph_specialized) {
             for (auto prop : current_graph_specialized->getComponent()->getProperties()) {
