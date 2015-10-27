@@ -89,6 +89,8 @@ class Pool {
     void load(std::string filename);
     void save(std::string filename);
     Component* getComponent(std::string);
+    
+    bool hasComponent(std::string);
 
     unsigned int getId(const Component *obj) const;
 

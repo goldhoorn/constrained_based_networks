@@ -14,8 +14,8 @@ Composition::Composition(Pool *pool) : Component(pool)
 Composition::Composition(std::string name, Pool *pool) : Component(pool)
 {
     this->name = name;
-    //cmp_id = pool->getItems<Composition *>().size() - 1;
-//    std::cout << "Creating composition: " << name << std::endl;
+    // cmp_id = pool->getItems<Composition *>().size() - 1;
+    //    std::cout << "Creating composition: " << name << std::endl;
 }
 
 Forwards Composition::getArgumentForwards(Component *child)
@@ -23,16 +23,17 @@ Forwards Composition::getArgumentForwards(Component *child)
     return argument_forwards[child];
 }
 
-bool Composition::hasChild(Component *child){
+bool Composition::hasChild(Component *child)
+{
     std::cout << this->getName() << "<->" << child->getName() << std::endl;
     Component *c = child;
-    while(auto spec =  dynamic_cast<SpecializedComponentBase*>(c)){
+    while (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
         c = spec->getOrginal();
     }
 
-    for(auto ch: getChildren()){
+    for (auto ch : getChildren()) {
         std::cout << "\t Child: " << ch.second->getName() << std::endl;
-        if(ch.second == c || (ch.second == child)){
+        if (ch.second == c || (ch.second == child)) {
             return true;
         }
     }
@@ -41,8 +42,8 @@ bool Composition::hasChild(Component *child){
 
 Forwards Composition::getEventForwards(Component *child, std::string name)
 {
-    if(children.find(name) == children.end()){
-        if(this->getName() != "root-knot"){
+    if (children.find(name) == children.end()) {
+        if (this->getName() != "root-knot") {
             std::cerr << "This is really bad !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! could not find child " << name << std::endl;
         }
         return Forwards();
@@ -50,12 +51,12 @@ Forwards Composition::getEventForwards(Component *child, std::string name)
     child = children[name];
 
     std::cout << "Forwards for " << this->getName() << " and child " << child->getName() << std::endl;
-    for(auto e : event_forwards[child]){
+    for (auto e : event_forwards[child]) {
         std::cout << "-\t" << e.first << " to " << e.second << std::endl;
     }
-    if(!hasChild(child)){
+    if (!hasChild(child)) {
         std::cout << "THIS IS BADDDDDDDDDDDDDDDDDDDDDDDD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-    }else{
+    } else {
         std::cout << "THIS IS GOOOOOOOOOOOOOOOOODDDDDDDDD" << std::endl;
     }
 
@@ -69,13 +70,16 @@ bool Composition::operator==(const Composition &comp) const
 
 void Composition::addArgumentForwards(std::string child, std::string source, std::string target)
 {
-    try{
+    try
+    {
         auto &c = children.at(child);
         argument_forwards[c][source] = target;
-    }catch(std::out_of_range e){
-        std::cerr << "Could not find child \""<< child << "\"" << std::endl;
+    }
+    catch (std::out_of_range e)
+    {
+        std::cerr << "Could not find child \"" << child << "\"" << std::endl;
         std::cerr << "Possible children are: " << std::endl;
-        for(auto child : children){
+        for (auto child : children) {
             std::cerr << "- " << child.first << std::endl;
         }
         std::cerr << std::endl;
@@ -83,9 +87,42 @@ void Composition::addArgumentForwards(std::string child, std::string source, std
     }
 }
 
+Component *Composition::searchCorresponding(Component *c, Pool *pool)
+{
+    if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
+        // search for object in DB
+        for (auto pci : pool->getItems<Component *>()) {
+            if (auto pc = dynamic_cast<SpecializedComponentBase *>(pci)) {
+                if (pc->getName(true) == spec->getName(true) && pc->configuration == spec->configuration) {
+                    //                            std::cout << "pc: " << pc << " pci: " << pci << std::endl;
+                    //                            std::cout << "pc: " << sizeof(*pc) << " pci: " << sizeof(*pci)  << " " << std::abs((long int)pc-(long int)pci) << std::endl;
+                    //                            throw std::runtime_error("bla");
+
+                    // This check should not be needed
+                    assert(pool->getComponent(pci->getName()) == pci);
+                    return pci;
+                }
+            }
+        }
+        throw std::runtime_error("Could not find compatible component in pool");
+    } else {
+
+        // Sainity check would rase a error otherwise
+        assert(pool->getComponent(c->getName()) == c);
+        return c;
+    }
+}
+
+void Composition::updateInternals(Pool *pool)
+{
+    for (auto &t : children) {
+        t.second = searchCorresponding(t.second, pool);
+    }
+}
+
 void Composition::addEventForwards(std::string child, std::string source, std::string target)
 {
-    event_forwards[children[child]][source] =  target;
+    event_forwards[children[child]][source] = target;
 }
 
 #if 0
@@ -134,9 +171,9 @@ void Composition::setConfiguration(const std::vector<std::string>& configuration
 void Composition::replaceChild(Component *c, std::string name)
 {
     if (isIgnored()) return;
-    if(children.find(name) == children.end()){
+    if (children.find(name) == children.end()) {
         std::cout << "Availilble children: " << std::endl;
-        for(auto c: children){
+        for (auto c : children) {
             std::cout << "\t-" << c.first << std::endl;
         }
         throw std::runtime_error("Cannot replace child, the requested child does not exist so far: " + name);
@@ -149,12 +186,12 @@ void Composition::addChild(Component *c, std::string name)
     if (isIgnored()) return;
     children[name] = c;
 
-    //Creating default forwards, this can be overridden by addEventForwards
-    addEventForwards(name,"failed","failed");
-    addEventForwards(name,"success","failed");
-    addEventForwards(name,"aborted","failed");
-    addEventForwards(name,"internal_error","failed");
-    addEventForwards(name,"fatal_error","failed");
+    // Creating default forwards, this can be overridden by addEventForwards
+    addEventForwards(name, "failed", "failed");
+    addEventForwards(name, "success", "failed");
+    addEventForwards(name, "aborted", "failed");
+    addEventForwards(name, "internal_error", "failed");
+    addEventForwards(name, "fatal_error", "failed");
 }
 
 void Composition::addConstraint(std::string child, std::string target)
@@ -181,7 +218,7 @@ void Composition::addConstraint(std::string child, std::string target)
 std::vector<std::string> Composition::unsolveableChildren()
 {
     std::vector<std::string> res;
-    //Pool *pool = Pool::getInstance();
+    // Pool *pool = Pool::getInstance();
 
     for (auto child : children) {
         bool valid = false;

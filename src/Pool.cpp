@@ -47,6 +47,7 @@ void Pool::checkConsistency()
 
     std::string cmp_name;
     std::string child_name;
+    std::string child_role;
     try
     {
         for (auto c : components) {
@@ -54,6 +55,7 @@ void Pool::checkConsistency()
                 cmp_name = cmp->getName();
                 for (auto child : cmp->getChildren()) {
                     child_name = child.second->getName();
+                    child_role = child.first;
                     // This line would throw a runtime error if it cannot be found
                     auto result = getComponent(child.second->getName());
                     (void)result;
@@ -63,8 +65,9 @@ void Pool::checkConsistency()
     }
     catch (std::invalid_argument e)
     {
+        std::cout << "Pool consistency failed, cannot find either child or compopsition:" << std::endl;
         std::cout << "Composition: " << cmp_name << std::endl;
-        std::cout << "\tChild: " << child_name  << std::endl;
+        std::cout << "\tChild: " << child_name  << " in role: " << child_role << std::endl;
         throw std::runtime_error("Pool is inconsistent");
     }
 }
@@ -74,6 +77,17 @@ Pool::Pool()
     new Task(this, "NIL-Task");
     auto c = new Composition("root-knot", this);
     c->setActive(true);
+}
+
+bool Pool::hasComponent(std::string name)
+{
+    for (auto v : components) {
+        // std::cout << "Have component wirh name: " << v->getName() << std::endl;
+        if (v->getName() == name) {
+            return true;
+        }
+    }
+    return false;
 }
 
 Component *Pool::getComponent(std::string name)
@@ -169,6 +183,16 @@ void Pool::mergeDoubles()
     // Cleanup orginal pointer of state-machines
     for (size_t i = 0; i < components.size(); i++) {
         if (auto sm = dynamic_cast<StateMachine *>(components[i])) {
+            sm->updateInternals(this);
+        }
+    }
+
+    // Sainitry check, should not needed after update the SMs
+    setDirty();
+
+    // Cleanup orginal pointer of state-machines
+    for (size_t i = 0; i < components.size(); i++) {
+        if (auto sm = dynamic_cast<Composition*>(components[i])) {
             sm->updateInternals(this);
         }
     }

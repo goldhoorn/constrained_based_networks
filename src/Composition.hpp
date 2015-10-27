@@ -29,12 +29,13 @@ class Composition : public constrained_based_networks::Component, public constra
     int type;
 
     std::map<std::string, Component *> children;
+
    private:
     std::map<Component *, Forwards> argument_forwards;
     std::map<Component *, Forwards> event_forwards;
     std::list<std::string> emitations;
 
-//    size_t cmp_id;
+    //    size_t cmp_id;
 
     /**
      * The configuration consists of a variable sized vector of strings, naming one configuration profile.
@@ -58,7 +59,10 @@ class Composition : public constrained_based_networks::Component, public constra
     virtual Forwards getEventForwards(Component *child, std::string name);
     bool hasChild(Component *child);
 
-    virtual std::string getClassName() const { return "constrained_based_networks::Composition"; }
+    virtual std::string getClassName() const
+    {
+        return "constrained_based_networks::Composition";
+    }
 
     SpecializedComponentBase *getSpecialized();
 #if 0
@@ -71,6 +75,8 @@ class Composition : public constrained_based_networks::Component, public constra
         }
     }
 #endif
+    Component *searchCorresponding(Component *c, Pool *pool);
+    void updateInternals(Pool *pool);
 
     Gecode::IntVarArray getPossibleTaskAssignments(Gecode::Space *space);
 
@@ -91,12 +97,12 @@ class Composition : public constrained_based_networks::Component, public constra
     void addConstraint(std::string child, std::string target);
 
     /** Get the Composition ID, NOT the id within the pool*/
-//    size_t getCmpID() const;
+    //    size_t getCmpID() const;
 
     /**
      * String representation of a component
      */
-    //std::string toString() const;
+    // std::string toString() const;
 
     /**
      * Get the type
@@ -120,11 +126,13 @@ class Composition : public constrained_based_networks::Component, public constra
     void addChild(Component *child, std::string name);
     virtual void replaceChild(Component *child, std::string name);
 
-    std::list<std::string> getEmitations(){
+    std::list<std::string> getEmitations()
+    {
         return emitations;
     }
 
-    void addSelfEmitations(std::string name){
+    void addSelfEmitations(std::string name)
+    {
         emitations.push_back(name);
     }
 

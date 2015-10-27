@@ -12,10 +12,12 @@ set(SOURCES
    InstanceSolution.cpp
    Logger.cpp
    EventModelHandler.cpp
+    XML.cpp
    #  Import.cpp
 )
 
 set(HEADERS
+    XML.hpp
    Pool.hpp
    Composition.hpp
    Task.hpp
@@ -51,7 +53,7 @@ set(Gecode_LIBRARIES
 rock_library(${PROJECT_NAME} 
     SOURCES ${SOURCES}
     HEADERS ${HEADERS}
-    DEPS_PKGCONFIG base-lib owlapi graph_analysis
+    DEPS_PKGCONFIG base-lib owlapi graph_analysis libxml++-2.6 
     LIBS ${Gecode_LIBRARIES} ${Boost_LIBRARIES}
 )
 
@@ -62,6 +64,8 @@ rock_executable(cbn_gexf_to_dot cbn_gexf_to_dot.cpp
     DEPS ${PROJECT_NAME} )
 
 rock_executable(cbn_based_on_graph SOURCES cbn_based_on_graph.cpp DEPS ${PROJECT_NAME})
+
+rock_executable(cbn_class_on_model SOURCES cbn_class_on_model.cpp DEPS ${PROJECT_NAME})
 
 #rock_executable(${PROJECT_NAME}-test
 #        SOURCES ClassSolution.cpp

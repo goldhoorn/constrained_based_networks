@@ -1,3 +1,67 @@
+#include "XML.hpp"
+#include <unistd.h>
+#include <iostream>
+#include "Pool.hpp"
+#include "ClassSolution.hpp"
+#include "DataService.hpp"
+#include <graph_analysis/GraphIO.hpp>
+
+using namespace constrained_based_networks;
+
+void printHelp()
+{
+    std::cout << "Please use -f <filename>" << std::endl;
+    exit(-1);
+}
+
+// main test function
+int main(int argc, char *argv[])
+{
+    char c;
+    char *base_network_file = 0;
+    std::vector<std::string> start_components;
+
+    while ((c = getopt(argc, argv, "c:f:")) != -1) {
+        switch (c) {
+            case 'c':
+                start_components.push_back(optarg);
+                break;
+            case 'f':
+                base_network_file = optarg;
+                break;
+            default:
+                printf("On default block\n");
+        }
+    }
+    if (!base_network_file) {
+        printHelp();
+    }
+
+    Pool *pool = XML::load(base_network_file);
+    for (auto s : start_components) {
+        if (!pool->hasComponent(s)) {
+            std::cerr << "Cannot start component: " << s << ", it does not exist in the pool" << std::endl;
+            return -2;
+        }
+        pool->getComponent(s)->setActive(true);
+    }
+    std::cout << "Pool size is: " << pool->size() << std::endl;
+    std::cout << "Compositions: " << pool->getCount<Composition*>() << std::endl;
+    std::cout << "Task: " << pool->getCount<Task*>() << std::endl;
+    std::cout << "StateMachine: " << pool->getCount<StateMachine*>() << std::endl;
+    std::cout << "DataService: " << pool->getCount<DataService*>() << std::endl;
+    int i = 0;
+    for (auto solution : ClassSolution::babSearch(pool)) {
+        std::stringstream s;
+        s << "network-" << std::setw(4) << std::setfill('0') << i;
+        graph_analysis::io::GraphIO::write(s.str(), solution, graph_analysis::representation::GEXF);
+        i++;
+    }
+    std::cout << "Finished class solution, found " << i << " Networks" << std::endl;
+    return 0;
+}
+
+#if 0
 #include <constrained_based_networks/Task.hpp>
 #include <constrained_based_networks/Composition.hpp>
 #include <constrained_based_networks/Pool.hpp>
@@ -16,7 +80,7 @@ bool resolve_nonresolveable = false;
 
 std::vector<graph_analysis::BaseGraph::Ptr> resolve(char *base_network_file, bool res, bool debug = false){
     std::vector<graph_analysis::BaseGraph::Ptr> erg;
-    
+
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
     graph_analysis::io::GraphIO::read(base_network_file, graph, graph_analysis::representation::GEXF);
 
@@ -114,12 +178,6 @@ void runTest(std::string name){
     if(!name.empty()){
         c = pool->getComponent(name);
     }
-    std::cout << "The pool size is: " << pool->size() << std::endl;
-    std::cout << "Compositions: " << pool->getCount<Composition*>() << std::endl;
-    std::cout << "Task: " << pool->getCount<Task*>() << std::endl;
-    std::cout << "StateMachine: " << pool->getCount<StateMachine*>() << std::endl;
-    std::cout << "DataService: " << pool->getCount<DataService*>() << std::endl;
-
     for (auto graph : resolve(c, resolve_nonresolveable, debug)) {
         std::cout << "Finished calculuation of ClassSolution number" << cnt << std::endl;
         std::stringstream s;
@@ -199,3 +257,4 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+#endif

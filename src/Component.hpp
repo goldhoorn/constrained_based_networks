@@ -56,7 +56,6 @@ class Component : public graph_analysis::Vertex
         return getName();
     }
 
-
     virtual std::string getClassName() const
     {
         return "constrained_based_networks::Component";
@@ -73,6 +72,21 @@ class Component : public graph_analysis::Vertex
     void addEvent(const std::string &name);
 
     Component *getComponent(std::string s);
+
+    void addProperty(const std::string &_name, std::string t)
+    {
+        if(t == "ConfigurationModel::DOUBLE"){
+                addProperty(_name, ConfigurationModel::DOUBLE);
+        }else if(t == "ConfigurationModel::BOOL"){
+                addProperty(_name, ConfigurationModel::BOOL);
+        }else if(t == "ConfigurationModel::INT"){
+                addProperty(_name, ConfigurationModel::INT);
+        }else if(t == "ConfigurationModel::STRING"){
+                addProperty(_name, ConfigurationModel::STRING);
+        }else{
+            throw std::runtime_error("unnsuported config type: " + t);
+        }
+    }
 
     void addProperty(const std::string &_name, ConfigurationModel::Type t)
     {

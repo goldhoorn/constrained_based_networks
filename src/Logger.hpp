@@ -6,8 +6,10 @@ namespace constrained_based_networks
 {
 #ifdef DEBUG
 #define DEBUG_CLASS_SOLUTION std::cerr
+#define DEBUG_XML std::cerr
 #else
 #define DEBUG_CLASS_SOLUTION constrained_based_networks::Logger::getInstance()->get()
+#define DEBUG_XML constrained_based_networks::Logger::getInstance()->get()
 #endif
 class Logger
 {

@@ -94,7 +94,9 @@ int main(int argc, char *argv[])
     for (auto solution : is) {
         std::cout << "Startinf to write" << std::endl;
         std::stringstream filename;
-        filename << file << "-instance-" << cnt;
+        //TODO
+        //filename << file << "-instance-" << cnt;
+        filename << "instance-" << cnt;
         graph_analysis::io::GraphIO::write(filename.str(), solution, graph_analysis::representation::GEXF);
         std::cout << "Wrote " << filename.str() << std::endl;
         if (follow_reqs) {
@@ -103,7 +105,9 @@ int main(int argc, char *argv[])
         graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(p, g);
         std::stringstream filename2;
-            filename2 << file << "-instance-" << cnt << "-follows.txt";
+            //TODO
+            //filename2 << file << "-instance-" << cnt << "-follows.txt";
+            filename2 << "instance-" << cnt << "-follows.txt";
             std::ofstream ofs(filename2.str());
             auto erg = trigger_events.getTrigger();
             for (auto p : erg) {
@@ -112,7 +116,9 @@ int main(int argc, char *argv[])
                 for(auto n : p.resulting_requirement.network){
 //                if (p.resulting_requirement.pool) {
                     std::stringstream filename3;
-                    filename3 << file << "-instance-" << cnt << "-follow-network-" << cnt2 << "-" << p.causing_component->getName() << "-" << p.causing_event;
+                    //TODO correct path
+                    //filename3 << file << "-instance-" << cnt << "-follow-network-" << cnt2 << "-" << p.causing_component->getName() << "-" << p.causing_event;
+                    filename3 << "instance-" << cnt << "-follow-network-" << cnt2 << "-" << p.causing_component->getName() << "-" << p.causing_event;
                         if (n->size() == 0) {
                             ofs << p.causing_component->getName() << " " << p.causing_event << " " << n->size() << std::endl;
                             //auto v = graph_analysis::Vertex::Ptr(new graph_analysis::Vertex("Empty"));
