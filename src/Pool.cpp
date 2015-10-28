@@ -33,6 +33,12 @@ void Pool::updateLookups(){
 }
 */
 
+Pool::~Pool(){
+    for(auto c : components){
+        delete c;
+    }
+};
+
 void Pool::checkConsistency()
 {
     for (auto c : getItems<Component *>()) {
@@ -72,11 +78,13 @@ void Pool::checkConsistency()
     }
 }
 
-Pool::Pool()
+Pool::Pool(bool empty)
 {
-    new Task(this, "NIL-Task");
-    auto c = new Composition("root-knot", this);
-    c->setActive(true);
+    if(!empty){
+        new Task(this, "NIL-Task");
+        auto c = new Composition("root-knot", this);
+        c->setActive(true);
+    }
 }
 
 bool Pool::hasComponent(std::string name)
@@ -135,6 +143,7 @@ void Pool::mergeDoubles()
                             // Skip this it already is part of the database, we can stop here
                             if (c->isActive()) {  // Don't do this here, this would cause other specilaized one to start
                                 existing->setActive(true);
+                                std::cout << "!!!!!!!!!         Discarding active component  !!!!!!!!!!!!!!!" << cmp->getName() << std::endl;
                             }
                             valid = false;
                             //                            break;
@@ -146,6 +155,7 @@ void Pool::mergeDoubles()
                 if (base) {
                     auto spec_new = base->getSpecialized();
                     spec_new->configuration = spec->configuration;
+                    spec_new->setActive(spec->isActive());
                     new_components.push_back(dynamic_cast<Component *>(spec_new));
                 } else {
                     throw std::runtime_error("Cannot re-add new component, base-class is unknown");

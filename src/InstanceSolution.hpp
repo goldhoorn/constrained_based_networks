@@ -139,10 +139,10 @@ class ConfiguredComponent : public graph_analysis::Vertex
         : underlaying_name(underlaying_component->getName())
     {
         component = underlaying_component;
-        std::cout << "Debug for " << underlaying_component->getName() << std::endl;
+        //std::cout << "Debug for " << underlaying_component->getName() << std::endl;
         // string_name << component->toString() << std::endl;
         for (auto j : i) {
-            std::cout << "\t-" << j.first << j.second << std::endl;
+            //std::cout << "\t-" << j.first << j.second << std::endl;
             int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
         }
         for (auto j : f) {

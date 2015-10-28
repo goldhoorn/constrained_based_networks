@@ -32,6 +32,21 @@ class ConfigurationModel
     {
     }
 
+    std::string typeAsString()
+    {
+        switch (t) {
+            case INT:
+                return "ConfigurationModel::INT";
+            case DOUBLE:
+                return "ConfigurationModel::DOUBLE";
+            case BOOL:
+                return "ConfigurationModel::BOOL";
+            case STRING:
+                return "ConfigurationModel::STRING";
+            default:
+                throw std::runtime_error("Invalid type");
+        }
+    }
     std::string name;
 
     Type t;
@@ -75,15 +90,15 @@ class Component : public graph_analysis::Vertex
 
     void addProperty(const std::string &_name, std::string t)
     {
-        if(t == "ConfigurationModel::DOUBLE"){
-                addProperty(_name, ConfigurationModel::DOUBLE);
-        }else if(t == "ConfigurationModel::BOOL"){
-                addProperty(_name, ConfigurationModel::BOOL);
-        }else if(t == "ConfigurationModel::INT"){
-                addProperty(_name, ConfigurationModel::INT);
-        }else if(t == "ConfigurationModel::STRING"){
-                addProperty(_name, ConfigurationModel::STRING);
-        }else{
+        if (t == "ConfigurationModel::DOUBLE") {
+            addProperty(_name, ConfigurationModel::DOUBLE);
+        } else if (t == "ConfigurationModel::BOOL") {
+            addProperty(_name, ConfigurationModel::BOOL);
+        } else if (t == "ConfigurationModel::INT") {
+            addProperty(_name, ConfigurationModel::INT);
+        } else if (t == "ConfigurationModel::STRING") {
+            addProperty(_name, ConfigurationModel::STRING);
+        } else {
             throw std::runtime_error("unnsuported config type: " + t);
         }
     }
@@ -138,10 +153,14 @@ class Component : public graph_analysis::Vertex
         return erg;
     }
 
+    const std::vector<std::string> & getFullfillments() const;
+
     const std::vector<std::string> &getEvents() const
     {
         return events;
     }
+
+    bool isInPool(Pool *pool) const;
 
    protected:
     /*

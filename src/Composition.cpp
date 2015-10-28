@@ -50,6 +50,7 @@ Forwards Composition::getEventForwards(Component *child, std::string name)
     }
     child = children[name];
 
+    /*
     std::cout << "Forwards for " << this->getName() << " and child " << child->getName() << std::endl;
     for (auto e : event_forwards[child]) {
         std::cout << "-\t" << e.first << " to " << e.second << std::endl;
@@ -59,6 +60,7 @@ Forwards Composition::getEventForwards(Component *child, std::string name)
     } else {
         std::cout << "THIS IS GOOOOOOOOOOOOOOOOODDDDDDDDD" << std::endl;
     }
+    */
 
     return event_forwards[child];
 }

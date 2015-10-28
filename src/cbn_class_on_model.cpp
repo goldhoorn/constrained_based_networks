@@ -50,7 +50,25 @@ int main(int argc, char *argv[])
     std::cout << "Task: " << pool->getCount<Task*>() << std::endl;
     std::cout << "StateMachine: " << pool->getCount<StateMachine*>() << std::endl;
     std::cout << "DataService: " << pool->getCount<DataService*>() << std::endl;
-    int i = 0;
+    for(auto c : pool->getItems<Component*>()){
+        if(c->isActive()){
+            std::cout << "Should start: " << c->getName() << std::endl;
+            if(auto cmp = dynamic_cast<Composition*>(c)){
+                for(auto child : cmp->getChildren()){
+                    std::cout << "\t -child: " << child.second->getName() << std::endl;
+                }
+            }
+        }
+    }
+    auto solutions = ClassSolution::babSearch(pool);
+    std::stringstream s;
+    s << base_network_file;
+    for(auto c : start_components){
+     s << "-" << c ;
+    }
+    s << "-class-result.xml";
+    XML::save(solutions,base_network_file,s.str());
+    /*
     for (auto solution : ClassSolution::babSearch(pool)) {
         std::stringstream s;
         s << "network-" << std::setw(4) << std::setfill('0') << i;
@@ -58,6 +76,8 @@ int main(int argc, char *argv[])
         i++;
     }
     std::cout << "Finished class solution, found " << i << " Networks" << std::endl;
+    */
+    std::cout << "Ende" << std::endl;
     return 0;
 }
 

@@ -33,9 +33,14 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
             for (auto h2 : h1.second) {
                 auto causing_event = h2.first;
 
+                // Ignoring them for now
+                if (causing_event == "aborted" || causing_event == "internal_error" || causing_event == "fatal_error" || causing_event == "aborted") continue;
+
                 // Here is the map for target causes
                 for (auto cause : h2.second) {
                     auto resulting_event = cause.event;
+                    if (resulting_event == "aborted" || resulting_event == "internal_error" || resulting_event == "fatal_error" || resulting_event == "aborted") continue;
+
                     auto resulting_component_id = cause.component_graph_id;
                     // auto resulting_component = dynamic_cast<Composition *>(instancitaed_network->getVertex(resulting_component_id).get());
                     // if(auto c = dynamic_cast<ConfiguredComponent*>(instancitaed_network->getVertex(resulting_component_id).get())) resulting_component= c->component;
@@ -50,6 +55,8 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
                         for (auto h3 : event_propagation_table[resulting_component_id][resulting_event]) {
                             auto new_target = h3.component_graph_id;
                             auto new_target_event = h3.event;
+                            if (new_target_event == "aborted" || new_target_event == "internal_error" || new_target_event == "fatal_error" || new_target_event == "aborted") continue;
+
                             //                            std::cout << "Debug: " << new_target_event << std::endl;
                             if (event_propagation_table[causing_component_id][causing_event].find({new_target, new_target_event}) ==
                                 event_propagation_table[causing_component_id][causing_event].end()) {
@@ -69,19 +76,19 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
         auto causing_component_id = h1.first;
         auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(causing_component_id).get());
         if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(causing_component_id).get())) causing_component = c->component;
-        std::cout << "- Component: " << causing_component->getName() << std::endl;
+        // std::cout << "- Component: " << causing_component->getName() << std::endl;
         for (auto h2 : h1.second) {
             auto causing_event = h2.first;
-            std::cout << "\t -Event: " << causing_event << std::endl;
+            // std::cout << "\t -Event: " << causing_event << std::endl;
             for (auto cause : h2.second) {
                 auto resulting_component = dynamic_cast<Component *>(instancitaed_network->getVertex(cause.component_graph_id).get());
                 if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(cause.component_graph_id).get())) resulting_component = c->component;
-                std::cout << "\t\t -- " << resulting_component->getName() << " event " << cause.event << std::endl;
+                // std::cout << "\t\t -- " << resulting_component->getName() << " event " << cause.event << std::endl;
             }
         }
     }
 
-    std::cout << "Jeha i'm done" << std::endl;
+    // std::cout << "Jeha i'm done" << std::endl;
 }
 
 std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirements(unsigned int causing_component, std::string causing_event)
@@ -94,14 +101,17 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
         auto affected_event = affected.event;
         auto affected_component_id = affected.component_graph_id;
         auto affected_component = EventModelHandler::get<StateMachine>(instancitaed_network->getVertex(affected_component_id));
+        if (affected_event == "aborted" || affected_event == "internal_error" || affected_event == "fatal_error" || affected_event == "aborted") continue;
 
         // Ok we found a state-machine which is affected no we have to search for the followup state of it
         if (affected_component) {
+            /*
             Pool *p = new Pool();
             initial_pool->dupFunction(p);
             initial_pool->mergeDoubles();
-            if(affected_event == "failed"){
-                std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
+            */
+            if (affected_event == "failed") {
+                // std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
                 graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
                 res.push_back(graph);
                 continue;
@@ -113,10 +123,10 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
                 // TODO figuring out the actual transition is a bit ugly here and should be done on basis of the causing evetns
                 throw std::runtime_error("Cannot get the current transition of a statemachine");
             }
-            std::cout << "Got a affected statemachine " << affected_component->getName() << " the event is: " << causing_event << " -> " << affected_event << std::endl;
+            // std::cout << "Got a affected statemachine " << affected_component->getName() << " the event is: " << causing_event << " -> " << affected_event << std::endl;
             // std::cout << "DEBUG:::::::::::::::::::: " << instancitaed_network->getVertex(affected_component_id)->toString() << std::endl;
             graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-            getFollowRequirements(graph ,p, root, instancitaed_network->getVertex(affected_component_id), current_transition);
+            getFollowRequirements(graph, initial_pool, root, instancitaed_network->getVertex(affected_component_id), current_transition);
             res.push_back(graph);
         }
     }
@@ -168,27 +178,27 @@ void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr gra
                 // becasue everything else we dont care in general
                 getFollowRequirements(graph, pool, c->getTargetVertex(), target, transition);
             } else {
-                //auto spec = dynamic_cast<SpecializedComponent<StateMachine> *>(child->getSpecialized());
-                //assert(spec);
-                //std::stringstream str;
-                //str << transition;
-                //spec->addConfig("current_state", str.str());
+                // auto spec = dynamic_cast<SpecializedComponent<StateMachine> *>(child->getSpecialized());
+                // assert(spec);
+                // std::stringstream str;
+                // str << transition;
+                // spec->addConfig("current_state", str.str());
                 auto new_child = Vertex::Ptr(c->getTargetVertex()->clone());
-                auto sm = dynamic_cast<ConfiguredComponent*>(new_child.get());
+                auto sm = dynamic_cast<ConfiguredComponent *>(new_child.get());
                 assert(sm);
-                bool success=false;
-                for(auto &c : sm->int_config){
-                    if(c.name == "current_state"){
+                bool success = false;
+                for (auto &c : sm->int_config) {
+                    if (c.name == "current_state") {
                         c.min = transition;
                         c.max = transition;
-                        success=true;
+                        success = true;
                     }
                 }
                 assert(success);
 
-                //TODO continue work here, we have specialized components to export into the graph which is not yet supported
-                //by the tooling. The specialized component must then later after the orgiginal model is loaded  re-linked to the model in the space
-                //The best way would be to re-create the specialized components on import maybe
+                // TODO continue work here, we have specialized components to export into the graph which is not yet supported
+                // by the tooling. The specialized component must then later after the orgiginal model is loaded  re-linked to the model in the space
+                // The best way would be to re-create the specialized components on import maybe
 
                 {
                     graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge(c->getLabel()));
@@ -212,10 +222,17 @@ void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr gra
         // We don't care for everything else, expect we have to start it because we are on the root-level
         // which means the component must be started.
         if (current == root) {
-            auto component = EventModelHandler::get<Component>(current);
-            auto new_component = pool->getComponent(component->getName());
-            assert(new_component);
-            new_component->setActive(true);
+            graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge("root-requirement"));
+            e->setSourceVertex(current);
+            e->setTargetVertex(target);
+            graph->addEdge(e);
+            /*
+                        graph->addEdge(e);
+                        auto component = EventModelHandler::get<Component>(current);
+                        auto new_component = pool->getComponent(component->getName());
+                        assert(new_component);
+                        //new_component->setActive(true);
+                        //*/
         }
     }
 
@@ -271,8 +288,8 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
             auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(component.first).get());
             if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(component.first).get())) causing_component = c->component;
             bool valid = dynamic_cast<Task *>(causing_component);
-            if (auto c = dynamic_cast<Composition*>(causing_component)){
-                //TODO maybe be more precise here
+            if (auto c = dynamic_cast<Composition *>(causing_component)) {
+                // TODO maybe be more precise here
                 valid = valid || (c->getEmitations().size() != 0);
             };
 
@@ -283,4 +300,102 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
         }
     }
     return res;
+}
+
+void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool *pool)
+{
+    // We onl support one following state to a event
+    if (trigger.resulting_requirement.network.size() != 1) {
+        // TODO we have to identify the FIRST component which
+        // throw std::invalid_argument("Cannot create pool for network size of " + std::to_string(trigger.resulting_requirement.network.size()));
+        std::cerr << ("Cannot create pool for network size of " + std::to_string(trigger.resulting_requirement.network.size())) << std::endl;
+    }
+
+    graph_analysis::BaseGraph::Ptr graph = trigger.resulting_requirement.network[0];
+
+    // Start to create our graph based on the imported graph
+    for (auto e : graph->edges()) {
+        // We have found a root-knot we need to set all children active in our pool
+        if (e->getSourceVertex()->toString() == "root-knot") {
+            const auto &active_child = pool->getComponent(e->getTargetVertex()->toString());
+            assert(active_child->getPtr());
+
+            auto new_component = setConfig(e->getTargetVertex(), active_child);
+            std::cout << "Setting active: " << new_component->getName() << " for pool " << pool << std::endl;
+            new_component->setActive(true);
+            assert(new_component->isActive());
+            assert(pool->getComponent(new_component->toString())->isActive());
+            bool found=false;
+            for (auto component : pool->getItems<Component*>()) {
+                if(component == new_component){
+                    found=true;
+                    break;
+                }
+            }
+            assert(found);
+
+            assert(new_component->isInPool(pool));
+        } else {
+            // std::cout << "From " << e->getSourceVertex()->toString() << " to " << e->getTargetVertex()->toString() << std::endl;
+            auto v1 = pool->getComponent(e->getSourceVertex()->toString());
+            auto v2 = pool->getComponent(e->getTargetVertex()->toString());
+            assert(v1->getPtr());
+            assert(v2->getPtr());
+            auto cmp = dynamic_cast<Composition *>(v1);
+            assert(cmp);  // Otherwise it could not have any children
+
+            auto new_component = setConfig(e->getTargetVertex(), v2);
+            assert(new_component);
+            cmp->replaceChild(new_component, e->toString());
+        }
+    }
+    std::cout << "TEST BEFORE MERGE" << std::endl;
+    for (auto component : pool->getItems<Component*>()) {
+        if(component->isActive()){
+            assert(component->isInPool(pool));
+            std::cout << "Component: " << component->getName() << " / " << component->toString() << "is active" << std::endl;
+            std::cout << "Pool pointer: " << pool << std::endl;
+        }
+    };
+
+    pool->mergeDoubles();
+    std::cout << "TEST AFTER MERGE" << std::endl;
+    for (auto component : pool->getItems<Component*>()) {
+        if(component->isActive()){
+            assert(component->isInPool(pool));
+            std::cout << "Component: " << component->getName() << " / " << component->toString() << "is active" << std::endl;
+            std::cout << "Pool pointer: " << pool << std::endl;
+        }
+    };
+    std::cout << "TEST DONE" << std::endl;
+}
+
+Component *EventModelHandler::setConfig(graph_analysis::Vertex::Ptr v, Component *c)
+{
+    auto conf = dynamic_cast<ConfiguredComponent *>(v.get());
+    assert(conf);
+    auto new_active_child = c->getSpecialized();
+    for (auto i : conf->int_config) {
+        std::stringstream s;
+        // TODO rething of limits
+        s << i.min;
+        new_active_child->addConfig(i.name, s.str());
+    }
+    for (auto i : conf->bool_config) {
+        std::stringstream s;
+        // TODO rething of limits
+        s << i.min;
+        new_active_child->addConfig(i.name, s.str());
+    }
+    for (auto i : conf->double_config) {
+        std::stringstream s;
+        // TODO rething of limits
+        s << i.min;
+        new_active_child->addConfig(i.name, s.str());
+    }
+    for (auto i : conf->string_config) {
+        // TODO rething of limits
+        new_active_child->addConfig(i.first, i.second);
+    }
+    return dynamic_cast<Component *>(new_active_child);
 }

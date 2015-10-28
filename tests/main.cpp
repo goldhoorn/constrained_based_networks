@@ -1,3 +1,4 @@
+#include <constrained_based_networks/XML.hpp>
 #include <constrained_based_networks/Task.hpp>
 #include <constrained_based_networks/Composition.hpp>
 #include <constrained_based_networks/Pool.hpp>
@@ -13,6 +14,7 @@ using namespace constrained_based_networks;
 
 bool debug = false;
 bool resolve_nonresolveable = false;
+std::string export_name;
 
 std::vector<graph_analysis::BaseGraph::Ptr> resolve(char *base_network_file, bool res, bool debug = false){
     std::vector<graph_analysis::BaseGraph::Ptr> erg;
@@ -46,6 +48,12 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
 
     if(c){
         c->setActive(true);
+    }
+
+    if(!export_name.empty()){
+        XML::save(pool,export_name);
+        std::cout << "Successfully exported old test" << std::endl;
+        exit(0);
     }
 
     try
@@ -143,7 +151,7 @@ int main(int argc, char *argv[])
     char *testname = 0;
     char *base_network_file= 0;
 
-    while ((c = getopt(argc, argv, "hadrt:n:f:")) != -1) {
+    while ((c = getopt(argc, argv, "hadrt:n:f:e:")) != -1) {
         switch (c) {
             case 'n':
                 testname = optarg;
@@ -166,7 +174,10 @@ int main(int argc, char *argv[])
                 return 0;
             case 'f':
                 base_network_file = optarg;
-                return 0;
+                break;
+            case 'e':
+                export_name = optarg;
+                break;
             default:
                 printf("On default block\n");
         }

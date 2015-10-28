@@ -60,12 +60,11 @@ rock_library(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} ${Gecode_LIBRARIES})
 
-rock_executable(cbn_gexf_to_dot cbn_gexf_to_dot.cpp 
-    DEPS ${PROJECT_NAME} )
-
-rock_executable(cbn_based_on_graph SOURCES cbn_based_on_graph.cpp DEPS ${PROJECT_NAME})
+rock_executable(cbn_gexf_to_dot cbn_gexf_to_dot.cpp DEPS ${PROJECT_NAME} )
 
 rock_executable(cbn_class_on_model SOURCES cbn_class_on_model.cpp DEPS ${PROJECT_NAME})
+
+rock_executable(cbn_instance_on_model cbn_instance_on_model.cpp DEPS ${PROJECT_NAME})
 
 #rock_executable(${PROJECT_NAME}-test
 #        SOURCES ClassSolution.cpp

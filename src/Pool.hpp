@@ -18,7 +18,8 @@ namespace constrained_based_networks {
 
 class Pool {
    public:
-    Pool();
+    ~Pool();
+    Pool(bool empty=false);
     Pool(std::string filename) {
         //if (pool) throw std::runtime_error("Pool already created");
         //pool = this;

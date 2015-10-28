@@ -58,6 +58,12 @@ class EventModelHandler
         return component;
     }
 
+    /*
+     * \param pool the pool that already contains all previous components, the new ones get added
+     */
+    static void createFollowPool(const TransitionTrigger &trigger, Pool *pool);
+    static Component* setConfig(graph_analysis::Vertex::Ptr v, Component *c);
+
    private:
     bool isOnPath(graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target);
     void getFollowRequirements(graph_analysis::BaseGraph::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target,unsigned int transition);
