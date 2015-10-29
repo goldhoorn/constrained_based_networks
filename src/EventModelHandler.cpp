@@ -321,7 +321,7 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
             assert(active_child->getPtr());
 
             auto new_component = setConfig(e->getTargetVertex(), active_child);
-            std::cout << "Setting active: " << new_component->getName() << " for pool " << pool << std::endl;
+            //std::cout << "Setting active: " << new_component->getName() << " for pool " << pool << std::endl;
             new_component->setActive(true);
             assert(new_component->isActive());
             assert(pool->getComponent(new_component->toString())->isActive());
@@ -349,6 +349,7 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
             cmp->replaceChild(new_component, e->toString());
         }
     }
+    /*
     std::cout << "TEST BEFORE MERGE" << std::endl;
     for (auto component : pool->getItems<Component*>()) {
         if(component->isActive()){
@@ -357,8 +358,10 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
             std::cout << "Pool pointer: " << pool << std::endl;
         }
     };
+    */
 
     pool->mergeDoubles();
+    /*
     std::cout << "TEST AFTER MERGE" << std::endl;
     for (auto component : pool->getItems<Component*>()) {
         if(component->isActive()){
@@ -368,6 +371,7 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
         }
     };
     std::cout << "TEST DONE" << std::endl;
+    */
 }
 
 Component *EventModelHandler::setConfig(graph_analysis::Vertex::Ptr v, Component *c)
@@ -379,6 +383,7 @@ Component *EventModelHandler::setConfig(graph_analysis::Vertex::Ptr v, Component
         std::stringstream s;
         // TODO rething of limits
         s << i.min;
+        std::cout << "Setting a config value " << i.name << " to " << s.str() << std::endl;
         new_active_child->addConfig(i.name, s.str());
     }
     for (auto i : conf->bool_config) {

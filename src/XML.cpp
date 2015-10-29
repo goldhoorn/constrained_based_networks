@@ -66,7 +66,7 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
     assert(nodeElement);
     std::string sm_name = nodeElement->get_attribute("name")->get_value();
     if (pool->hasComponent(sm_name)) {
-        std::cout << "StateMachine was already imported: " << sm_name << std::endl;
+        //std::cout << "StateMachine was already imported: " << sm_name << std::endl;
         // Already imported, skipping
         return;
     }
@@ -120,7 +120,7 @@ void XML::importComposition(Pool* pool, xmlpp::Node* const child, xmlpp::Node* c
     assert(nodeElement);
     std::string composition_name = nodeElement->get_attribute("name")->get_value();
     if (pool->hasComponent(composition_name)) {
-        std::cout << "Component was already imported: " << composition_name << std::endl;
+        //std::cout << "Component was already imported: " << composition_name << std::endl;
         // Already imported, skipping
         return;
     }
@@ -267,7 +267,7 @@ std::vector<ClassSolutionImport> XML::loadClassSolutions(std::string filename)
     iterate(pNode, "class_instance", [&](const xmlpp::Element* data) {
         int instance_id = atoi(data->get_attribute("id")->get_value().c_str());
         std::string instance_filename = data->get_attribute("filename")->get_value();
-        std::cout << "imported " << instance_filename << " id: " << instance_id << std::endl;
+        //std::cout << "imported " << instance_filename << " id: " << instance_id << std::endl;
         res.push_back({instance_filename, instance_id});
     });
     return res;
