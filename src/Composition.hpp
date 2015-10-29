@@ -49,7 +49,8 @@ class Composition : public constrained_based_networks::Component, public constra
      *Default constructor to be able to use components as map value type.
      */
     Composition(Pool *pool);
-
+    virtual ~Composition(){
+    }
     /**
      * Construct component with type and name.
      */

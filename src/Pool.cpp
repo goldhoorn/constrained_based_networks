@@ -33,9 +33,13 @@ void Pool::updateLookups(){
 }
 */
 
-Pool::~Pool(){
-    for(auto c : components){
-        delete c;
+Pool::~Pool()
+{
+
+    for (auto c : components) {
+        //Ugly but we don't allow the shared_ptr the deletion
+        c->prepareDelete();
+   //     delete c;
     }
 };
 
@@ -73,17 +77,21 @@ void Pool::checkConsistency()
     {
         std::cout << "Pool consistency failed, cannot find either child or compopsition:" << std::endl;
         std::cout << "Composition: " << cmp_name << std::endl;
-        std::cout << "\tChild: " << child_name  << " in role: " << child_role << std::endl;
+        std::cout << "\tChild: " << child_name << " in role: " << child_role << std::endl;
         throw std::runtime_error("Pool is inconsistent");
     }
 }
 
 Pool::Pool(bool empty)
 {
-    if(!empty){
-        new Task(this, "NIL-Task");
+    if (!empty) {
+        auto t = new Task(this, "NIL-Task");
         auto c = new Composition("root-knot", this);
         c->setActive(true);
+
+        //Prevent memory leak:
+        t->getPtr();
+        c->getPtr();
     }
 }
 
@@ -112,11 +120,17 @@ Component *Pool::getComponent(std::string name)
 void Pool::mergeDoubles()
 {
     checkConsistency();
+    /*
+    std::cout << "Pool before merge:" << std::endl;
+    for (size_t i = 0; i < components.size(); i++) {
+        std::cout << "\t- " << components[i]->getName() << std::endl;
+    }
+    */
 
     std::vector<Component *> new_components;
     for (size_t i = 0; i < components.size(); i++) {
         auto &c = components[i];
-        std::cout << "Checking: " << c->getName() << std::endl;
+//        std::cout << "Checking: " << c->getName() << std::endl;
         auto spec = dynamic_cast<SpecializedComponentBase *>(c);
         if (spec) {
             bool valid = true;
@@ -132,21 +146,27 @@ void Pool::mergeDoubles()
                     name_equals = spec->getName(true) == existing->getName();
                 }
 
+
+                //If the name equals we have on both sides a specialized component, so we have to check the configuration
                 if (name_equals) {
-                    // auto cmp = dynamic_cast<SpecializedComponent<Composition> *>(existing);
                     auto cmp = dynamic_cast<SpecializedComponentBase *>(existing);
                     if (!cmp) {
-                        //                        std::cout << "Got base component" << std::endl;
-                        base = existing;
                         // We found the base-class of this specialized one
+                        //Okay this existing is the base component for spec
+                        //std::cout << "Got base component" << std::endl;
+                        base = existing;
                     } else {
+                        //This mean it's a different specialized component with the same base-class
                         if (cmp->configuration == spec->configuration) {
+  //                          std::cout << "Got a equal component between " << cmp->getName() << " and " << spec->getName() << std::endl;
                             // Skip this it already is part of the database, we can stop here
+                            /*
                             if (c->isActive()) {  // Don't do this here, this would cause other specilaized one to start
                                 existing->setActive(true);
                                 std::cout << "!!!!!!!!!         Discarding active component  !!!!!!!!!!!!!!!" << cmp->getName() << " and " << spec->getName() << std::endl;
                                 std::cout << cmp << " and " << spec << std::endl;
                             }
+                            */
                             valid = false;
                             //                            break;
                         }
@@ -155,21 +175,30 @@ void Pool::mergeDoubles()
             }
             if (valid) {
                 if (base) {
-                    //TODO re-thing if this makes sense here
+                    /*
+                    // TODO re-thing if this makes sense here, why was this added this re-specialization?!
                     auto spec_new = base->getSpecialized();
                     std::cout << "Adding specialized: " << spec_new->getName() << std::endl;
                     spec_new->configuration = spec->configuration;
                     spec_new->setActive(spec->isActive());
-                    new_components.push_back(dynamic_cast<Component *>(spec_new));
+                    //new_components.push_back(dynamic_cast<Component *>(spec_new));
+                    */
+                    new_components.push_back(c);
                 } else {
                     throw std::runtime_error("Cannot re-add new component, base-class is unknown");
                 }
             }
         } else {
-            std::cout << "Adding non specialied: " << c->getName() << std::endl;
+ //           std::cout << "Adding non specialied: " << c->getName() << std::endl;
             new_components.push_back(c);
         }
     }
+    /*
+    std::cout << "Pool after merge:" << std::endl;
+    for (size_t i = 0; i < new_components.size(); i++) {
+        std::cout << "\t- " << new_components[i]->getName() << std::endl;
+    }
+    */
 
     for (size_t i = 0; i < new_components.size(); i++) {
         auto &c = new_components[i];
@@ -207,7 +236,7 @@ void Pool::mergeDoubles()
 
     // Cleanup orginal pointer of state-machines
     for (size_t i = 0; i < components.size(); i++) {
-        if (auto sm = dynamic_cast<Composition*>(components[i])) {
+        if (auto sm = dynamic_cast<Composition *>(components[i])) {
             sm->updateInternals(this);
         }
     }
@@ -226,7 +255,7 @@ void Pool::setDirty()
 
 size_t Pool::addComponent(Component *c)
 {
-    if(hasComponent(c->getName())){
+    if (hasComponent(c->getName())) {
         throw std::runtime_error("Cannot add a component a second time");
     }
 

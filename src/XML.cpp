@@ -11,54 +11,54 @@
 
 using namespace constrained_based_networks;
 
-Component* XML::ensureComponentAvailible(Pool *pool, std::string child_name, xmlpp::Node* const root){
-        Component *child_component;
-        try
-        {
-            child_component = pool->getComponent(child_name);
+Component* XML::ensureComponentAvailible(Pool* pool, std::string child_name, xmlpp::Node* const root)
+{
+    Component* child_component;
+    try
+    {
+        child_component = pool->getComponent(child_name);
+    }
+    catch (std::invalid_argument c)
+    {
+        // We need to include the other one before, so we are searching the element in the XML graph and call outself
+        bool found = false;
+        for (const auto& c : root->get_children("composition")) {
+            const xmlpp::Element* nodeElement = dynamic_cast<const xmlpp::Element*>(c);
+            assert(nodeElement);
+            std::string c_name = nodeElement->get_attribute("name")->get_value();
+            DEBUG_XML << "Compare: " << c_name << " with " << child_name << std::endl;
+            if (child_name == c_name) {
+                DEBUG_XML << "Now import first another component" << c_name << std::endl;
+                importComposition(pool, c, root);
+                found = true;
+                break;
+            }
         }
-        catch (std::invalid_argument c)
-        {
-            // We need to include the other one before, so we are searching the element in the XML graph and call outself
-            bool found = false;
-            for (const auto& c : root->get_children("composition")) {
+        if (!found) {
+            // Okay maybe a state-machine?
+            for (const auto& c : root->get_children("state_machine")) {
                 const xmlpp::Element* nodeElement = dynamic_cast<const xmlpp::Element*>(c);
                 assert(nodeElement);
                 std::string c_name = nodeElement->get_attribute("name")->get_value();
                 DEBUG_XML << "Compare: " << c_name << " with " << child_name << std::endl;
                 if (child_name == c_name) {
-                    DEBUG_XML << "Now import first another component" << c_name << std::endl;
-                    importComposition(pool, c, root);
+                    DEBUG_XML << "Now import first another StateMachine" << c_name << std::endl;
+                    importSM(pool, c, root);
                     found = true;
                     break;
                 }
             }
-            if(!found){
-                //Okay maybe a state-machine?
-                for (const auto& c : root->get_children("state_machine")) {
-                    const xmlpp::Element* nodeElement = dynamic_cast<const xmlpp::Element*>(c);
-                    assert(nodeElement);
-                    std::string c_name = nodeElement->get_attribute("name")->get_value();
-                    DEBUG_XML << "Compare: " << c_name << " with " << child_name << std::endl;
-                    if (child_name == c_name) {
-                        DEBUG_XML << "Now import first another StateMachine" << c_name << std::endl;
-                        importSM(pool, c, root);
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (!found) {
-                throw std::runtime_error("This should not happen it seems the child " + child_name + " does not exist in the pool");
-            }
-
-            // Now we got (hopefully the needed child)
-            child_component = pool->getComponent(child_name);
         }
-        assert(child_component);
-        return child_component;
-}
+        if (!found) {
+            throw std::runtime_error("This should not happen it seems the child " + child_name + " does not exist in the pool");
+        }
 
+        // Now we got (hopefully the needed child)
+        child_component = pool->getComponent(child_name);
+    }
+    assert(child_component);
+    return child_component;
+}
 
 void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root)
 {
@@ -66,8 +66,29 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
     assert(nodeElement);
     std::string sm_name = nodeElement->get_attribute("name")->get_value();
     if (pool->hasComponent(sm_name)) {
-        //std::cout << "StateMachine was already imported: " << sm_name << std::endl;
+        // std::cout << "StateMachine was already imported: " << sm_name << std::endl;
         // Already imported, skipping
+        return;
+    }
+
+    // Check if the SM itself is specialized
+    if (auto specialized = nodeElement->get_attribute("specialized")) {
+        if (specialized->get_value() == "true") {
+            auto base_component_name = nodeElement->get_attribute("base_class")->get_value();
+            auto* spec_cmp = ensureComponentAvailible(pool, base_component_name, root)->getSpecialized();
+            if (auto active = nodeElement->get_attribute("active")) {
+                if (active->get_value() == "true") {
+                    spec_cmp->setActive(true);
+                }
+            }
+            for (const auto& conf : child->get_children("config")) {
+                const xmlpp::Element* conf_element = dynamic_cast<const xmlpp::Element*>(conf);
+                auto config_name = conf_element->get_attribute("name")->get_value();
+                auto config_value = conf_element->get_attribute("value")->get_value();
+                spec_cmp->addConfig(config_name, config_value);
+            }
+        }
+        // We do not need to continue, all children are generated based on the parent by getSpecialized
         return;
     }
     int start_state = atoi(nodeElement->get_attribute("start_state")->get_value().c_str());
@@ -77,6 +98,7 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
             sm->setActive(true);
         }
     }
+
     std::vector<Component*> children;
     for (const auto& event_node : child->get_children("child")) {
         const xmlpp::Element* sub_element = dynamic_cast<const xmlpp::Element*>(event_node);
@@ -84,7 +106,7 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
         std::string child_name = sub_element->get_attribute("name")->get_value();
         bool specialized = sub_element->get_attribute("specialized")->get_value() == "true";
         int child_id = atoi(sub_element->get_attribute("id")->get_value().c_str());
-        auto child_component = ensureComponentAvailible(pool,child_name,root);
+        auto child_component = ensureComponentAvailible(pool, child_name, root);
         assert(child_component);
         if (specialized) {
             DEBUG_XML << "Creating a specialized component" << std::endl;
@@ -120,9 +142,29 @@ void XML::importComposition(Pool* pool, xmlpp::Node* const child, xmlpp::Node* c
     assert(nodeElement);
     std::string composition_name = nodeElement->get_attribute("name")->get_value();
     if (pool->hasComponent(composition_name)) {
-        //std::cout << "Component was already imported: " << composition_name << std::endl;
+        // std::cout << "Component was already imported: " << composition_name << std::endl;
         // Already imported, skipping
         return;
+    }
+
+    if (auto specialized = nodeElement->get_attribute("specialized")) {
+        if (specialized->get_value() == "true") {
+            auto base_component_name = nodeElement->get_attribute("base_class")->get_value();
+            auto* spec_cmp = ensureComponentAvailible(pool, base_component_name, root)->getSpecialized();
+            if (auto active = nodeElement->get_attribute("active")) {
+                if (active->get_value() == "true") {
+                    spec_cmp->setActive(true);
+                }
+            }
+            for (const auto& conf : child->get_children("config")) {
+                const xmlpp::Element* conf_element = dynamic_cast<const xmlpp::Element*>(conf);
+                auto config_name = conf_element->get_attribute("name")->get_value();
+                auto config_value = conf_element->get_attribute("value")->get_value();
+                spec_cmp->addConfig(config_name, config_value);
+            }
+            // We do not need to continue, all children are generated based on the parent by getSpecialized
+            return;
+        }
     }
 
     DEBUG_XML << "Importing Composition: " << composition_name << std::endl;
@@ -151,7 +193,7 @@ void XML::importComposition(Pool* pool, xmlpp::Node* const child, xmlpp::Node* c
         std::string child_name = sub_element->get_attribute("name")->get_value();
         std::string child_role = sub_element->get_attribute("role")->get_value();
         DEBUG_XML << "Adding child " << child_name << " as " << child_role << " to " << composition_name << std::endl;
-        Component* child_component = ensureComponentAvailible(pool,child_name,root);
+        Component* child_component = ensureComponentAvailible(pool, child_name, root);
         composition->addChild(child_component, child_role);
     }
 }
@@ -179,6 +221,26 @@ Pool* XML::load(std::string filename)
             const xmlpp::Element* nodeElement = dynamic_cast<const xmlpp::Element*>(child);
             assert(nodeElement);
             std::string task_name = nodeElement->get_attribute("name")->get_value();
+
+            if (auto specialized = nodeElement->get_attribute("specialized")) {
+                if (specialized->get_value() == "true") {
+                    auto base_component_name = nodeElement->get_attribute("base_class")->get_value();
+                    auto* spec_cmp = ensureComponentAvailible(p, base_component_name, pNode)->getSpecialized();
+                    if (auto active = nodeElement->get_attribute("active")) {
+                        if (active->get_value() == "true") {
+                            spec_cmp->setActive(true);
+                        }
+                    }
+                    for (const auto& conf : child->get_children("config")) {
+                        const xmlpp::Element* conf_element = dynamic_cast<const xmlpp::Element*>(conf);
+                        auto config_name = conf_element->get_attribute("name")->get_value();
+                        auto config_value = conf_element->get_attribute("value")->get_value();
+                        spec_cmp->addConfig(config_name, config_value);
+                    }
+                    // We do not need to continue, all children are generated based on the parent by getSpecialized
+                    continue;
+                }
+            }
             // This adds the DS automatically to the pool
             auto task = new Task(task_name, p);
             if (auto active = nodeElement->get_attribute("active")) {
@@ -267,7 +329,7 @@ std::vector<ClassSolutionImport> XML::loadClassSolutions(std::string filename)
     iterate(pNode, "class_instance", [&](const xmlpp::Element* data) {
         int instance_id = atoi(data->get_attribute("id")->get_value().c_str());
         std::string instance_filename = data->get_attribute("filename")->get_value();
-        //std::cout << "imported " << instance_filename << " id: " << instance_id << std::endl;
+        // std::cout << "imported " << instance_filename << " id: " << instance_id << std::endl;
         res.push_back({instance_filename, instance_id});
     });
     return res;
@@ -342,6 +404,23 @@ bool XML::save(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std:
     return true;
 }
 
+void XML::addSpecialization(Pool* pool, Component* comp, xmlpp::Element* const root)
+{
+    if (auto spec = dynamic_cast<SpecializedComponentBase*>(comp)) {
+        root->set_attribute("specialized", "true");
+
+        // This is currently unsupported and should be resolved anywhere else before
+        assert(!dynamic_cast<SpecializedComponentBase*>(spec->getOrginal()));
+
+        root->set_attribute("base_class", spec->getOrginal()->getName());
+        for (auto c : spec->configuration) {
+            auto cNode = root->add_child("config");
+            cNode->set_attribute("name", c.first);
+            cNode->set_attribute("value", c.second);
+        }
+    }
+}
+
 bool XML::save(Pool* pool, const std::string filename)
 {
     /*
@@ -362,16 +441,32 @@ bool XML::save(Pool* pool, const std::string filename)
         if (auto sm = dynamic_cast<StateMachine*>(component)) {
             auto smNode = rootNode->add_child("state_machine");
             smNode->set_attribute("name", sm->getName());
+            addSpecialization(pool, component, smNode);
 
             // this should be valid because the transition 0 is by default the starting state, and the 1 (not 0) child is the target state to enter
             // 0 and 2 are the SM itselfe
             assert(sm->getTransitions()[0].event == "start");
-            smNode->set_attribute("start_state", "1");
+            smNode->set_attribute("start_state", "0");
 
             smNode->set_attribute("active", sm->isActive() ? "true" : "false");
             std::vector<Component*> children;
             unsigned int child_id = 0;
+            bool first = true;
             for (auto smStates : sm->getTransitions()) {
+                // We don't need to export the start-state transition this is create by setStart
+                if (first) {
+                    first = false;
+                    {
+                        auto childNode = smNode->add_child("child");
+                        childNode->set_attribute("id", std::to_string(child_id++));
+                        childNode->set_attribute("name", smStates.target->getName());
+                        // TODO we could here figure out the base class and specialize it on or own (or we simply using the specialized as done here
+                        // This somehow changes the model but should not change the behaviour in the end
+                        childNode->set_attribute("specialized", "false");  // Spcialized would mean that a specilaization is explicitly done
+                    }
+                    continue;
+                }
+
                 {
                     auto childNode = smNode->add_child("child");
                     childNode->set_attribute("id", std::to_string(child_id++));
@@ -404,6 +499,7 @@ bool XML::save(Pool* pool, const std::string filename)
             }
         } else if (auto composition = dynamic_cast<Composition*>(component)) {
             auto cNode = rootNode->add_child("composition");
+            addSpecialization(pool, component, cNode);
             cNode->set_attribute("name", composition->getName());
             cNode->set_attribute("active", composition->isActive() ? "true" : "false");
             for (auto e : composition->getEvents()) {
@@ -427,6 +523,7 @@ bool XML::save(Pool* pool, const std::string filename)
             }
         } else if (auto task = dynamic_cast<Task*>(component)) {
             auto cNode = rootNode->add_child("task");
+            addSpecialization(pool, component, cNode);
             cNode->set_attribute("active", task->isActive() ? "true" : "false");
             cNode->set_attribute("name", task->getName());
             for (auto e : task->getEvents()) {

@@ -10,6 +10,7 @@ Component::Component(Pool *_pool) : pool(_pool)
     assert(pool);
     pool->addComponent(this);
     active = false;
+    getPtr();
 }
 
 Component::~Component()

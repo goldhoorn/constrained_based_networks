@@ -28,7 +28,7 @@ class StateMachine : public Composition
 {
    public:
     StateMachine(std::string name, Pool *pool);
-    ~StateMachine();
+    virtual ~StateMachine();
     void addTransition(std::string s, std::string t, std::string event_s, std::string event_name);
     void addTransition(Component *source, Component *target, Component *event_source, std::string ev);
     void addTransition(SpecializedComponentBase *source, SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev);

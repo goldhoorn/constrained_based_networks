@@ -321,8 +321,11 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
             assert(active_child->getPtr());
 
             auto new_component = setConfig(e->getTargetVertex(), active_child);
-            //std::cout << "Setting active: " << new_component->getName() << " for pool " << pool << std::endl;
+            std::cout << "Setting active: " << new_component->getName() << " for pool " << pool << std::endl;
             new_component->setActive(true);
+            //We have to disable the old component
+            active_child->setActive(false);
+
             assert(new_component->isActive());
             assert(pool->getComponent(new_component->toString())->isActive());
             bool found=false;

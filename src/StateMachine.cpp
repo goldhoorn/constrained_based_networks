@@ -64,6 +64,11 @@ std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
 {
     std::vector<std::pair<std::string, Component *>> res;
     res.push_back({"main", transitions[getCurrentTransition()].target});
+    std::cout << "Returning child " << res[0].second->getName() << " for " << getName() << " current transition is: " << getCurrentTransition() << std::endl;
+    std::cout << "Transition size is: " << transitions.size() << std::endl;
+    for(auto t: transitions){
+        std::cout << "\t- " << t.target->getName() << std::endl;
+    }
     return res;
 }
 

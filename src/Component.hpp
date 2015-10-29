@@ -125,6 +125,10 @@ class Component : public graph_analysis::Vertex
         return properties;
     }
 
+    void prepareDelete(){
+        self.reset();
+    }
+
     graph_analysis::Vertex::Ptr getPtr()
     {
         if (self.get() == nullptr) {
