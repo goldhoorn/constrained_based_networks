@@ -256,7 +256,7 @@ void Pool::setDirty()
 size_t Pool::addComponent(Component *c)
 {
     if (hasComponent(c->getName())) {
-        throw std::runtime_error("Cannot add a component a second time");
+        throw std::runtime_error("Cannot add a component with name '" + c->getName() + "' a second time");
     }
 
     auto b = dynamic_cast<SpecializedComponentBase *>(c);

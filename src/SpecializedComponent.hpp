@@ -69,13 +69,16 @@ class SpecializedComponent : public SpecializedComponentBase, public T
         , pool(pool)
     {
         // classScope = false;
-        pool->addComponent(this);
         org = t;
         active = false;
+        std::cout << "Should add a specialized component with name: '" << name << "' and its base-class '" << t->getName() << "'" << std::endl;
+
+        pool->addComponent(this);
 
         if (name.empty()) {
             std::stringstream s;
             s << T::getName() << "_" << getID();
+            specialized_name = s.str();
         } else {
             if (pool->hasComponent(name)) {
                 throw std::invalid_argument("Cannot add Specialized component " + name + ", it already exists");

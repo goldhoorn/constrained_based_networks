@@ -75,7 +75,7 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
     if (auto specialized = nodeElement->get_attribute("specialized")) {
         if (specialized->get_value() == "true") {
             auto base_component_name = nodeElement->get_attribute("base_class")->get_value();
-            auto* spec_cmp = ensureComponentAvailible(pool, base_component_name, root)->getSpecialized();
+            auto* spec_cmp = ensureComponentAvailible(pool, base_component_name, root)->getSpecialized(sm_name);
             if (auto active = nodeElement->get_attribute("active")) {
                 if (active->get_value() == "true") {
                     spec_cmp->setActive(true);
@@ -150,7 +150,7 @@ void XML::importComposition(Pool* pool, xmlpp::Node* const child, xmlpp::Node* c
     if (auto specialized = nodeElement->get_attribute("specialized")) {
         if (specialized->get_value() == "true") {
             auto base_component_name = nodeElement->get_attribute("base_class")->get_value();
-            auto* spec_cmp = ensureComponentAvailible(pool, base_component_name, root)->getSpecialized();
+            auto* spec_cmp = ensureComponentAvailible(pool, base_component_name, root)->getSpecialized(composition_name);
             if (auto active = nodeElement->get_attribute("active")) {
                 if (active->get_value() == "true") {
                     spec_cmp->setActive(true);
@@ -225,7 +225,7 @@ Pool* XML::load(std::string filename)
             if (auto specialized = nodeElement->get_attribute("specialized")) {
                 if (specialized->get_value() == "true") {
                     auto base_component_name = nodeElement->get_attribute("base_class")->get_value();
-                    auto* spec_cmp = ensureComponentAvailible(p, base_component_name, pNode)->getSpecialized();
+                    auto* spec_cmp = ensureComponentAvailible(p, base_component_name, pNode)->getSpecialized(task_name);
                     if (auto active = nodeElement->get_attribute("active")) {
                         if (active->get_value() == "true") {
                             spec_cmp->setActive(true);
