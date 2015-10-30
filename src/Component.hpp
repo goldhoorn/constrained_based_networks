@@ -109,7 +109,7 @@ class Component : public graph_analysis::Vertex
     }
 
     // virtual void addConfig(std::string name, std::string value)=0;
-    virtual SpecializedComponentBase *getSpecialized() = 0;
+    virtual SpecializedComponentBase *getSpecialized(std::string name="") = 0;
 
     const ConfigurationModel::Type getProperty(std::string _name) const
     {

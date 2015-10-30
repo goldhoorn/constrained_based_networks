@@ -1,5 +1,8 @@
 #find_package(Boost 1.48 COMPONENTS serialization system REQUIRED)
 
+#We want to create a really stric lib
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra -Wfatal-errors")
+
 set(SOURCES
    Pool.cpp
    Composition.cpp

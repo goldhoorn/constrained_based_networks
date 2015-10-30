@@ -111,7 +111,7 @@ class Pool {
     std::vector<Component*> components;
     std::vector<StateMachine*> state_machines;
     //static Pool* pool;
-    friend class boost::serialization::access;
+//    friend class boost::serialization::access;
     void setDirty();
 
     template <class Archive>

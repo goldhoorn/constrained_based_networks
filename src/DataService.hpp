@@ -60,7 +60,7 @@ public:
             throw std::runtime_error("Called addConfig on invalid class");
         }
     }
-    SpecializedComponentBase *getSpecialized();
+    SpecializedComponentBase *getSpecialized(std::string name="");
 
     /*
     Component* getSpecialized()

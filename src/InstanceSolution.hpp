@@ -203,7 +203,9 @@ class ComponentInstanceHelper : public graph_analysis::Vertex
     static graph_analysis::Vertex::Ptr make(graph_analysis::Vertex::Ptr o)
     {
         auto c = new ComponentInstanceHelper(o);
-        return c->getPtr();
+        auto p = c->getPtr();
+        assert(p.get());
+        return p;
     }
     std::string toString() const
     {

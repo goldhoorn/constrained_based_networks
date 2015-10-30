@@ -355,7 +355,7 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
         solution_node->set_attribute("id", std::to_string(i));
         int cnt2 = 0;
         for (const auto& trigger : solution.second) {
-            if (trigger.causing_event == "aborted" || trigger.causing_event == "internal_error" || trigger.causing_event == "fatal_error") continue;
+//            if (trigger.causing_event == "aborted" || trigger.causing_event == "internal_error" || trigger.causing_event == "fatal_error") continue;
 
             cnt2++;
             std::cout << "processing: " << i << "/" << instance_solutions.size() << " " << cnt2 << "/" << solution.second.size() << std::endl;

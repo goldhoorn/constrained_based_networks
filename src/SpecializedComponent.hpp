@@ -64,34 +64,41 @@ template <class T>
 class SpecializedComponent : public SpecializedComponentBase, public T
 {
    public:
-    SpecializedComponent(T* t, Pool* pool) : T(*t), pool(pool)
+    SpecializedComponent(T* t, Pool* pool, std::string name)
+        : T(*t)
+        , pool(pool)
     {
         // classScope = false;
         pool->addComponent(this);
         org = t;
-        active=false;
+        active = false;
 
-        std::stringstream s;
-        s << T::getName() << "_" << getID();
-        specialized_name = s.str();
-
+        if (name.empty()) {
+            std::stringstream s;
+            s << T::getName() << "_" << getID();
+        } else {
+            if (pool->hasComponent(name)) {
+                throw std::invalid_argument("Cannot add Specialized component " + name + ", it already exists");
+            }
+            specialized_name = name;
+        }
     }
 
     virtual bool isActive()
     {
-//        std::cerr << "Is Active on specialized called " << active << " on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
+        //        std::cerr << "Is Active on specialized called " << active << " on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
         return active;
     };
 
     virtual void setActive(bool active = true)
     {
- //       std::cerr << "----------------############ Set active on specialized called " << active << std::endl;
-  //      std::cerr << "on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
+        //       std::cerr << "----------------############ Set active on specialized called " << active << std::endl;
+        //      std::cerr << "on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
         this->active = active;
         if (active && id != ID_ROOT_KNOT) {  // ID for the root-knot-composition
             dynamic_cast<Composition*>((*pool)[1])->addChild(this, "child_" + getName());
         }
-//        std::cerr << " " << active << " " << this->active << " " << T::active  << std::endl;
+        //        std::cerr << " " << active << " " << this->active << " " << T::active  << std::endl;
     }
 
     virtual ~SpecializedComponent() {};
@@ -108,8 +115,7 @@ class SpecializedComponent : public SpecializedComponentBase, public T
 
     virtual const std::string& getName(bool base) const
     {
-        if (base)
-            return T::getName();
+        if (base) return T::getName();
 
         return specialized_name;
     }

@@ -63,9 +63,9 @@ void Task::setConfiguration(const std::vector<std::string>& configurations)
 }
 */
 
-SpecializedComponentBase* Task::getSpecialized()
+SpecializedComponentBase* Task::getSpecialized(std::string name)
 {
-    return new SpecializedComponent<Task>(this, pool);
+    return new SpecializedComponent<Task>(this, pool,name);
 }
 
 

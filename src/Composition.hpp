@@ -65,7 +65,7 @@ class Composition : public constrained_based_networks::Component, public constra
         return "constrained_based_networks::Composition";
     }
 
-    SpecializedComponentBase *getSpecialized();
+    SpecializedComponentBase *getSpecialized(std::string name="");
 #if 0
     void addConfig(std::string name, std::string value)
     {

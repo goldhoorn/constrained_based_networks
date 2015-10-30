@@ -58,7 +58,7 @@ class StateMachine : public Composition
     void updateInternals(Pool *pool);
     unsigned int getCurrentTransition();
     virtual void replaceChild(Component *child, std::string name);
-    SpecializedComponentBase *getSpecialized();
+    SpecializedComponentBase *getSpecialized(std::string name="");
     /*
                 SpecializedComponent<StateMachine> *getSpecialized()
                 {

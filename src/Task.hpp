@@ -41,7 +41,7 @@ public:
      */
     Task(std::string name, Pool *pool) ;
 
-    SpecializedComponentBase* getSpecialized();
+    SpecializedComponentBase* getSpecialized(std::string name="");
 /*
     void addConfig(std::string name, std::string value){
         if(auto c = dynamic_cast<Task*>(this)){

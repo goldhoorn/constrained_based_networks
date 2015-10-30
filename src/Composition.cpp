@@ -266,9 +266,9 @@ std::vector<std::pair<std::string, Component *>> Composition::getChildren()
     return erg;
 };
 
-SpecializedComponentBase *Composition::getSpecialized()
+SpecializedComponentBase *Composition::getSpecialized(std::string name)
 {
-    return new SpecializedComponent<Composition>(this, pool);
+    return new SpecializedComponent<Composition>(this, pool, name);
 }
 
 }  // end namespace constrained_based_networks

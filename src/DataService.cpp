@@ -59,8 +59,8 @@ void DataService::setConfiguration(const std::vector<std::string>& configuration
 }
 */
 
-SpecializedComponentBase *DataService::getSpecialized(){
-    return new SpecializedComponent<DataService>(this, pool);
+SpecializedComponentBase *DataService::getSpecialized(std::string name){
+    return new SpecializedComponent<DataService>(this, pool,name);
 }
 
 } // end namespace constrained_based_networks

@@ -101,15 +101,14 @@ graph_analysis::Vertex::Ptr InstanceSolution::getRoot(const graph_analysis::Base
             }
         }
     }
-    /*
-    std::cerr << "Error output:" << std::endl;
-    for (auto v : _graph->getAllVertices()) {
-        std::cerr << "Got " << v->toString() <<  std::endl;
-    }
+
     if (!root) {
+        std::cerr << "Error output:" << std::endl;
+        for (auto v : _graph->getAllVertices()) {
+            std::cerr << "Got " << v->toString() <<  std::endl;
+        }
         throw std::runtime_error("Could not get the root knot of the graph");
     }
-    */
     return root;
 }
 
@@ -120,7 +119,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     graph = boost::static_pointer_cast<graph_analysis::DirectedGraphInterface>(graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH));
     auto orig = dynamic_cast<graph_analysis::DirectedGraphInterface *>(_graph.get());
     assert(orig);
-
+    assert(root.get());
     buildInstanceGraph(root, *orig, ComponentInstanceHelper::make(root));
 
     for (auto v : _graph->vertices()) {

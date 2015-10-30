@@ -33,13 +33,9 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
             for (auto h2 : h1.second) {
                 auto causing_event = h2.first;
 
-                // Ignoring them for now
-                if (causing_event == "aborted" || causing_event == "internal_error" || causing_event == "fatal_error" || causing_event == "aborted") continue;
-
                 // Here is the map for target causes
                 for (auto cause : h2.second) {
                     auto resulting_event = cause.event;
-                    if (resulting_event == "aborted" || resulting_event == "internal_error" || resulting_event == "fatal_error" || resulting_event == "aborted") continue;
 
                     auto resulting_component_id = cause.component_graph_id;
                     // auto resulting_component = dynamic_cast<Composition *>(instancitaed_network->getVertex(resulting_component_id).get());
@@ -55,7 +51,6 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
                         for (auto h3 : event_propagation_table[resulting_component_id][resulting_event]) {
                             auto new_target = h3.component_graph_id;
                             auto new_target_event = h3.event;
-                            if (new_target_event == "aborted" || new_target_event == "internal_error" || new_target_event == "fatal_error" || new_target_event == "aborted") continue;
 
                             //                            std::cout << "Debug: " << new_target_event << std::endl;
                             if (event_propagation_table[causing_component_id][causing_event].find({new_target, new_target_event}) ==
@@ -101,7 +96,6 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
         auto affected_event = affected.event;
         auto affected_component_id = affected.component_graph_id;
         auto affected_component = EventModelHandler::get<StateMachine>(instancitaed_network->getVertex(affected_component_id));
-        if (affected_event == "aborted" || affected_event == "internal_error" || affected_event == "fatal_error" || affected_event == "aborted") continue;
 
         // Ok we found a state-machine which is affected no we have to search for the followup state of it
         if (affected_component) {
@@ -111,11 +105,13 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
             initial_pool->mergeDoubles();
             */
             if (affected_event == "failed") {
-                // std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
-                graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-                res.push_back(graph);
+                std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
+                std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
+//                graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+//                res.push_back(graph);
                 continue;
             }
+
             unsigned int current_transition;
             int parsed = sscanf(affected_event.c_str(), "transition-%u", &current_transition);
             if (parsed != 1) {
@@ -127,6 +123,9 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
             // std::cout << "DEBUG:::::::::::::::::::: " << instancitaed_network->getVertex(affected_component_id)->toString() << std::endl;
             graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
             getFollowRequirements(graph, initial_pool, root, instancitaed_network->getVertex(affected_component_id), current_transition);
+
+            std::cerr << "THIS IS GOOD" << std::endl;
+            std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
             res.push_back(graph);
         }
     }
@@ -295,6 +294,7 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
 
             if (valid || true) {
                 auto p = getFollowRequirements(component.first, event.first);
+                //std::cout << "Graph size: " << p.size() << std::endl;
                 res.push_back({causing_component, event.first, {p}});
             }
         }
@@ -323,15 +323,15 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
             auto new_component = setConfig(e->getTargetVertex(), active_child);
             std::cout << "Setting active: " << new_component->getName() << " for pool " << pool << std::endl;
             new_component->setActive(true);
-            //We have to disable the old component
+            // We have to disable the old component
             active_child->setActive(false);
 
             assert(new_component->isActive());
             assert(pool->getComponent(new_component->toString())->isActive());
-            bool found=false;
-            for (auto component : pool->getItems<Component*>()) {
-                if(component == new_component){
-                    found=true;
+            bool found = false;
+            for (auto component : pool->getItems<Component *>()) {
+                if (component == new_component) {
+                    found = true;
                     break;
                 }
             }

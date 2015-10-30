@@ -10,7 +10,7 @@ using namespace constrained_based_networks;
 
 void printHelp()
 {
-    std::cout << "Please use -f <filename>" << std::endl;
+    std::cout << "Please use -f <filename> -c <components_to_start>" << std::endl;
     exit(-1);
 }
 

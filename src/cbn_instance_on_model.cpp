@@ -94,7 +94,14 @@ int main(int argc, char *argv[])
     for (auto solution : is) {
         graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(pool, g);
-        results.push_back({solution,trigger_events.getTrigger()});
+        auto events = trigger_events.getTrigger();
+        /*
+        std::cout << "Event size is: " <<events.size() << std::endl;
+        for(auto e : events){
+            std::cout << "\t- " << e.resulting_requirement.network.size() << std::endl;
+        }
+        */
+        results.push_back({solution,events});
     }
     std::cout << "Calculated all follow solutions " << results.size() << std::endl;
     XML::addInstanceSolutions(instance_id,results,base_network_file,(base_network_file + std::string("-instance-solution-for-class-") + std::to_string(instance_id)));
