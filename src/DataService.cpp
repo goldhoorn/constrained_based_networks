@@ -9,12 +9,17 @@ namespace constrained_based_networks {
 
 DataService::DataService(Pool *pool): Component(pool) {}
 
-DataService::DataService(std::string name, Pool *pool)
+DataService::DataService(const std::string &name, Pool *pool)
     : Component(pool)
 {
     this->name = name;
     auto c = new Composition(name + "_cmp", pool);
     c->addChild(this,"virtual_main_child");
+}
+
+Component* DataService::clone(Pool *p) const {
+    auto ds = new DataService(name,p);
+    return ds;
 }
 
 bool DataService::operator ==( const DataService &comp ) const

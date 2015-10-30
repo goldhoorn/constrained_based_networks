@@ -17,6 +17,12 @@ Component::~Component()
 {
 }
 
+Component* Component::clone(Pool *p) const{
+    throw std::runtime_error("THIS SHOULD NOT HAPPEN, DELETE IMPLEMENTATION");
+    return (*p)[0];
+}
+
+
 bool Component::isActive()
 {
     return active;

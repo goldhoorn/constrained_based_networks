@@ -32,11 +32,13 @@ public:
      *Default constructor to be able to use components as map value type.
      */
     DataService(Pool *pool);
+    
+    virtual Component* clone(Pool *p) const;
 
     /**
      * Construct component with type and name.
      */
-    DataService(std::string name, Pool *pool) ;
+    DataService(const std::string &name, Pool *pool) ;
 
     void addConfig(std::string name, std::string value){
         if(auto c = dynamic_cast<DataService*>(this)){

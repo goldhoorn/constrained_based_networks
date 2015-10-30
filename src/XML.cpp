@@ -345,6 +345,7 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
     const auto orginal_root = parser.get_document()->get_root_node();
     auto elem = doc.create_root_node_by_import(orginal_root, true);  // Create a document which is based on this
     unsigned int i = 0;
+    std::vector<TransitionHelper> calculationHelper;
     for (const auto& solution : instance_solutions) {
         auto solution_node = elem->add_child("solution");
         std::stringstream s;
@@ -354,6 +355,8 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
         graph_analysis::io::GraphIO::write(s.str(), solution.first, graph_analysis::representation::GEXF);
         solution_node->set_attribute("id", std::to_string(i));
         int cnt2 = 0;
+
+
         for (const auto& trigger : solution.second) {
 //            if (trigger.causing_event == "aborted" || trigger.causing_event == "internal_error" || trigger.causing_event == "fatal_error") continue;
 
@@ -367,6 +370,16 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
                 transition_node->set_attribute("resulting-pool", "");
                 continue;
             } else {
+                    bool found=false;
+                for(auto e : calculationHelper){
+                    if(e.th == trigger){
+                        std::cout << "!!!!!!!!!-------------------------------  Found a previous generated solution for our problem";
+                        transition_node->set_attribute("resulting-pool", e.filename);
+                        found=true;
+                        continue;
+                    }
+                }
+                if(found) continue;
                 std::stringstream event_follow_network_filename;
                 event_follow_network_filename << s.str() << "-" << trigger.causing_component->getName() << "-" << trigger.causing_event;
                 std::cout << "We have a follow network for: " << trigger.causing_component->getName() << " -> " << trigger.causing_event << " And file " << event_follow_network_filename.str()
@@ -375,9 +388,14 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
                 Pool* pool = XML::load(original_file);
                 EventModelHandler::createFollowPool(trigger, pool);
                 XML::save(pool, event_follow_network_filename.str());
-                delete pool;
+                calculationHelper.push_back({trigger, pool,event_follow_network_filename.str()});
+                transition_node->set_attribute("resulting-pool", event_follow_network_filename.str());
+                //delete pool;
             }
         }
+    }
+    for(auto p : calculationHelper){
+        delete p.pool;
     }
     doc.write_to_file_formatted(outfile);
     return true;

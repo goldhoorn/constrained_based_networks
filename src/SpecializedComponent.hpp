@@ -12,6 +12,7 @@
 
 namespace constrained_based_networks
 {
+class Pool;
 
 struct Configuration : public std::map<std::string, std::string>
 {
@@ -71,7 +72,7 @@ class SpecializedComponent : public SpecializedComponentBase, public T
         // classScope = false;
         org = t;
         active = false;
-        std::cout << "Should add a specialized component with name: '" << name << "' and its base-class '" << t->getName() << "'" << std::endl;
+//        std::cout << "Should add a specialized component with name: '" << name << "' and its base-class '" << t->getName() << "'" << std::endl;
 
         pool->addComponent(this);
 
@@ -85,7 +86,14 @@ class SpecializedComponent : public SpecializedComponentBase, public T
             }
             specialized_name = name;
         }
-    }
+    };
+
+    virtual Component* clone(Pool* p) const
+    {
+        (void)p;
+        throw std::runtime_error("Implement me");
+        return 0;
+    };
 
     virtual bool isActive()
     {

@@ -66,6 +66,8 @@ class Component : public graph_analysis::Vertex
     virtual void setActive(bool active = true);
     virtual const std::string &getName() const;
 
+    virtual Component* clone(Pool *p) const = 0;
+
     std::string toString() const
     {
         return getName();

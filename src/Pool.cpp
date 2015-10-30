@@ -253,6 +253,12 @@ void Pool::setDirty()
     component_ids.clear();
 }
 
+Pool * Pool::clone(){
+    Pool* res = new Pool();
+    throw std::runtime_error("IMPLEMENT ME");
+    return res;
+}
+
 size_t Pool::addComponent(Component *c)
 {
     if (hasComponent(c->getName())) {

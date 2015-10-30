@@ -105,8 +105,8 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
             initial_pool->mergeDoubles();
             */
             if (affected_event == "failed") {
-                std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
-                std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
+//                std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
+//                std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
 //                graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
 //                res.push_back(graph);
                 continue;
@@ -124,7 +124,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
             graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
             getFollowRequirements(graph, initial_pool, root, instancitaed_network->getVertex(affected_component_id), current_transition);
 
-            std::cerr << "THIS IS GOOD" << std::endl;
+//            std::cerr << "THIS IS GOOD" << std::endl;
             std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
             res.push_back(graph);
         }

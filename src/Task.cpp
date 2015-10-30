@@ -27,6 +27,13 @@ bool Task::operator ==( const Task &comp ) const
     return name == comp.name;
 }
 
+Component* Task::clone(Pool *p) const{
+    Component::clone(p);
+    throw std::runtime_error("IMPLEMENT ME");
+    auto *c = new Task(name,p);
+    return c;
+};
+
 #if 0
 std::string Task::toString() const
 {

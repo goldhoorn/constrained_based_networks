@@ -629,10 +629,10 @@ graph_analysis::Vertex::Ptr InstanceSolution::getConfiguredComponent(graph_analy
         assert(helper);
         auto component = dynamic_cast<Component *>(helper);
         assert(component);
-        auto s = string_config[id];
-        auto i = int_config[id];
-        auto b = bool_config[id];
-        auto f = float_config[id];
+        auto &s = string_config[id];
+        auto &i = int_config[id];
+        auto &b = bool_config[id];
+        auto &f = float_config[id];
         configured_component_helper[id] = graph_analysis::Vertex::Ptr(new ConfiguredComponent(component, f, b, i, s, string_helper));
     }
 

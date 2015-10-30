@@ -59,6 +59,7 @@ class StateMachine : public Composition
     unsigned int getCurrentTransition();
     virtual void replaceChild(Component *child, std::string name);
     SpecializedComponentBase *getSpecialized(std::string name="");
+    virtual Component* clone(Pool *p) const;
     /*
                 SpecializedComponent<StateMachine> *getSpecialized()
                 {

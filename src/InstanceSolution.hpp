@@ -57,6 +57,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
     std::string serializeConfig()
     {
         std::stringstream str;
+        std::cout << "Serialize int_config with size: " << int_config.size() << " for " << underlaying_name << std::endl;
         str << int_config.size() << " ";
         for (auto j : int_config) {
             str << j.name << " " << j.min << " " << j.max << " ";
@@ -143,10 +144,10 @@ class ConfiguredComponent : public graph_analysis::Vertex
         : underlaying_name(underlaying_component->getName())
     {
         component = underlaying_component;
-        // std::cout << "Debug for " << underlaying_component->getName() << std::endl;
-        // string_name << component->toString() << std::endl;
+        //std::cout << "Debug for " << underlaying_component->getName() << std::endl;
+        //string_name << component->toString() << std::endl;
         for (auto j : i) {
-            // std::cout << "\t-" << j.first << j.second << std::endl;
+            //std::cout << "\t-" << j.first << j.second << std::endl;
             int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
         }
         for (auto j : f) {

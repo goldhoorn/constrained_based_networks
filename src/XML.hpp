@@ -18,6 +18,7 @@ namespace constrained_based_networks
         int solution_id;
     };
 
+
     class XML{
         public:
         static void importSM(Pool* pool, xmlpp::Node *const child, xmlpp::Node *const root);
@@ -29,6 +30,13 @@ namespace constrained_based_networks
         static bool addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger> > > instance_solutions, std::string original_file, std::string outfile);
         static Component* ensureComponentAvailible(Pool *pool, std::string component_name, xmlpp::Node* const root);
         static void addSpecialization(Component *comp, xmlpp::Element* const root);
+
+        private:
+        struct TransitionHelper{
+            TransitionTrigger th;
+            Pool *pool;
+            std::string filename;
+        };
     };
 };
 

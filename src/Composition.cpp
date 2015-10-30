@@ -18,6 +18,12 @@ Composition::Composition(std::string name, Pool *pool) : Component(pool)
     //    std::cout << "Creating composition: " << name << std::endl;
 }
 
+Component* Composition::clone(Pool *p) const{
+    Composition *c = new Composition(name,p);
+    throw std::runtime_error("Implement me");
+    return c;
+};
+
 Forwards Composition::getArgumentForwards(Component *child)
 {
     return argument_forwards[child];

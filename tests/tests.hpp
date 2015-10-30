@@ -466,16 +466,16 @@ std::string load_test(int nr = -1)
     if (nr == -1) {
         printf("Creating model from export\n");
         create_model(pool);
-        pool->dupFunction = create_model;
+        //pool->dupFunction = create_model;
         pool->mergeDoubles();
     } else {
         // printf("Running test: %i\n",nr);
         if (tests[nr].name == "") {
             name = tests[nr].v(pool);
-            pool->dupFunction = tests[nr].v;
+//            pool->dupFunction = tests[nr].v;
         } else {
             tests[nr].v(pool);
-            pool->dupFunction = tests[nr].v;
+//            pool->dupFunction = tests[nr].v;
             name = tests[nr].name;
             pool->mergeDoubles();
         }

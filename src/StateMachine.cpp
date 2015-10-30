@@ -151,6 +151,12 @@ int StateMachine::getNewState(Component *child, std::string event)
     return -1;
 }
 
+Component* StateMachine::clone(Pool *p) const{
+    auto *c = new StateMachine(name,p);
+    throw std::runtime_error("Implement me");
+    return c;
+};
+
 Forwards StateMachine::getEventForwards(Component *child, std::string name)
 {
     (void)name;

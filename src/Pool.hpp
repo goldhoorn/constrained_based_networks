@@ -23,7 +23,9 @@ class Pool
     ~Pool();
     Pool(bool empty = false);
 
-    std::string (*dupFunction)(constrained_based_networks::Pool*);
+    Pool* clone();
+
+    //std::string (*dupFunction)(constrained_based_networks::Pool*);
 
     size_t addComponent(Component* c);
 

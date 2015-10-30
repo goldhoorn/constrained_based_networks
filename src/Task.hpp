@@ -40,6 +40,8 @@ public:
      * Construct component with type and name.
      */
     Task(std::string name, Pool *pool) ;
+    
+    virtual Component* clone(Pool *p) const;
 
     SpecializedComponentBase* getSpecialized(std::string name="");
 /*

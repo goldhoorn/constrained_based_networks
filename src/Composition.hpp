@@ -60,6 +60,8 @@ class Composition : public constrained_based_networks::Component, public constra
     virtual Forwards getEventForwards(Component *child, std::string name);
     bool hasChild(Component *child);
 
+    virtual Component* clone(Pool *p) const;
+
     virtual std::string getClassName() const
     {
         return "constrained_based_networks::Composition";
