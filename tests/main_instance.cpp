@@ -9,6 +9,7 @@
 #include "tests.hpp"
 #include <constrained_based_networks/EventModelHandler.hpp>
 #include <graph_analysis/VertexTypeManager.hpp>
+#include <fstream>
 
 using namespace constrained_based_networks;
 

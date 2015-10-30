@@ -10,9 +10,6 @@
 #include <gecode/int.hh>
 #include <gecode/search.hh>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-
 namespace constrained_based_networks {
 
 /**
@@ -40,18 +37,6 @@ protected:
      * The outgoing connections. Ports mapped to the names of the component, they are connected to.
      */
     std::multimap<constrained_based_networks::OutputPort, std::string> outgoingConnections;
-
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version){
-        /*
-            ar & inPorts;
-            ar & outPorts;
-            ar & incomingConnections;
-            ar & outgoingConnections;
-            */
-    };
-
 
 public:
     ~PortHandler();

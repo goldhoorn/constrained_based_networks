@@ -25,7 +25,7 @@ struct EventWithSource
     unsigned int component_graph_id;
     std::string event;
 
-    const bool operator <( const EventWithSource&r ) const{
+    bool operator <( const EventWithSource&r ) const{
         //TODO this should be done more efficiently
         std::stringstream str1;
         std::stringstream str2;

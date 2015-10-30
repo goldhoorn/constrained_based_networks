@@ -7,7 +7,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/noncopyable.hpp>
 #include <graph_analysis/GraphAnalysis.hpp>
-#include <graph_analysis/lemon/Graph.hpp>
+//#include <graph_analysis/lemon/Graph.hpp>
 
 namespace constrained_based_networks
 {
@@ -111,7 +111,7 @@ class Component : public graph_analysis::Vertex
     // virtual void addConfig(std::string name, std::string value)=0;
     virtual SpecializedComponentBase *getSpecialized(std::string name="") = 0;
 
-    const ConfigurationModel::Type getProperty(std::string _name) const
+    ConfigurationModel::Type getProperty(std::string _name) const
     {
         for (auto p : properties) {
             if (p.name == _name) {

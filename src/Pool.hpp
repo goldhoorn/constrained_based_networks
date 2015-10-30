@@ -10,30 +10,28 @@
 #include "Task.hpp"
 #include "Logger.hpp"
 
-namespace constrained_based_networks {
+namespace constrained_based_networks
+{
 
 #define ID_NIL 0
 #define ID_ROOT_KNOT 1
 #define ID_START 0
 
-class Pool {
+class Pool
+{
    public:
     ~Pool();
-    Pool(bool empty=false);
-    Pool(std::string filename) {
-        //if (pool) throw std::runtime_error("Pool already created");
-        //pool = this;
-        load(filename);
-    }
+    Pool(bool empty = false);
 
     std::string (*dupFunction)(constrained_based_networks::Pool*);
 
     size_t addComponent(Component* c);
 
-//    static Pool* getInstance();
+    //    static Pool* getInstance();
 
     template <typename T>
-    unsigned int getCount() {
+    unsigned int getCount()
+    {
         unsigned int cnt = 0;
         for (auto c : components) {
             auto comp = dynamic_cast<T>(c);
@@ -46,7 +44,10 @@ class Pool {
 
     void checkConsistency();
 
-    unsigned int size() const { return components.size(); }
+    unsigned int size() const
+    {
+        return components.size();
+    }
 
     void mergeDoubles();
     //  void updateLookups();
@@ -56,10 +57,11 @@ class Pool {
     Component* operator[](unsigned int id);
 
     template <typename T>
-    std::vector<T> getItems(bool first = true) {
+    std::vector<T> getItems()
+    {
         for (size_t i = 0; i < component_names.size(); i++) {
             if (component_names[i] == typeid(T).name()) {
-                return *reinterpret_cast< std::vector<T>* >(&component_helper[i]);
+                return *reinterpret_cast<std::vector<T>*>(&component_helper[i]);
             }
         }
 
@@ -87,19 +89,18 @@ class Pool {
 
     std::map<Component*, size_t> component_ids;
 
-    void load(std::string filename);
-    void save(std::string filename);
     Component* getComponent(std::string);
-    
+
     bool hasComponent(std::string);
 
-    unsigned int getId(const Component *obj) const;
+    unsigned int getId(const Component* obj) const;
 
     template <typename T>
-    unsigned int getTypeSpecificId(const T t){
-        size_t cnt=0;
-        for(auto i : getItems<T>()){
-            if(i == t){
+    unsigned int getTypeSpecificId(const T t)
+    {
+        size_t cnt = 0;
+        for (auto i : getItems<T>()) {
+            if (i == t) {
                 return cnt;
             }
             cnt++;
@@ -110,19 +111,7 @@ class Pool {
    private:
     std::vector<Component*> components;
     std::vector<StateMachine*> state_machines;
-    //static Pool* pool;
-//    friend class boost::serialization::access;
+    // static Pool* pool;
     void setDirty();
-
-    template <class Archive>
-    void serialize(Archive& ar, const unsigned int version) {
-        for (Component* f : components) {
-            auto task = dynamic_cast<constrained_based_networks::Task*>(f);
-            if (task) {
-                std::cerr << "Writing a task" << std::endl;
-                ar&* task;
-            }
-        }
-    }
 };
 };

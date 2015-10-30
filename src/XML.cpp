@@ -105,7 +105,7 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
         assert(sub_element);
         std::string child_name = sub_element->get_attribute("name")->get_value();
         bool specialized = sub_element->get_attribute("specialized")->get_value() == "true";
-        int child_id = atoi(sub_element->get_attribute("id")->get_value().c_str());
+        unsigned int child_id = (unsigned int) atoi(sub_element->get_attribute("id")->get_value().c_str());
         auto child_component = ensureComponentAvailible(pool, child_name, root);
         assert(child_component);
         if (specialized) {
@@ -404,7 +404,7 @@ bool XML::save(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std:
     return true;
 }
 
-void XML::addSpecialization(Pool* pool, Component* comp, xmlpp::Element* const root)
+void XML::addSpecialization(Component* comp, xmlpp::Element* const root)
 {
     if (auto spec = dynamic_cast<SpecializedComponentBase*>(comp)) {
         root->set_attribute("specialized", "true");
@@ -441,7 +441,7 @@ bool XML::save(Pool* pool, const std::string filename)
         if (auto sm = dynamic_cast<StateMachine*>(component)) {
             auto smNode = rootNode->add_child("state_machine");
             smNode->set_attribute("name", sm->getName());
-            addSpecialization(pool, component, smNode);
+            addSpecialization(component, smNode);
 
             // this should be valid because the transition 0 is by default the starting state, and the 1 (not 0) child is the target state to enter
             // 0 and 2 are the SM itselfe
@@ -499,7 +499,7 @@ bool XML::save(Pool* pool, const std::string filename)
             }
         } else if (auto composition = dynamic_cast<Composition*>(component)) {
             auto cNode = rootNode->add_child("composition");
-            addSpecialization(pool, component, cNode);
+            addSpecialization(component, cNode);
             cNode->set_attribute("name", composition->getName());
             cNode->set_attribute("active", composition->isActive() ? "true" : "false");
             for (auto e : composition->getEvents()) {
@@ -523,7 +523,7 @@ bool XML::save(Pool* pool, const std::string filename)
             }
         } else if (auto task = dynamic_cast<Task*>(component)) {
             auto cNode = rootNode->add_child("task");
-            addSpecialization(pool, component, cNode);
+            addSpecialization(component, cNode);
             cNode->set_attribute("active", task->isActive() ? "true" : "false");
             cNode->set_attribute("name", task->getName());
             for (auto e : task->getEvents()) {

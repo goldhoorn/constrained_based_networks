@@ -7,6 +7,7 @@
 #include <gecode/search.hh>
 #include "Pool.hpp"
 #include <graph_analysis/GraphAnalysis.hpp>
+#include <graph_analysis/DirectedGraphInterface.hpp>
 
 namespace constrained_based_networks
 {
@@ -25,7 +26,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
     /*Empty constructor should not be used, but needed for GraphClass */
     ConfiguredComponent()
     {
-        component=0;
+        component = 0;
         underlaying_name = "UNDEF";
     }
 
@@ -44,11 +45,13 @@ class ConfiguredComponent : public graph_analysis::Vertex
         return cc;
     }
 
-    std::string serializeName(){
+    std::string serializeName()
+    {
         return underlaying_name;
     }
-    void deserializeName(std::string n){
-        underlaying_name=n;
+    void deserializeName(std::string n)
+    {
+        underlaying_name = n;
     }
 
     std::string serializeConfig()
@@ -106,7 +109,8 @@ class ConfiguredComponent : public graph_analysis::Vertex
     void deSerializeConfig(std::string input)
     {
         std::stringstream ifs(input);
-        int count, min, max;
+        int min, max;
+        size_t count;
         std::string name;
         ifs >> count;
         for (size_t i = 0; i < count; ++i) {
@@ -135,14 +139,14 @@ class ConfiguredComponent : public graph_analysis::Vertex
     }
 
     ConfiguredComponent(Component* underlaying_component, std::map<std::string, Gecode::FloatVar> f, std::map<std::string, Gecode::BoolVar> b, std::map<std::string, Gecode::IntVar> i,
-                        std::map<std::string, Gecode::IntVar> s, std::shared_ptr<std::map<std::string, unsigned int>> sh)
+                        std::map<std::string, Gecode::IntVar> s, std::shared_ptr<std::map<std::string, int>> sh)
         : underlaying_name(underlaying_component->getName())
     {
         component = underlaying_component;
-        //std::cout << "Debug for " << underlaying_component->getName() << std::endl;
+        // std::cout << "Debug for " << underlaying_component->getName() << std::endl;
         // string_name << component->toString() << std::endl;
         for (auto j : i) {
-            //std::cout << "\t-" << j.first << j.second << std::endl;
+            // std::cout << "\t-" << j.first << j.second << std::endl;
             int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
         }
         for (auto j : f) {
@@ -167,12 +171,11 @@ class ConfiguredComponent : public graph_analysis::Vertex
         }
     }
 
-    Component *component;
+    Component* component;
     virtual std::string getClassName() const
     {
         return "constrained_based_networks::ConfiguredComponent";
     }
-
 
     std::string toString() const
     {
@@ -251,7 +254,7 @@ class InstanceSolution : public Gecode::Space
     /**
      * print support for given outputstream
      */
-    void printToStream(std::ostream& os, bool full = false) const;
+    void printToStream(std::ostream& os) const;
     void printToDot(std::ostream& os) const;
 
     static void print(const Space& home, const Gecode::BrancherHandle& bh, unsigned int a, Gecode::IntVar x, int i, const int& n, std::ostream& o);
@@ -285,7 +288,7 @@ class InstanceSolution : public Gecode::Space
     std::vector<std::map<std::string, Gecode::IntVar>> string_config;
     Gecode::BoolVarArray interleaved;
 
-    std::shared_ptr<std::map<std::string, unsigned int>> string_helper;
+    std::shared_ptr<std::map<std::string, int>> string_helper;
 
     template <typename C>
     void setupProperties(C component, graph_analysis::Vertex::Ptr vertex, graph_analysis::BaseGraph::Ptr graph)

@@ -41,7 +41,7 @@ protected:
     void markAbstractAsInactive();
     void markActiveAsActive();
     void removeSelfCompositonsFromDepends();
-    bool markCompositionAsChildless(Composition *composition, size_t composition_id);
+    bool markCompositionAsChildless(Composition *composition);
     //Ids are the composition ids that are used within the core-root
     bool allDepsResolved(unsigned int cmp_id, std::vector<size_t> &ids);
 

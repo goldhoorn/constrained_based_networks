@@ -111,7 +111,7 @@ void ClassSolution::depsOnlyOnCmp()
 #endif
 }
 
-bool ClassSolution::markCompositionAsChildless(Composition* composition, size_t composition_id)
+bool ClassSolution::markCompositionAsChildless(Composition* composition)
 {
     if (composition->getChildren().size() == 0) {
         std::cout << "Composition (cmp id:" << composition->getID() << ", component id " << composition->getID() << "): " << composition->getName() << " is childless" << std::endl;
@@ -145,7 +145,7 @@ void ClassSolution::createConstraintsForComposition(Composition* composition)
     // auto composition_child_constraints = composition->getPossibleTaskAssignments(this);
     // std::cout << "Hallo" << __LINE__ << std::endl;
     // std::cout << "Counter vs max: " << cmp_counter << "/" << compositions.size() << std::endl;
-    markCompositionAsChildless(composition, cmp_counter);
+    markCompositionAsChildless(composition);
 
     for (size_t child_id = 0; child_id != composition->getChildren().size(); child_id++) {
         auto child = composition->getChildren()[child_id];
@@ -234,7 +234,7 @@ ClassSolution::ClassSolution(Pool* _pool)
         assert(root->getName() == "root-knot");
         if (root->getChildren().size() == 0) {
             std::cout << "Warning, root-knot has no children, this will result in a empty network" << std::endl;
-            for (size_t i = 0; i != active.size(); i++) {
+            for (int i = 0; i != active.size(); i++) {
                 // The root-knot must remain active, otherwise the solution is invalid
                 if (i != 1) {
                     // Nothign else is active
@@ -967,12 +967,16 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
 
 void ClassSolution::print(const Space& home, const BrancherHandle& bh, unsigned int a, BoolVar x, int i, const int& n, std::ostream& o)
 {
+    (void)home;
+    (void)bh;
     // const ClassSolution& c = static_cast<const ClassSolution&>(home);
     o << "foo" << a << " " << x << " " << i << " " << n << std::endl;
 }
 
 void ClassSolution::print(const Space& home, const BrancherHandle& bh, unsigned int a, IntVar x, int i, const int& n, std::ostream& o)
 {
+    (void)home;
+    (void)bh;
     // const ClassSolution& c = static_cast<const ClassSolution&>(home);
     o << "foo" << a << " " << x << " " << i << " " << n << std::endl;
     /*

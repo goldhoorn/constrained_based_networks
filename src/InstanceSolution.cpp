@@ -60,7 +60,7 @@ void InstanceSolution::gatherAllStringConfigs()
             }
         }
     }
-    string_helper = std::shared_ptr<std::map<std::string, unsigned int>>(new std::map<std::string, unsigned int>);
+    string_helper = std::shared_ptr<std::map<std::string, int>>(new std::map<std::string, int>);
     unsigned int cnt = 0;
     for (auto s : strings) {
         string_helper->insert({s, cnt++});
@@ -576,7 +576,7 @@ void InstanceSolution::printToDot(std::ostream &os) const
     }
 }
 
-void InstanceSolution::printToStream(std::ostream &os, bool full) const
+void InstanceSolution::printToStream(std::ostream &os) const
 {
     for (auto _node : graph->vertices()) {
         auto node = boost::reinterpret_pointer_cast<ComponentInstanceHelper>(_node);

@@ -4,9 +4,6 @@
 #include <sstream>
 #include <string>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-
 namespace constrained_based_networks {
 
     /**
@@ -80,16 +77,6 @@ namespace constrained_based_networks {
             ss << "[" << name << ", " << datatype << "]>>";
             return ss.str();
         }
-        friend class boost::serialization::access;
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int version){
-        /*
-            ar & inPorts;
-            ar & outPorts;
-            ar & incomingConnections;
-            ar & outgoingConnections;
-            */
-        };
     };
 
 } // end namespace constrained_based_networks

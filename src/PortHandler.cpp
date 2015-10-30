@@ -16,6 +16,7 @@ PortHandler::~PortHandler(){
 
 bool PortHandler::operator ==( const PortHandler &comp ) const
 {
+    (void)comp;
 //    return name == comp.name;
     throw std::runtime_error("Implement portHandler operator==");
     //TODO implement me
@@ -76,11 +77,11 @@ const std::vector<OutputPort*>& PortHandler::getOutPorts() const
 
 const InputPort& PortHandler::getInputPortByName(const std::string& name) const
 {
-    for(int i = 0; i < inPorts.size(); i++)
+    for(const auto &p : inPorts)
     {
-        if(inPorts[i]->name == name)
+        if(p->name == name)
         {
-            return *inPorts[i];
+            return *p;
         }
     }
     throw std::runtime_error("PortHandler getInputPortByName: no port named " + name);
@@ -88,11 +89,11 @@ const InputPort& PortHandler::getInputPortByName(const std::string& name) const
 
 const OutputPort& PortHandler::getOutputPortByName(const std::string& name) const
 {
-    for(int i = 0; i < outPorts.size(); i++)
+    for(const auto &p : outPorts)
     {
-        if(outPorts[i]->name == name)
+        if(p->name == name)
         {
-            return *outPorts[i];
+            return *p;
         }
     }
     throw std::runtime_error("PortHandler getOutputPortByName: no port named " + name);

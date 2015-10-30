@@ -28,7 +28,7 @@ namespace constrained_based_networks
         static bool save(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std::string original_file, std::string outfile);
         static bool addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger> > > instance_solutions, std::string original_file, std::string outfile);
         static Component* ensureComponentAvailible(Pool *pool, std::string component_name, xmlpp::Node* const root);
-        static void addSpecialization(Pool *pool, Component *comp, xmlpp::Element* const root);
+        static void addSpecialization(Component *comp, xmlpp::Element* const root);
     };
 };
 
