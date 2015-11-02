@@ -105,7 +105,7 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
         assert(sub_element);
         std::string child_name = sub_element->get_attribute("name")->get_value();
         bool specialized = sub_element->get_attribute("specialized")->get_value() == "true";
-        unsigned int child_id = (unsigned int) atoi(sub_element->get_attribute("id")->get_value().c_str());
+        unsigned int child_id = (unsigned int)atoi(sub_element->get_attribute("id")->get_value().c_str());
         auto child_component = ensureComponentAvailible(pool, child_name, root);
         assert(child_component);
         if (specialized) {
@@ -205,6 +205,14 @@ Pool* XML::load(std::string filename)
     parser.parse_file(filename);
     if (parser) {
         const auto pNode = parser.get_document()->get_root_node();
+
+        {
+            auto mFilename = pNode->get_first_child("initial_model");
+            assert(mFilename);
+            const xmlpp::Element* nFilename = dynamic_cast<const xmlpp::Element*>(mFilename);
+            assert(nFilename);
+            p->source_of_model = nFilename->get_attribute("file")->get_value();
+        }
 
         // Import all DataServices
         for (const auto& child : pNode->get_children("data_service")) {
@@ -344,6 +352,12 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
     assert(parser);
     const auto orginal_root = parser.get_document()->get_root_node();
     auto elem = doc.create_root_node_by_import(orginal_root, true);  // Create a document which is based on this
+    std::string most_uplevel_orginal_model;
+    {
+        auto mFilename = orginal_root->get_first_child("initial_model");
+        const xmlpp::Element* nFilename = dynamic_cast<const xmlpp::Element*>(mFilename);
+        most_uplevel_orginal_model = nFilename->get_attribute("file")->get_value();
+    }
     unsigned int i = 0;
     std::vector<TransitionHelper> calculationHelper;
     for (const auto& solution : instance_solutions) {
@@ -356,9 +370,8 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
         solution_node->set_attribute("id", std::to_string(i));
         int cnt2 = 0;
 
-
         for (const auto& trigger : solution.second) {
-//            if (trigger.causing_event == "aborted" || trigger.causing_event == "internal_error" || trigger.causing_event == "fatal_error") continue;
+            //            if (trigger.causing_event == "aborted" || trigger.causing_event == "internal_error" || trigger.causing_event == "fatal_error") continue;
 
             cnt2++;
             std::cout << "processing: " << i << "/" << instance_solutions.size() << " " << cnt2 << "/" << solution.second.size() << std::endl;
@@ -370,31 +383,31 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
                 transition_node->set_attribute("resulting-pool", "");
                 continue;
             } else {
-                    bool found=false;
-                for(auto e : calculationHelper){
-                    if(e.th == trigger){
+                bool found = false;
+                for (auto e : calculationHelper) {
+                    if (e.th == trigger) {
                         std::cout << "!!!!!!!!!-------------------------------  Found a previous generated solution for our problem";
                         transition_node->set_attribute("resulting-pool", e.filename);
-                        found=true;
+                        found = true;
                         continue;
                     }
                 }
-                if(found) continue;
+                if (found) continue;
                 std::stringstream event_follow_network_filename;
                 event_follow_network_filename << s.str() << "-" << trigger.causing_component->getName() << "-" << trigger.causing_event;
                 std::cout << "We have a follow network for: " << trigger.causing_component->getName() << " -> " << trigger.causing_event << " And file " << event_follow_network_filename.str()
                           << std::endl;
                 // First we load the orginal pool, then we add our components we have to create in order to re-run our network resolution
-                Pool* pool = XML::load(original_file);
+                Pool* pool = XML::load(most_uplevel_orginal_model);
                 EventModelHandler::createFollowPool(trigger, pool);
                 XML::save(pool, event_follow_network_filename.str());
-                calculationHelper.push_back({trigger, pool,event_follow_network_filename.str()});
+                calculationHelper.push_back({trigger, pool, event_follow_network_filename.str()});
                 transition_node->set_attribute("resulting-pool", event_follow_network_filename.str());
-                //delete pool;
+                // delete pool;
             }
         }
     }
-    for(auto p : calculationHelper){
+    for (auto p : calculationHelper) {
         delete p.pool;
     }
     doc.write_to_file_formatted(outfile);
@@ -455,6 +468,13 @@ bool XML::save(Pool* pool, const std::string filename)
     auto rootNode = doc.create_root_node("root");
     for (auto component : pool->getItems<Component*>()) {
         if (component->getName() == "root-knot" || component->getName() == "NIL-Task") continue;
+
+        {
+            if (pool->source_of_model.empty()) {
+                pool->source_of_model = filename;
+            }
+            rootNode->add_child("state_machine")->set_attribute("file", pool->source_of_model);
+        }
 
         if (auto sm = dynamic_cast<StateMachine*>(component)) {
             auto smNode = rootNode->add_child("state_machine");

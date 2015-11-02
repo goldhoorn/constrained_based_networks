@@ -27,13 +27,16 @@ void InstanceSolution::gatherAllStringConfigs()
     std::set<std::string> strings;
     strings.insert("");
     for (const auto &v : graph->getAllVertices()) {
+        std::cout << "Hallo " << v->toString() << std::endl;
         auto current_graph_vertex = boost::static_pointer_cast<ComponentInstanceHelper>(v);
         auto component = dynamic_cast<Component *>(current_graph_vertex->component.get());
         if (!component) throw std::runtime_error("Cannot get component from graph");
         auto spec_component = dynamic_cast<SpecializedComponentBase *>(component);
 
         for (const auto &prop : component->getProperties()) {
+            std::cout << "\t- " << prop.name << std::endl;
             if (prop.t == ConfigurationModel::STRING) {
+                std::cout << "Have a string config with name " << prop.name << " for " << v->toString() << std::endl;
 
                 // Save all possible options from the config
                 for (const auto &section : component->getSections()) {
@@ -143,7 +146,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
             std::cout << "ERR(3): " << c->getName() << std::endl;
         } else {
             std::cout << "WFT(3): " << v->getClassName() << std::endl;
-            // assert(false);
+            assert(false);
         }
     }
 
@@ -671,7 +674,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
         // Got a solution print statistics
         auto c = e.statistics();
         std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
-
+        s->printToStream(std::cout);
         graph_analysis::BaseGraph::Ptr out_graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
         s->build_tree(out_graph, graph_analysis::Vertex::Ptr());
         erg.push_back(out_graph);

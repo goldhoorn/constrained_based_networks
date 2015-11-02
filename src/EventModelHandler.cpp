@@ -89,6 +89,7 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
 std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirements(unsigned int causing_component, std::string causing_event)
 {
     std::vector<graph_analysis::BaseGraph::Ptr> res;
+#warning we have to figure out the closest component which is affected to a component not all in the tree
 
     // First we have to check if a state-machine is affected by this change.
     // Otherwise... TODO rething is this is sensful which affectec component we search

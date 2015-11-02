@@ -206,6 +206,7 @@ class ComponentInstanceHelper : public graph_analysis::Vertex
     }
     static graph_analysis::Vertex::Ptr make(graph_analysis::Vertex::Ptr o)
     {
+        //std::cout << o->getClassName() << std::endl;
         auto c = new ComponentInstanceHelper(o);
         auto p = c->getPtr();
         assert(p.get());

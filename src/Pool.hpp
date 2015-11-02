@@ -23,6 +23,8 @@ class Pool
     ~Pool();
     Pool(bool empty = false);
 
+    std::string source_of_model;
+
     Pool* clone();
 
     //std::string (*dupFunction)(constrained_based_networks::Pool*);
