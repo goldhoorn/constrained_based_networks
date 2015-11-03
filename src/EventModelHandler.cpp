@@ -86,10 +86,22 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
     // std::cout << "Jeha i'm done" << std::endl;
 }
 
+double EventModelHandler::distance(graph_analysis::Vertex::Ptr source, graph_analysis::Vertex::Ptr target, double depth){
+    for(auto k : instancitaed_network->outEdges(source)){
+        if( k->getTargetVertex() == target )
+            return depth+1;
+    }
+    for(auto k : instancitaed_network->outEdges(source)){
+        auto d= distance(k->getTargetVertex(),target,depth+1);
+        if(d) return d;
+    }
+    return 0;
+}
+
 std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirements(unsigned int causing_component, std::string causing_event)
 {
     std::vector<graph_analysis::BaseGraph::Ptr> res;
-#warning we have to figure out the closest component which is affected to a component not all in the tree
+    std::vector<graph_analysis::Vertex::Ptr> affected_vertices;
 
     // First we have to check if a state-machine is affected by this change.
     // Otherwise... TODO rething is this is sensful which affectec component we search
@@ -127,8 +139,30 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
 
 //            std::cerr << "THIS IS GOOD" << std::endl;
             std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
+            affected_vertices.push_back(instancitaed_network->getVertex(affected_component_id));
             res.push_back(graph);
         }
+    }
+
+    if(res.size() > 1){
+        double dist = std::numeric_limits<double>::max();
+        size_t final_id=0;
+        std::cout << "We have multiple affectd components, reduce them to the component which is the closest one to the original one " << affected_vertices.size() << std::endl;
+        auto causing = instancitaed_network->getVertex(causing_component);
+        for(size_t i=0;i<affected_vertices.size();++i){
+            auto c = affected_vertices[i];
+            auto dist_new = distance(causing,c);
+            std::cout << "Current distance is: " << dist << " candidate is: " << dist_new << std::endl;
+            if(dist_new < dist){
+                final_id = 0;
+                dist = dist_new;
+            }
+        }
+        assert(dist != std::numeric_limits<double>::max());
+        assert(dist != 0);
+        auto result = res[final_id];
+        res.clear();
+        res.push_back(result);
     }
     return res;
 }

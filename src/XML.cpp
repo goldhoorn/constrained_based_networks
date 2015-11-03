@@ -8,6 +8,7 @@
 #include "SpecializedComponent.hpp"
 #include "EventModelHandler.hpp"
 #include <graph_analysis/GraphIO.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace constrained_based_networks;
 
@@ -354,9 +355,13 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
     auto elem = doc.create_root_node_by_import(orginal_root, true);  // Create a document which is based on this
     std::string most_uplevel_orginal_model;
     {
+        boost::filesystem::path path(original_file);
         auto mFilename = orginal_root->get_first_child("initial_model");
         const xmlpp::Element* nFilename = dynamic_cast<const xmlpp::Element*>(mFilename);
-        most_uplevel_orginal_model = nFilename->get_attribute("file")->get_value();
+        path.remove_filename();
+        path+="/";
+        path+=boost::filesystem::path(nFilename->get_attribute("file")->get_value());
+        most_uplevel_orginal_model = path.string();
     }
     unsigned int i = 0;
     std::vector<TransitionHelper> calculationHelper;
@@ -466,15 +471,15 @@ bool XML::save(Pool* pool, const std::string filename)
 
     xmlpp::Document doc;
     auto rootNode = doc.create_root_node("root");
+    {
+        if (pool->source_of_model.empty()) {
+            pool->source_of_model = filename;
+        }
+        rootNode->add_child("initial_model")->set_attribute("file", pool->source_of_model);
+    }
     for (auto component : pool->getItems<Component*>()) {
         if (component->getName() == "root-knot" || component->getName() == "NIL-Task") continue;
 
-        {
-            if (pool->source_of_model.empty()) {
-                pool->source_of_model = filename;
-            }
-            rootNode->add_child("state_machine")->set_attribute("file", pool->source_of_model);
-        }
 
         if (auto sm = dynamic_cast<StateMachine*>(component)) {
             auto smNode = rootNode->add_child("state_machine");
