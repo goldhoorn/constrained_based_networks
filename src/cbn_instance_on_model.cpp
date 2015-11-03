@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
         graph->addEdge(e);
     }
 
+    std::cout << "Start to create instance-solutions" << std::endl;
     auto is = InstanceSolution::babSearch(graph);
     std::cout << "All instance solutions are calculated" << std::endl;
 
@@ -104,7 +105,7 @@ int main(int argc, char *argv[])
         results.push_back({solution,events});
     }
     std::cout << "Calculated all follow solutions " << results.size() << std::endl;
-    XML::addInstanceSolutions(instance_id,results,base_network_file,(base_network_file + std::string("-instance-solution-for-class-") + std::to_string(instance_id)));
-
+    XML::addInstanceSolutions(instance_id,results,base_network_file);
+    std::cout << "Finish" << std::endl;
 return 0;
 }

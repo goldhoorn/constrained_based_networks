@@ -61,13 +61,16 @@ int main(int argc, char *argv[])
         }
     }
     auto solutions = ClassSolution::babSearch(pool);
+    /*
     std::stringstream s;
     s << base_network_file;
     for(auto c : start_components){
      s << "-" << c ;
     }
     s << "-class-result.xml";
-    XML::save(solutions,base_network_file,s.str());
+    */
+    std::string filename;
+    XML::saveClassSolutions(solutions,base_network_file,filename,true);
     /*
     for (auto solution : ClassSolution::babSearch(pool)) {
         std::stringstream s;
@@ -77,7 +80,7 @@ int main(int argc, char *argv[])
     }
     std::cout << "Finished class solution, found " << i << " Networks" << std::endl;
     */
-    std::cout << "Ende" << std::endl;
+    std::cout << "Created instance solutions file: " << filename << std::endl;
     return 0;
 }
 

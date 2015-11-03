@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <libxml++/libxml++.h>
 #include "XML.hpp"
 #include "Pool.hpp"
@@ -9,6 +10,9 @@
 #include "EventModelHandler.hpp"
 #include <graph_analysis/GraphIO.hpp>
 #include <boost/filesystem.hpp>
+#include <openssl/md5.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 using namespace constrained_based_networks;
 
@@ -344,37 +348,38 @@ std::vector<ClassSolutionImport> XML::loadClassSolutions(std::string filename)
     return res;
 }
 
-bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> instance_solutions, std::string original_file,
-                               std::string outfile)
+bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> instance_solutions, std::string original_file)
 {
+    // Create filename for the instance solution file
+    std::string instanceSolutionFilename = original_file + "-class_solution-" + std::to_string(classSolutionID);
+
+    std::string basePath = boost::filesystem::path(original_file).remove_filename().string();
+
     xmlpp::Document doc;
     xmlpp::DomParser parser;
     parser.parse_file(original_file);
     assert(parser);
     const auto orginal_root = parser.get_document()->get_root_node();
     auto elem = doc.create_root_node_by_import(orginal_root, true);  // Create a document which is based on this
-    std::string most_uplevel_orginal_model;
-    {
-        boost::filesystem::path path(original_file);
-        auto mFilename = orginal_root->get_first_child("initial_model");
-        const xmlpp::Element* nFilename = dynamic_cast<const xmlpp::Element*>(mFilename);
-        path.remove_filename();
-        path+="/";
-        path+=boost::filesystem::path(nFilename->get_attribute("file")->get_value());
-        most_uplevel_orginal_model = path.string();
-    }
+
+    auto mFilename = orginal_root->get_first_child("initial_model");
+    const xmlpp::Element* nFilename = dynamic_cast<const xmlpp::Element*>(mFilename);
+    std::string most_uplevel_orginal_model = basePath + "/" + nFilename->get_attribute("file")->get_value();
+
     unsigned int i = 0;
     std::vector<TransitionHelper> calculationHelper;
     for (const auto& solution : instance_solutions) {
+
+        std::string instanceSolutionNetworkFilename = basePath + "/data/" + boost::filesystem::path(instanceSolutionFilename).filename().string() + "-instance-" + std::to_string(i);
+        std::cout << "Creating instance solution network file: " << instanceSolutionNetworkFilename << std::endl;
         auto solution_node = elem->add_child("solution");
-        std::stringstream s;
-        s << outfile << "-instance_network-" << i++;
-        solution_node->set_attribute("filename", s.str());
+
+        solution_node->set_attribute("filename", instanceSolutionNetworkFilename);
         solution_node->set_attribute("class_solution_id", std::to_string(classSolutionID));
-        graph_analysis::io::GraphIO::write(s.str(), solution.first, graph_analysis::representation::GEXF);
+        graph_analysis::io::GraphIO::write(instanceSolutionNetworkFilename, solution.first, graph_analysis::representation::GEXF);
         solution_node->set_attribute("id", std::to_string(i));
         int cnt2 = 0;
-
+        ++i;
         for (const auto& trigger : solution.second) {
             //            if (trigger.causing_event == "aborted" || trigger.causing_event == "internal_error" || trigger.causing_event == "fatal_error") continue;
 
@@ -398,16 +403,18 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
                     }
                 }
                 if (found) continue;
-                std::stringstream event_follow_network_filename;
-                event_follow_network_filename << s.str() << "-" << trigger.causing_component->getName() << "-" << trigger.causing_event;
-                std::cout << "We have a follow network for: " << trigger.causing_component->getName() << " -> " << trigger.causing_event << " And file " << event_follow_network_filename.str()
-                          << std::endl;
-                // First we load the orginal pool, then we add our components we have to create in order to re-run our network resolution
                 Pool* pool = XML::load(most_uplevel_orginal_model);
                 EventModelHandler::createFollowPool(trigger, pool);
-                XML::save(pool, event_follow_network_filename.str());
-                calculationHelper.push_back({trigger, pool, event_follow_network_filename.str()});
-                transition_node->set_attribute("resulting-pool", event_follow_network_filename.str());
+                std::string event_follow_network_filename = basePath + "/data/";
+                XML::save(pool, event_follow_network_filename, true);
+
+                std::cout << "We have a follow network for: " << trigger.causing_component->getName() << " -> " << trigger.causing_event << " And file " << event_follow_network_filename
+                          << std::endl;
+                // First we load the orginal pool, then we add our components we have to create in order to re-run our network resolution
+                std::cout << "Should load: " << most_uplevel_orginal_model << std::endl;
+
+                calculationHelper.push_back({trigger, pool, event_follow_network_filename});
+                transition_node->set_attribute("resulting-pool", event_follow_network_filename);
                 // delete pool;
             }
         }
@@ -415,11 +422,23 @@ bool XML::addInstanceSolutions(int classSolutionID, std::vector<std::pair<graph_
     for (auto p : calculationHelper) {
         delete p.pool;
     }
-    doc.write_to_file_formatted(outfile);
+    doc.write_to_file_formatted(instanceSolutionFilename);
     return true;
 }
 
-bool XML::save(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std::string original_file, std::string outfile)
+std::string XML::toMD5(const std::string input)
+{
+    unsigned char result[MD5_DIGEST_LENGTH];
+    MD5((unsigned char*)input.c_str(), input.size(), result);
+    std::stringstream str;
+    str << std::hex << std::setfill('0');
+    for (size_t i = 0; i < MD5_DIGEST_LENGTH; ++i) {
+        str << std::setw(2) << static_cast<unsigned>(result[i]);
+    }
+    return str.str();
+}
+
+bool XML::saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std::string original_file, std::string& outfile, bool md5)
 {
     xmlpp::Document doc;
     xmlpp::DomParser parser;
@@ -428,15 +447,35 @@ bool XML::save(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std:
     const auto orginal_root = parser.get_document()->get_root_node();
     auto elem = doc.create_root_node_by_import(orginal_root, true);  // Create a document which is based on this
     unsigned int i = 0;
+
+    boost::filesystem::path p(original_file);
+    p.remove_filename();
+    p += "/data/";
+    mkdir(p.c_str(), 0755);
+
     for (auto solution : class_solutions) {
         auto solution_node = elem->add_child("class_instance");
         std::stringstream s;
-        s << outfile << "-class_network-" << i;
+        s << p.string() << boost::filesystem::path(original_file).filename().string() << "-class_network-" << i;
+        std::cout << "Create instance solution : " << s.str() << std::endl;
         solution_node->set_attribute("filename", s.str());
         graph_analysis::io::GraphIO::write(s.str(), solution, graph_analysis::representation::GEXF);
         solution_node->set_attribute("id", std::to_string(i));
+        ++i;
     }
-    doc.write_to_file_formatted(outfile);
+
+    if (!md5) {
+        doc.write_to_file_formatted(outfile);
+    } else {
+        std::string xml_result = doc.write_to_string();
+        outfile = toMD5(doc.write_to_string());
+        boost::filesystem::path p(original_file);
+        p.remove_filename();
+        p += "/";
+        p += outfile;
+        std::cout << "Write to: " << p.string() << std::endl;
+        doc.write_to_file_formatted(p.string());
+    }
     return true;
 }
 
@@ -457,7 +496,7 @@ void XML::addSpecialization(Component* comp, xmlpp::Element* const root)
     }
 }
 
-bool XML::save(Pool* pool, const std::string filename)
+bool XML::save(Pool* pool, std::string& filename, bool md5)
 {
     /*
     for (auto component : pool->getItems<Component*>()) {
@@ -479,7 +518,6 @@ bool XML::save(Pool* pool, const std::string filename)
     }
     for (auto component : pool->getItems<Component*>()) {
         if (component->getName() == "root-knot" || component->getName() == "NIL-Task") continue;
-
 
         if (auto sm = dynamic_cast<StateMachine*>(component)) {
             auto smNode = rootNode->add_child("state_machine");
@@ -589,6 +627,12 @@ bool XML::save(Pool* pool, const std::string filename)
             throw std::runtime_error("Got unknown component " + component->getName());
         }
     }
-    doc.write_to_file_formatted(filename);
+
+    if (!md5) {
+        doc.write_to_file_formatted(filename);
+    } else {
+        filename = filename + "/" + toMD5(doc.write_to_string());
+        doc.write_to_file_formatted(filename);
+    }
     return true;
 }
