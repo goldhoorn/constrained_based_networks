@@ -19,9 +19,10 @@ int main(int argc, char *argv[])
 {
     char c;
     char *base_network_file = 0;
-    std::vector<std::string> start_components;
+    std::list<std::string> start_components;
+    std::vector<unsigned int> ids;
 
-    while ((c = getopt(argc, argv, "c:f:")) != -1) {
+    while ((c = getopt(argc, argv, "c:f:i:")) != -1) {
         switch (c) {
             case 'c':
                 start_components.push_back(optarg);
@@ -29,15 +30,19 @@ int main(int argc, char *argv[])
             case 'f':
                 base_network_file = optarg;
                 break;
+            case 'i':
+                ids.push_back(atoi(optarg));
+                break;
             default:
-                printf("On default block\n");
+                printHelp();
         }
     }
     if (!base_network_file) {
         printHelp();
     }
 
-    Pool *pool = XML::load(base_network_file);
+    Pool *pool = XML::load(XML::loadInstanceSolution(base_network_file,ids));
+
     for (auto s : start_components) {
         if (!pool->hasComponent(s)) {
             std::cerr << "Cannot start component: " << s << ", it does not exist in the pool" << std::endl;
@@ -69,8 +74,7 @@ int main(int argc, char *argv[])
     }
     s << "-class-result.xml";
     */
-    std::string filename;
-    XML::saveClassSolutions(solutions,base_network_file,filename,true);
+    XML::saveClassSolutions(solutions,base_network_file, start_components, ids);
     /*
     for (auto solution : ClassSolution::babSearch(pool)) {
         std::stringstream s;
@@ -80,7 +84,7 @@ int main(int argc, char *argv[])
     }
     std::cout << "Finished class solution, found " << i << " Networks" << std::endl;
     */
-    std::cout << "Created instance solutions file: " << filename << std::endl;
+    std::cout << "Finished" << std::endl;
     return 0;
 }
 

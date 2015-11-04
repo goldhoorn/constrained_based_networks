@@ -37,12 +37,12 @@ int main(int argc, char *argv[])
     char c;
     char *base_network_file = 0;
     std::vector<std::string> start_components;
-    int instance_id = -1;
+    std::vector<unsigned int> ids;
 
     while ((c = getopt(argc, argv, "f:i:")) != -1) {
         switch (c) {
             case 'i':
-                instance_id = atoi(optarg);
+                ids.push_back(atoi(optarg));
                 break;
             case 'f':
                 base_network_file = optarg;
@@ -51,22 +51,15 @@ int main(int argc, char *argv[])
                 printf("On default block\n");
         }
     }
-    if (!base_network_file || instance_id == -1) {
+    if (!base_network_file || ids.size() == 0) {
         printHelp();
     }
 
     Pool *pool = XML::load(base_network_file);
-    auto instances = XML::loadClassSolutions(base_network_file);
+    auto instance_graph_filename = XML::loadClassSolution(base_network_file, ids);
 
-    std::string instance_graph_filename;
-    for (auto i : instances) {
-        if (i.solution_id == instance_id) {
-            instance_graph_filename = i.graph_filename + std::string(".gexf");
-            break;
-        }
-    }
     if (instance_graph_filename.empty()) {
-        std::cout << "Cannot find ClassSolution id " << instance_id << std::endl;
+        std::cout << "Cannot find ClassSolution with the given indexes" << std::endl;
         printHelp();
     }
 
@@ -89,7 +82,7 @@ int main(int argc, char *argv[])
 
     std::cout << "Start to create instance-solutions" << std::endl;
     auto is = InstanceSolution::babSearch(graph);
-    std::cout << "All instance solutions are calculated" << std::endl;
+    std::cout << "All " << is.size() << " instance solutions are calculated" << std::endl;
 
     std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> results;
     for (auto solution : is) {
@@ -105,7 +98,7 @@ int main(int argc, char *argv[])
         results.push_back({solution,events});
     }
     std::cout << "Calculated all follow solutions " << results.size() << std::endl;
-    XML::addInstanceSolutions(instance_id,results,base_network_file);
+    XML::addInstanceSolutions(base_network_file, results, ids);
     std::cout << "Finish" << std::endl;
-return 0;
+    return 0;
 }
