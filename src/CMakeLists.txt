@@ -71,6 +71,8 @@ rock_executable(cbn_class_on_model SOURCES cbn_class_on_model.cpp DEPS ${PROJECT
 
 rock_executable(cbn_instance_on_model cbn_instance_on_model.cpp DEPS ${PROJECT_NAME})
 
+rock_executable(cbn_master_tool cbn_master_tool.cpp DEPS ${PROJECT_NAME})
+
 #rock_executable(${PROJECT_NAME}-test
 #        SOURCES ClassSolution.cpp
 #        DEPS ${PROJECT_NAME}

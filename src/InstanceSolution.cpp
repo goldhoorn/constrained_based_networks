@@ -679,7 +679,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
         erg.push_back(out_graph);
         best = s;
 
-        if ((erg.size() == 100)) { //TODO hack
+        if ((erg.size() == 2)) { //TODO hack
             auto c = e.statistics();
             std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
             //        s->printToStream(std::cout);

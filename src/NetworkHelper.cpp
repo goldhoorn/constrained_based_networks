@@ -44,7 +44,7 @@ void NetworkHelper::createClassSolution(std::string core_model, std::list<std::s
     }
     auto solutions = ClassSolution::babSearch(pool);
     XML::saveClassSolutions(solutions,core_model, additionalRequirements, ids);
-
+    delete pool;
 }
 
 void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<unsigned int> ids){
@@ -87,6 +87,9 @@ void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<u
     std::cout << "Calculated all follow solutions " << results.size() << std::endl;
     XML::addInstanceSolutions(core_model, results, ids);
     std::cout << "Finish" << std::endl;
-
+    delete pool;
 }
 
+bool NetworkHelper::getNextUncalculatedIDs(std::string core_model, std::vector<unsigned int> &ids){
+    return XML::findUnresolvedIDs(core_model,ids);
+}
