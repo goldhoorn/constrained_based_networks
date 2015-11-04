@@ -13,6 +13,7 @@ set(SOURCES
    PortHandler.cpp
    StateMachine.cpp
    InstanceSolution.cpp
+   NetworkHelper.cpp
    Logger.cpp
    EventModelHandler.cpp
     XML.cpp
@@ -22,6 +23,7 @@ set(SOURCES
 set(HEADERS
     XML.hpp
    Pool.hpp
+   NetworkHelper.hpp
    Composition.hpp
    Task.hpp
    DataService.hpp
