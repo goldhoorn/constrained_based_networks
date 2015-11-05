@@ -1026,6 +1026,12 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
         // std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         // std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         best = s;
+        if ((erg.size() == 2)) { //TODO hack
+            auto c = e.statistics();
+            std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
+            std::cerr << "Warn cancel search because we have too much solutions" << std::endl;
+            break;
+        }
     }
 
     // throw exception if there is no solution

@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+
 using namespace constrained_based_networks;
 
 pthread_mutex_t XML::mutex;
@@ -430,6 +431,7 @@ bool XML::findUnresolvedIDs(std::string filename, std::vector<unsigned int>& res
     return true;
 }
 
+
 xmlpp::Element* XML::findNodeForID(xmlpp::Element* root, const std::vector<unsigned int>& ids)
 {
     const char* attribute_name[] = {"class_solution", "instance_solution", "transition"};
@@ -480,6 +482,9 @@ std::string XML::loadSolution(std::string filename, std::vector<unsigned int> id
     assert(v);
     return boost::filesystem::path(filename).remove_filename().string() + "/" + v->get_value();
 }
+
+
+
 
 bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> instance_solutions, std::vector<unsigned int> ids)
 {
@@ -578,6 +583,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
     }
     doc.create_root_node_by_import(rootNode, true);
     doc.write_to_file_formatted(genDBFilename(filename));
+    sync();
     pthread_mutex_unlock(&mutex);
     return true;
 }
@@ -720,6 +726,7 @@ bool XML::saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_s
         doc.write_to_file_formatted(p.string());
     }
 #endif
+    sync();
     pthread_mutex_unlock(&mutex);
     return true;
 }
