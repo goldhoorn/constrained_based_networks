@@ -1,6 +1,9 @@
 #include <unistd.h>
 #include <iostream>
 #include "NetworkHelper.hpp"
+#include <stdexcept>
+
+#define NUM_THREADS 4
 
 using namespace constrained_based_networks;
 
@@ -10,11 +13,44 @@ void printHelp()
     exit(-1);
 }
 
+char* base_network_file;
+
+volatile bool thread_alive[NUM_THREADS];
+
+pthread_mutex_t mutex_for_list;
+std::list<std::vector<unsigned int>> currently_processed_ids;
+
+std::vector<unsigned int> params[NUM_THREADS];
+
+void* runClassThread(void* id_)
+{
+    long int id = (long int)id_;
+    std::cout << "Starting " << id << std::endl;
+    NetworkHelper::createClassSolution(base_network_file, std::list<std::string>(), params[id]);
+    pthread_mutex_lock(&mutex_for_list);
+    currently_processed_ids.remove(params[id]);
+    pthread_mutex_unlock(&mutex_for_list);
+    thread_alive[id] = false;
+    return 0;
+}
+
+void* runInstanceThread(void* id_)
+{
+    long int id = (long int)id_;
+    std::cout << "Starting " << id << std::endl;
+    NetworkHelper::createInstanceSolution(base_network_file, params[id]);
+    pthread_mutex_lock(&mutex_for_list);
+    currently_processed_ids.remove(params[id]);
+    pthread_mutex_unlock(&mutex_for_list);
+    thread_alive[id] = false;
+    return 0;
+}
+
 // main test function
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     char c;
-    char *base_network_file = 0;
+    base_network_file = 0;
     bool list_unresolved = false;
 
     while ((c = getopt(argc, argv, "lf:")) != -1) {
@@ -33,9 +69,13 @@ int main(int argc, char *argv[])
         printHelp();
     }
 
+    for (unsigned int i = 0; i < NUM_THREADS; ++i) {
+        thread_alive[i] = false;
+    }
+
     std::vector<unsigned int> ids;
     if (list_unresolved) {
-        if (NetworkHelper::getNextUncalculatedIDs(base_network_file, ids)) {
+        if (NetworkHelper::getNextUncalculatedIDs(base_network_file, ids, currently_processed_ids)) {
             std::cout << "Unresolved ids: " << std::endl;
             for (auto id : ids) {
                 std::cout << " " << id;
@@ -47,19 +87,50 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    pthread_t threads[NUM_THREADS];
+
     // Okay we don't should list only, then we do a full resolution
-    while (NetworkHelper::getNextUncalculatedIDs(base_network_file, ids)) {
-        std::cout << "Resolving: " << std::endl;
-        for (auto id : ids) {
-            std::cout << " " << id;
+    // outer loop make sure that we really capture all solutions even some was irgnored
+    while (NetworkHelper::getNextUncalculatedIDs(base_network_file, ids, currently_processed_ids) || currently_processed_ids.size() != 0) {
+
+        while (NetworkHelper::getNextUncalculatedIDs(base_network_file, ids, currently_processed_ids)) {
+            long int free_thread = -1;
+            while (free_thread == -1) {
+                for (unsigned int i = 0; i < NUM_THREADS; i++) {
+                    if (!thread_alive[i]) {
+                        thread_alive[i] = true;
+                        free_thread = i;
+                        break;
+                    }
+                }
+                sleep(1);
+            }
+
+            params[free_thread] = ids;
+            pthread_mutex_lock(&mutex_for_list);
+            currently_processed_ids.push_back(ids);
+            pthread_mutex_unlock(&mutex_for_list);
+
+            std::cout << "Resolving: " << std::endl;
+            for (auto id : ids) {
+                std::cout << " " << id;
+            }
+
+            std::cout << std::endl;
+            if (ids.size() % 3 == 0) {
+                if (pthread_create(&threads[free_thread], NULL, &runClassThread, (void*)free_thread)) {
+                    throw std::runtime_error("Cannot start thread");
+                }
+            } else if (ids.size() % 3 == 1) {
+                if (pthread_create(&threads[free_thread], NULL, &runInstanceThread, (void*)free_thread)) {
+                    throw std::runtime_error("Cannot start thread");
+                }
+            }
+            ids.clear();
         }
-        std::cout << std::endl;
-        if (ids.size() % 3 == 0) {
-            NetworkHelper::createClassSolution(base_network_file, std::list<std::string>(), ids);
-        } else if (ids.size() % 3 == 1) {
-            NetworkHelper::createInstanceSolution(base_network_file, ids);
-        }
-        ids.clear();
+        std::cout << "Waiting for other thread to complete, are " << currently_processed_ids.size() << " threads active." << std::endl;
+        sleep(1);
     }
+
     return 0;
 }

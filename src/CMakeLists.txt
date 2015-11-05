@@ -59,7 +59,7 @@ rock_library(${PROJECT_NAME}
     SOURCES ${SOURCES}
     HEADERS ${HEADERS}
     DEPS_PKGCONFIG base-lib owlapi graph_analysis libxml++-2.6 
-    LIBS ${Gecode_LIBRARIES} ${Boost_LIBRARIES} ssl
+    LIBS ${Gecode_LIBRARIES} ${Boost_LIBRARIES} ssl pthread
 )
 
 

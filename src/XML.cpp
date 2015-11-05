@@ -16,6 +16,9 @@
 
 using namespace constrained_based_networks;
 
+pthread_mutex_t XML::mutex;
+
+
 Component* XML::ensureComponentAvailible(Pool* pool, std::string child_name, xmlpp::Node* const root)
 {
     Component* child_component;
@@ -329,62 +332,65 @@ void iterate(const xmlpp::Node* n, const std::string name, std::function<void(co
     }
 }
 
-xmlpp::Element* XML::getUnresolvedForFollowNetwork(xmlpp::Element* e)
+xmlpp::Element* XML::getUnresolvedForFollowNetwork(xmlpp::Element* root, xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions)
 {
     auto chilren = e->get_children("class_solution");
     auto link = e->get_children("link");
 
     // No children (yet) calculated, returning the parent node
-    if (chilren.size() == 0 && link.size() == 0) {
-        std::cout << "Returning in " << __FUNCTION__ << " line " << __LINE__ << std::endl;
+    if (chilren.size() == 0 && link.size() == 0 && !findPath(getPath(root,e),ignored_solutions)) {
         return e;
     }
 
     for (auto child : chilren) {
-        if (auto res = getUnresolvedForClassSolution(dynamic_cast<xmlpp::Element*>(child))) {
+        if (auto res = getUnresolvedForClassSolution(root, dynamic_cast<xmlpp::Element*>(child),ignored_solutions)) {
             return res;
         }
     }
 
-    std::cout << "Returning ZERO in " << __FUNCTION__ << " line " << __LINE__ << std::endl;
     return 0;
 }
 
-xmlpp::Element* XML::getUnresolvedForInstanceSolution(xmlpp::Element* e)
+xmlpp::Element* XML::getUnresolvedForInstanceSolution(xmlpp::Element* root, xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions)
 {
 
     for (auto child : e->get_children("transition")) {
         auto elem = dynamic_cast<xmlpp::Element*>(child);
         // If this element has a possible follow-network and no children so far, we have to calculate for this a solution
         if (elem->get_attribute("resulting_pool")->get_value() != "") {  // Okay this might be a candidate
-            if (elem->get_children().size() == 0) {
+            if (elem->get_children().size() == 0 && (!findPath(getPath(root,elem),ignored_solutions))) {
                 return elem;
             }
-            if (auto res = getUnresolvedForFollowNetwork(elem)) {
+            if (auto res = getUnresolvedForFollowNetwork(root, elem, ignored_solutions)) {
                 return res;
             }
         }
     }
 
-    std::cout << "Returning ZERO in " << __FUNCTION__ << " line " << __LINE__ << std::endl;
     return 0;
 }
 
-xmlpp::Element* XML::getUnresolvedForClassSolution(xmlpp::Element* e)
+bool XML::findPath(std::vector<unsigned int> s, std::list<std::vector<unsigned int>> ignored_solutions){
+    for(auto so : ignored_solutions){
+        if( s == so)
+            return true;
+    }
+    return false;
+}
+
+xmlpp::Element* XML::getUnresolvedForClassSolution(xmlpp::Element* root ,xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions)
 {
     auto children = e->get_children("instance_solution");
-    if (children.size() == 0) {
-        std::cout << "Returning in " << __FUNCTION__ << " line " << __LINE__ << std::endl;
+    if (children.size() == 0 && (!findPath(getPath(root,e),ignored_solutions))) {
         return e;
     }
 
     for (auto child : children) {
-        if (auto res = getUnresolvedForInstanceSolution(dynamic_cast<xmlpp::Element*>(child))) {
+        if (auto res = getUnresolvedForInstanceSolution(root, dynamic_cast<xmlpp::Element*>(child), ignored_solutions)) {
             return res;
         }
     }
 
-    std::cout << "Returning ZERO in " << __FUNCTION__ << " line " << __LINE__ << std::endl;
     return 0;
 }
 
@@ -403,7 +409,7 @@ std::vector<unsigned int> XML::getPath(xmlpp::Element* rootNode, xmlpp::Element*
     return res_v;
 }
 
-bool XML::findUnresolvedIDs(std::string filename, std::vector<unsigned int>& res_v)
+bool XML::findUnresolvedIDs(std::string filename, std::vector<unsigned int>& res_v, std::list<std::vector<unsigned int>> ignored_solutions)
 {
     if (!boost::filesystem::is_regular_file(genDBFilename(filename))) {
         createDatabase(filename);
@@ -413,7 +419,7 @@ bool XML::findUnresolvedIDs(std::string filename, std::vector<unsigned int>& res
     parser.parse_file(genDBFilename(filename));
     assert(parser);
     auto rootNode = parser.get_document()->get_root_node();
-    auto element = getUnresolvedForFollowNetwork(rootNode);
+    auto element = getUnresolvedForFollowNetwork(rootNode, rootNode,ignored_solutions);
     if (!element) {
         // Everything is done, cannot find any node which is unresolved
         return false;
@@ -477,6 +483,7 @@ std::string XML::loadSolution(std::string filename, std::vector<unsigned int> id
 
 bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> instance_solutions, std::vector<unsigned int> ids)
 {
+    pthread_mutex_lock(&mutex);
     if ((ids.size() % 3) != 1) {
         throw std::invalid_argument("The given indexed must have a length%3 == 1, but got " + std::to_string(ids.size()));
     }
@@ -533,7 +540,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                             auto link = transition_node->add_child("link");
                             auto link_id = getPath(rootNode, node);
                             for (auto link_id_elem : link_id) {
-                                link->add_child(std::to_string(link_id_elem));
+                                link->add_child("path")->set_attribute("id",std::to_string(link_id_elem));
                             }
                         }
                         continue;
@@ -556,7 +563,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                     auto link = transition_node->add_child("link");
                     auto link_id = getPath(rootNode, node);
                     for (auto link_id_elem : link_id) {
-                        link->add_child(std::to_string(link_id_elem));
+                        link->add_child("path")->set_attribute("id",std::to_string(link_id_elem));
                     }
                 }
 
@@ -571,17 +578,21 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
     }
     doc.create_root_node_by_import(rootNode, true);
     doc.write_to_file_formatted(genDBFilename(filename));
+    pthread_mutex_unlock(&mutex);
     return true;
 }
 
 xmlpp::Element* XML::getReferenceNodeForNetwork(xmlpp::Element* root, std::string md5)
 {
-    auto nodes = root->find("attribute::resulting_pool='" + md5 + "'");
+    auto nodes = root->find("//*[@resulting_pool='" + md5 + "']");
     for (auto n : nodes) {
+        std::cerr << "Check here" << std::endl;
         if (n->get_children("class_solution").size() != 0) {
+            std::cerr << "Allright thats good" << std::endl;
             return dynamic_cast<xmlpp::Element*>(n);
         }
     }
+    std::cerr << "Searching pool " << md5 << " not found" << std::endl;
     return 0;
 }
 
@@ -638,6 +649,7 @@ void XML::createDatabase(std::string original_file)
 
 bool XML::saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std::string original_file, std::list<std::string> additionalRequirements, std::vector<unsigned int> id)
 {
+    pthread_mutex_lock(&mutex);
     if ((id.size() % 3) != 0) {
         throw std::invalid_argument("The given indexed must have a length%3 == 0, but got " + std::to_string(id.size()));
     }
@@ -708,6 +720,7 @@ bool XML::saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_s
         doc.write_to_file_formatted(p.string());
     }
 #endif
+    pthread_mutex_unlock(&mutex);
     return true;
 }
 

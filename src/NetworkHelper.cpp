@@ -90,6 +90,6 @@ void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<u
     delete pool;
 }
 
-bool NetworkHelper::getNextUncalculatedIDs(std::string core_model, std::vector<unsigned int> &ids){
-    return XML::findUnresolvedIDs(core_model,ids);
+bool NetworkHelper::getNextUncalculatedIDs(std::string core_model, std::vector<unsigned int> &ids, std::list<std::vector<unsigned int>> id){
+    return XML::findUnresolvedIDs(core_model,ids,id);
 }

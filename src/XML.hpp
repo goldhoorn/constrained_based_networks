@@ -2,6 +2,8 @@
 #include <string>
 #include <graph_analysis/BaseGraph.hpp>
 #include "EventModelHandler.hpp"
+#include <pthread.h>
+
 
 namespace xmlpp
 {
@@ -29,18 +31,21 @@ class XML
     static void addSpecialization(Component* comp, xmlpp::Element* const root);
     static std::string toMD5(const std::string input);
     static void createDatabase(std::string original_file);
-    static bool findUnresolvedIDs(std::string filename, std::vector<unsigned int> &res_v);
+    static bool findUnresolvedIDs(std::string filename, std::vector<unsigned int> &res_v, std::list<std::vector<unsigned int>> ignored_solutions);
     static std::vector<unsigned int> findUncalculatedID(std::string filename, std::vector<unsigned int> ids);
 
    private:
     static std::string loadSolution(std::string filename, std::vector<unsigned int> ids);
     static std::string genDBFilename(const std::string modelFilename);
     static xmlpp::Element* findNodeForID(xmlpp::Element* root, const std::vector<unsigned int>& ids);
-    static xmlpp::Element* getUnresolvedForFollowNetwork(xmlpp::Element* e);
-    static xmlpp::Element* getUnresolvedForInstanceSolution(xmlpp::Element* e);
-    static xmlpp::Element* getUnresolvedForClassSolution(xmlpp::Element* e);
+    static xmlpp::Element* getUnresolvedForFollowNetwork(xmlpp::Element* root,xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions);
+    static xmlpp::Element* getUnresolvedForInstanceSolution(xmlpp::Element* root,xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions);
+    static xmlpp::Element* getUnresolvedForClassSolution(xmlpp::Element* root,xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions);
     static xmlpp::Element* getReferenceNodeForNetwork(xmlpp::Element *root, std::string md5);
     static std::vector<unsigned int> getPath(xmlpp::Element *rootNode, xmlpp::Element *element);
+    static bool findPath(std::vector<unsigned int> s, std::list<std::vector<unsigned int>> ignored_solutions);
+
+    static pthread_mutex_t mutex;
 
     struct TransitionHelper
     {
