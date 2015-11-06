@@ -57,9 +57,11 @@ int main(int argc, char *argv[])
         tmp_file_fd = mkstemps(tmpfile,4);
     }
 
-
+    std::cout << __LINE__ << std::endl;
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    std::cout << __LINE__ << std::endl;
     graph_analysis::io::GraphIO::read(infile, graph, graph_analysis::representation::GEXF);
+    std::cout << __LINE__ << std::endl;
     if(tmp_file_fd){
         graph_analysis::io::GraphIO::write(tmpfile, graph, graph_analysis::representation::GRAPHVIZ);
         size_t buflen;

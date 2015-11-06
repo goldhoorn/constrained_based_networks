@@ -49,6 +49,7 @@ void* runInstanceThread(void* id_)
 // main test function
 int main(int argc, char* argv[])
 {
+    NetworkHelper::initializeExporter();
     char c;
     base_network_file = 0;
     bool list_unresolved = false;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <list>
 
 namespace xmlpp
 {
@@ -21,12 +22,14 @@ class SolutionXML
     std::string getDotGraph();
 
    private:
-    void  parseTransitionSolution(xmlpp::Element *c, std::stringstream &s);
-    std::string parseInstanceSolution(xmlpp::Element *c, std::stringstream &s);
-    std::string parseClassSolution(xmlpp::Element *c, std::stringstream &s);
+//    std::list<std::string>parseTransitionSolution(xmlpp::Element *c, std::stringstream &s);
+//    std::list<std::string> parseInstanceSolution(xmlpp::Element *c, std::stringstream &s);
+//    std::list<std::string> parseClassSolution(xmlpp::Element *c, std::stringstream &s);
+    std::list<std::string> parse(xmlpp::Element *c, std::stringstream &s);
     std::string getIdentifier(xmlpp::Element *c);
     std::string filename;
     xmlpp::Element *rootNode;
     xmlpp::DomParser *parser;
+    bool cluster;
 };
 };

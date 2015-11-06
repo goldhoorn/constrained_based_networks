@@ -137,6 +137,9 @@ void StateMachine::addTransition(Component *source, Component *target, Component
 
 SpecializedComponentBase *StateMachine::getSpecialized(std::string name)
 {
+    if (dynamic_cast<SpecializedComponentBase *>(this)) {
+        throw std::runtime_error("We cannot specilaize a specialized component");
+    }
     return new SpecializedComponent<StateMachine>(this, pool, name);
 }
 
@@ -151,8 +154,9 @@ int StateMachine::getNewState(Component *child, std::string event)
     return -1;
 }
 
-Component* StateMachine::clone(Pool *p) const{
-    auto *c = new StateMachine(name,p);
+Component *StateMachine::clone(Pool *p) const
+{
+    auto *c = new StateMachine(name, p);
     throw std::runtime_error("Implement me");
     return c;
 };
@@ -205,10 +209,48 @@ std::vector<Component *> StateMachine::getStates()
     return erg;
 }
 
+void StateMachine::replaceChild(Component *child, Component *old)
+{
+    bool done = false;
+    for (auto &t : transitions) {
+        if (t.source == old) {
+            done = true;
+            t.source = child;
+        }
+        if (t.target == old) {
+            done = true;
+            t.target = child;
+        }
+        if (t.event_source == old) {
+            done = true;
+            t.event_source = child;
+        }
+    }
+    assert(done);
+}
+
 void StateMachine::replaceChild(Component *child, std::string name)
 {
-    std::cerr << "TODO IMPLEMENT ME StateMachine::replaceChild:" << std::endl;
-    std::cerr << "Replacing: " << name << child->getName() << std::endl;
+    (void)name;
+    (void)child;
+    throw std::runtime_error("Unsupported");
+    /*
+    if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
+        bool found=false;
+        for(size_t i = 0; i< transitions.size() ;i++){
+            auto c = transitions[i];
+            if(c.target == child){
+                spec->configuration["current_state"] = std::to_string(i);
+                found = true;
+            }
+        }
+        if(!found){
+            throw std::invalid_argument("Cannot replace child, it does not exist as target on this SM");
+        }
+    }else{
+        throw std::runtime_error("Cannot replace a component on a non-specialized state-machine");
+    }
+    */
 }
 
 void StateMachine::addTransition(SpecializedComponentBase *source, SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev)

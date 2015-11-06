@@ -71,34 +71,33 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
         auto causing_component_id = h1.first;
         auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(causing_component_id).get());
         if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(causing_component_id).get())) causing_component = c->component;
-        // std::cout << "- Component: " << causing_component->getName() << std::endl;
+        std::cout << "- Component: " << causing_component->getName() << std::endl;
         for (auto h2 : h1.second) {
             auto causing_event = h2.first;
-            // std::cout << "\t -Event: " << causing_event << std::endl;
+            std::cout << "\t -Event: " << causing_event << std::endl;
             for (auto cause : h2.second) {
                 auto resulting_component = dynamic_cast<Component *>(instancitaed_network->getVertex(cause.component_graph_id).get());
                 if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(cause.component_graph_id).get())) resulting_component = c->component;
-                // std::cout << "\t\t -- " << resulting_component->getName() << " event " << cause.event << std::endl;
+                std::cout << "\t\t -- " << resulting_component->getName() << " event " << cause.event << std::endl;
             }
         }
     }
-
-    // std::cout << "Jeha i'm done" << std::endl;
+    std::cout << "Jeha i'm done" << std::endl;
 }
 
-double EventModelHandler::distance(graph_analysis::Vertex::Ptr source, graph_analysis::Vertex::Ptr target, double depth){
-    for(auto k : instancitaed_network->outEdges(source)){
-        if( k->getTargetVertex() == target )
-            return depth+1;
+double EventModelHandler::distance(graph_analysis::Vertex::Ptr source, graph_analysis::Vertex::Ptr target, double depth)
+{
+    for (auto k : instancitaed_network->outEdges(source)) {
+        if (k->getTargetVertex() == target) return depth + 1;
     }
-    for(auto k : instancitaed_network->outEdges(source)){
-        auto d= distance(k->getTargetVertex(),target,depth+1);
-        if(d) return d;
+    for (auto k : instancitaed_network->outEdges(source)) {
+        auto d = distance(k->getTargetVertex(), target, depth + 1);
+        if (d) return d;
     }
     return 0;
 }
 
-std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirements(unsigned int causing_component, std::string causing_event)
+std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirementGraph(unsigned int causing_component, std::string causing_event)
 {
     std::vector<graph_analysis::BaseGraph::Ptr> res;
     std::vector<graph_analysis::Vertex::Ptr> affected_vertices;
@@ -118,10 +117,10 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
             initial_pool->mergeDoubles();
             */
             if (affected_event == "failed") {
-//                std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
-//                std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
-//                graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-//                res.push_back(graph);
+                //                std::cerr << "StateMachine Failed, this can cause a empty solution" << std::endl;
+                //                std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
+                //                graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+                //                res.push_back(graph);
                 continue;
             }
 
@@ -135,25 +134,25 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
             // std::cout << "Got a affected statemachine " << affected_component->getName() << " the event is: " << causing_event << " -> " << affected_event << std::endl;
             // std::cout << "DEBUG:::::::::::::::::::: " << instancitaed_network->getVertex(affected_component_id)->toString() << std::endl;
             graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-            getFollowRequirements(graph, initial_pool, root, instancitaed_network->getVertex(affected_component_id), current_transition);
+            generateRequrementsGraphRecusivly(graph, initial_pool, root, instancitaed_network->getVertex(affected_component_id), current_transition);
 
-//            std::cerr << "THIS IS GOOD" << std::endl;
+            //            std::cerr << "THIS IS GOOD" << std::endl;
             std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
             affected_vertices.push_back(instancitaed_network->getVertex(affected_component_id));
             res.push_back(graph);
         }
     }
 
-    if(res.size() > 1){
+    if (res.size() > 1) {
         double dist = std::numeric_limits<double>::max();
-        size_t final_id=0;
+        size_t final_id = 0;
         std::cout << "We have multiple affectd components, reduce them to the component which is the closest one to the original one " << affected_vertices.size() << std::endl;
         auto causing = instancitaed_network->getVertex(causing_component);
-        for(size_t i=0;i<affected_vertices.size();++i){
+        for (size_t i = 0; i < affected_vertices.size(); ++i) {
             auto c = affected_vertices[i];
-            auto dist_new = distance(causing,c);
+            auto dist_new = distance(causing, c);
             std::cout << "Current distance is: " << dist << " candidate is: " << dist_new << std::endl;
-            if(dist_new < dist){
+            if (dist_new < dist) {
                 final_id = 0;
                 dist = dist_new;
             }
@@ -181,43 +180,30 @@ bool EventModelHandler::isOnPath(graph_analysis::Vertex::Ptr current, graph_anal
     return false;
 }
 
-void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target, unsigned int transition)
+void EventModelHandler::generateRequrementsGraphRecusivly(graph_analysis::BaseGraph::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target,
+                                                          unsigned int transition)
 {
     if (isOnPath(current, target)) {
         // Searching each child of the composition, becasue we have to fix this
         // for a sub-solution. This prevents a generation of all requiremetns that could fit.
         // We only want to generate only solutions that are really close to out previous one.
-        for (auto c : instancitaed_network->outEdges(current)) {
+        for (auto outEdgeOfCurrent : instancitaed_network->outEdges(current)) {
             // TODO not sure if we need a orginal child here to read the config from it
-
-            //            auto new_child = pool->getComponent(EventModelHandler::get<Component>(c->getTargetVertex())->getName());
-            //            auto orginal_child = dynamic_cast<Composition*>(EventModelHandler::get<Component>(c->getTargetVertex()));
-            auto parent = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(c->getSourceVertex())->getName()));
-            auto child = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(c->getTargetVertex())->getName()));
+            auto parent = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(outEdgeOfCurrent->getSourceVertex())->getName()));
+            auto child = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(outEdgeOfCurrent->getTargetVertex())->getName()));
             assert(parent);
             assert(child);
 
-            if (c->getTargetVertex() != target) {
-                /*
-                std::cout << "Replace child for: " << parent->getName() << "with name: " << c->getLabel() << " to " << child->getName() << std::endl;
-                if (current == root) {
-                    child->setActive(true);
-                } else {
-                    parent->replaceChild(child, c->getLabel());
-                }
-                */
-                graph->addEdge(c);
+            if (outEdgeOfCurrent->getTargetVertex() != target) {
+
+
+                graph->addEdge(outEdgeOfCurrent);
 
                 // We branch here a level deeper, we need only to do this if we are on the path
                 // becasue everything else we dont care in general
-                getFollowRequirements(graph, pool, c->getTargetVertex(), target, transition);
+                generateRequrementsGraphRecusivly(graph, pool, outEdgeOfCurrent->getTargetVertex(), target, transition);
             } else {
-                // auto spec = dynamic_cast<SpecializedComponent<StateMachine> *>(child->getSpecialized());
-                // assert(spec);
-                // std::stringstream str;
-                // str << transition;
-                // spec->addConfig("current_state", str.str());
-                auto new_child = Vertex::Ptr(c->getTargetVertex()->clone());
+                auto new_child = Vertex::Ptr(outEdgeOfCurrent->getTargetVertex()->clone());
                 auto sm = dynamic_cast<ConfiguredComponent *>(new_child.get());
                 assert(sm);
                 bool success = false;
@@ -233,23 +219,12 @@ void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr gra
                 // TODO continue work here, we have specialized components to export into the graph which is not yet supported
                 // by the tooling. The specialized component must then later after the orgiginal model is loaded  re-linked to the model in the space
                 // The best way would be to re-create the specialized components on import maybe
-
                 {
-                    graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge(c->getLabel()));
+                    graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge(outEdgeOfCurrent->getLabel()));
                     e->setSourceVertex(current);
                     e->setTargetVertex(new_child);
                     graph->addEdge(e);
                 }
-
-                /*
-                if (current == root) {
-                    // Special case state-machine itself was a root-requirement
-                    // we need to activate it before
-                    sm->setActive(true);
-                } else {
-                    parent->replaceChild(sm, c->getLabel());
-                }
-                */
             }
         }
     } else {
@@ -260,36 +235,9 @@ void EventModelHandler::getFollowRequirements(graph_analysis::BaseGraph::Ptr gra
             e->setSourceVertex(current);
             e->setTargetVertex(target);
             graph->addEdge(e);
-            /*
-                        graph->addEdge(e);
-                        auto component = EventModelHandler::get<Component>(current);
-                        auto new_component = pool->getComponent(component->getName());
-                        assert(new_component);
-                        //new_component->setActive(true);
-                        //*/
         }
     }
-
-    // TODO we have to somehow build up the graph with new components
-    // getFollowRequirements(pool, edge->getTargetVertex(), target, transition);
 }
-#if 0
-    else
-    {
-        auto component = dynamic_cast<StateMachine *>(edge->getTargetVertex().get());
-        if (auto c = dynamic_cast<ConfiguredComponent *>(edge->getTargetVertex().get())) component = dynamic_cast<StateMachine *>(c->component);
-        component = dynamic_cast<StateMachine *>(pool->getComponent(component->getName()));
-        assert(component);
-        // auto spec = dynamic_cast<SpecializedComponent<StateMachine>*> (component->getSpecialized());
-        auto spec = (component->getSpecialized());
-        assert(spec);
-        std::stringstream str;
-        str << transition;
-        spec->addConfig("current_state", str.str());
-        spec->setActive(true);
-    }
-}
-#endif
 
 void EventModelHandler::generateDBRecursive(graph_analysis::Vertex::Ptr current_node)
 {
@@ -328,88 +276,147 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
             };
 
             if (valid || true) {
-                auto p = getFollowRequirements(component.first, event.first);
-                //std::cout << "Graph size: " << p.size() << std::endl;
+                auto p = getFollowRequirementGraph(component.first, event.first);
+                // std::cout << "Graph size: " << p.size() << std::endl;
                 res.push_back({causing_component, event.first, {p}});
             }
         }
     }
     return res;
 }
+#if 0
+void EventModelHandler::replaceSMinGraph(graph_analysis::DirectedGraphInterface::Ptr graph, graph_analysis::Vertex::Ptr current, Pool *pool, Component *old){
+
+    if(auto parent_sm = dynamic_cast<StateMachine*>(pool->getComponent(current->toString()))){
+        auto new_sm = setConfig(current, old);
+         
+        throw std::runtime_error("Implement me");
+        (void)graph;
+        (void)parent_sm;
+        /*
+        for(auto parent : graph->inEdges(current)){
+            if(auto cmp = dynamic_cast<Composition*>(pool->getComponent(parent->toString()))){
+                replaceSMinGraph(graph,,parent,pool);
+            }
+        }
+        */
+    }else if(auto composition = dynamic_cast<Composition*>(pool->getComponent(current->toString()))){
+        bool found=false;
+        for(auto c : composition->getChildren()){
+            if(c.second == old){
+                composition->replaceChild(sm,c.first);
+                found=true;
+                break;
+            }
+        }
+        if(!found){
+            throw std::invalid_argument("Cannot replace child");
+        }
+    }else{
+        throw std::runtime_error("Unsupported");
+    }
+}
+#endif
+
+void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphInterface::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current_vertex, Component *parent)
+{
+    for (auto child : graph->outEdges(current_vertex)) {
+        auto c = pool->getComponent(child->getTargetVertex()->toString());
+        auto new_component = setConfig(child->getTargetVertex(), c);
+
+        // We have to start this component IF parent is a root
+        if (current_vertex->toString() == "root-knot") {
+            new_component->setActive(true);
+        } else {
+            if (auto sm = dynamic_cast<StateMachine *>(parent)) {
+
+                sm->replaceChild(new_component, c);
+
+                if(auto spec = dynamic_cast<SpecializedComponentBase*>(sm)){
+                    std::cout << "Warn we should have a state-machine here" << sm->getName() << std::endl;
+                    for(auto conf : spec->configuration){
+                        std::cout << "\t- " << conf.first << ": " << conf.second << std::endl;
+                    }
+                }else{
+                    throw std::runtime_error("All state-machines needs to be specialized here");
+                }
+                // Should not needed, solved by the spec
+            } else if (auto composition = dynamic_cast<Composition *>(parent)) {
+                composition->replaceChild(new_component, child->toString());
+            } else {
+                //Maybe a task we dont care here
+                //throw std::runtime_error("Unsupported");
+            }
+        }
+        createFollowPoolRecursive(graph, pool, child->getTargetVertex(), new_component);
+    }
+}
 
 void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool *pool)
 {
     // We onl support one following state to a event
     if (trigger.resulting_requirement.network.size() != 1) {
-        // TODO we have to identify the FIRST component which
-        // throw std::invalid_argument("Cannot create pool for network size of " + std::to_string(trigger.resulting_requirement.network.size()));
-        std::cerr << ("Cannot create pool for network size of " + std::to_string(trigger.resulting_requirement.network.size())) << std::endl;
+        throw std::invalid_argument("Cannot create pool for network size of " + std::to_string(trigger.resulting_requirement.network.size()));
     }
-
     graph_analysis::BaseGraph::Ptr graph = trigger.resulting_requirement.network[0];
 
-    // Start to create our graph based on the imported graph
-    for (auto e : graph->edges()) {
-        // We have found a root-knot we need to set all children active in our pool
-        if (e->getSourceVertex()->toString() == "root-knot") {
-            const auto &active_child = pool->getComponent(e->getTargetVertex()->toString());
-            assert(active_child->getPtr());
-
-            auto new_component = setConfig(e->getTargetVertex(), active_child);
-            std::cout << "Setting active: " << new_component->getName() << " for pool " << pool << std::endl;
-            new_component->setActive(true);
-            // We have to disable the old component
-            active_child->setActive(false);
-
-            assert(new_component->isActive());
-            assert(pool->getComponent(new_component->toString())->isActive());
-            bool found = false;
-            for (auto component : pool->getItems<Component *>()) {
-                if (component == new_component) {
-                    found = true;
-                    break;
-                }
-            }
-            assert(found);
-
-            assert(new_component->isInPool(pool));
-        } else {
-            // std::cout << "From " << e->getSourceVertex()->toString() << " to " << e->getTargetVertex()->toString() << std::endl;
-            auto v1 = pool->getComponent(e->getSourceVertex()->toString());
-            auto v2 = pool->getComponent(e->getTargetVertex()->toString());
-            assert(v1->getPtr());
-            assert(v2->getPtr());
-            auto cmp = dynamic_cast<Composition *>(v1);
-            assert(cmp);  // Otherwise it could not have any children
-
-            auto new_component = setConfig(e->getTargetVertex(), v2);
-            assert(new_component);
-            cmp->replaceChild(new_component, e->toString());
+    auto d_graph = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(graph);
+    assert(d_graph);
+    graph_analysis::Vertex::Ptr root;
+    for (auto k : d_graph->vertices()) {
+        if (k->toString() == "root-knot") {
+            root = k;
+            break;
         }
     }
-    /*
-    std::cout << "TEST BEFORE MERGE" << std::endl;
-    for (auto component : pool->getItems<Component*>()) {
-        if(component->isActive()){
-            assert(component->isInPool(pool));
-            std::cout << "Component: " << component->getName() << " / " << component->toString() << "is active" << std::endl;
-            std::cout << "Pool pointer: " << pool << std::endl;
-        }
-    };
-    */
+    assert(root.get());
 
-    pool->mergeDoubles();
-    /*
-    std::cout << "TEST AFTER MERGE" << std::endl;
-    for (auto component : pool->getItems<Component*>()) {
-        if(component->isActive()){
-            assert(component->isInPool(pool));
-            std::cout << "Component: " << component->getName() << " / " << component->toString() << "is active" << std::endl;
-            std::cout << "Pool pointer: " << pool << std::endl;
+    // Disable all current components in the network
+    for (auto e : graph->edges()) {
+        if (e->getSourceVertex()->toString() == "root-knot") {
+            const auto &active_child = pool->getComponent(e->getTargetVertex()->toString());
+            active_child->setActive(false);
         }
-    };
-    std::cout << "TEST DONE" << std::endl;
+    }
+
+    createFollowPoolRecursive(d_graph, pool, root, 0);
+    /*
+        // Start to create our graph based on the imported graph
+        for (auto e : graph->edges()) {
+            // We have found a root-knot we need to set all children active in our pool
+            if (e->getSourceVertex()->toString() == "root-knot") {
+                const auto &active_child = pool->getComponent(e->getTargetVertex()->toString());
+                assert(active_child->getPtr());
+
+                auto new_component = setConfig(e->getTargetVertex(), active_child);
+                std::cout << "Setting active: " << new_component->getName() << " for pool " << pool << std::endl;
+                new_component->setActive(true);
+                // We have to disable the old component
+                active_child->setActive(false);
+
+                assert(new_component->isInPool(pool));
+            } else {
+                // std::cout << "From " << e->getSourceVertex()->toString() << " to " << e->getTargetVertex()->toString() << std::endl;
+                auto v1 = pool->getComponent(e->getSourceVertex()->toString());
+                auto v2 = pool->getComponent(e->getTargetVertex()->toString());
+                assert(v1->getPtr());
+                assert(v2->getPtr());
+                auto cmp = dynamic_cast<Composition *>(v1);
+                assert(cmp);  // Otherwise it could not have any children
+
+                auto new_component = setConfig(e->getTargetVertex(), v2);
+                assert(new_component);
+
+                if(auto sm =  dynamic_cast<StateMachine*>(cmp)){
+    //                auto new_sm = setConfig(e->getSourceVertex(), sm);
+    //                replaceSMinGraph(boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(graph) ,e->getSourceVertex(), pool,sm);
+                }else{
+                    cmp->replaceChild(new_component, e->toString());
+                }
+            }
+        }
     */
+    pool->mergeDoubles();
 }
 
 Component *EventModelHandler::setConfig(graph_analysis::Vertex::Ptr v, Component *c)

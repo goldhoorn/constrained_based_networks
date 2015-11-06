@@ -245,6 +245,41 @@ std::string test_state_machinemultiple_results(constrained_based_networks::Pool*
     return "SM1";
 }
 
+
+std::string test_state_machinefailed(constrained_based_networks::Pool* pool)
+{
+
+    auto start = new StateMachine("start_sm", pool);
+
+    auto t1 = new Task("task1", pool);
+    t1->addEvent("event1");
+    t1->addEvent("event2");
+
+    auto t2 = new Task("task2", pool);
+    t2->addEvent("event1");
+    t2->addEvent("event2");
+
+    auto c = new Composition("CmpInBetween",pool);
+    auto t3 = new Task("revover-task", pool);
+    c->addChild(t3,"t3_child");
+
+
+    auto sm = new StateMachine("SM1", pool);
+
+    start->setStart(sm);
+    
+    sm->addTransition(t1, t2, t1, "event1");
+    sm->addTransition(t1, c, t1, "event2");
+    sm->addTransition(t2, t1, t2, "event1");
+    sm->addTransition(c, t1, c, "failed");
+//    sm->addEventForwards("t1_child", "event2", "failed");
+//    sm->addEventForwards("t2_child", "event2", "failed");
+    
+    sm->setStart(t1);
+    //return "start_sm";
+    return "SM1";
+}
+
 std::string test_state_machine(constrained_based_networks::Pool* pool)
 {
     auto a1 = new Composition("pipe_detector", pool);
@@ -401,6 +436,7 @@ Tests tests[] = {{test_cmp_recursion, ""},
                  {test_state_machine2, ""},
                  {test_state_machine3, ""},
                  {test_state_machinemultiple_results, ""},
+                 {test_state_machinefailed, ""},
                  {create_model, ""},  // Trivial test empty (VALID!) solution
                  {create_model, "AuvControl::DepthFusionCmp"},
                  {create_model, "Pipeline::Follower"},

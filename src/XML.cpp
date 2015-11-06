@@ -96,6 +96,17 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
                 auto config_value = conf_element->get_attribute("value")->get_value();
                 spec_cmp->addConfig(config_name, config_value);
             }
+
+            auto state_machine = dynamic_cast<StateMachine*>(spec_cmp);
+            for (const auto& event_node : child->get_children("replaced_child")) {
+                const xmlpp::Element* sub_element = dynamic_cast<const xmlpp::Element*>(event_node);
+                assert(sub_element);
+                std::string orginal_name = sub_element->get_attribute("orginal_name")->get_value();
+                std::string new_name = sub_element->get_attribute("new_name")->get_value();
+                auto new_child = ensureComponentAvailible(pool, new_name, root);
+                auto old_child = ensureComponentAvailible(pool, orginal_name, root);
+                state_machine->replaceChild(new_child,old_child);
+            }
         }
         // We do not need to continue, all children are generated based on the parent by getSpecialized
         return;
@@ -775,6 +786,13 @@ bool XML::save(Pool* pool, std::string& filename, bool md5)
             auto smNode = rootNode->add_child("state_machine");
             smNode->set_attribute("name", sm->getName());
             addSpecialization(component, smNode);
+
+            if (auto spec = dynamic_cast<SpecializedComponentBase*>(component)) {
+                //TODO replace here the children and continue with the replace-child implementatipn to the specialized component.
+                //remove replace-child from state-machine and from composition
+                //
+                
+            }
 
             // this should be valid because the transition 0 is by default the starting state, and the 1 (not 0) child is the target state to enter
             // 0 and 2 are the SM itselfe
