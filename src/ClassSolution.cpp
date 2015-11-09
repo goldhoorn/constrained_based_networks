@@ -431,7 +431,7 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
                 //
             }
         } else {
-            std::cout << "Unresolved: " << (*pool)[i]->getName() << std::endl;
+            throw std::runtime_error("Got a unresolved solution for " + (*pool)[i]->getName());
         }
     }
     return true;

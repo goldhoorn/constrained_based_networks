@@ -2,7 +2,7 @@
 #include <string>
 #include <graph_analysis/BaseGraph.hpp>
 #include "EventModelHandler.hpp"
-#include <pthread.h>
+#include <boost/thread/recursive_mutex.hpp>
 
 
 namespace xmlpp
@@ -35,6 +35,7 @@ class XML
     static std::vector<unsigned int> findUncalculatedID(std::string filename, std::vector<unsigned int> ids);
     static std::string genDBFilename(const std::string modelFilename);
     static std::vector<unsigned int> getPath(xmlpp::Element *rootNode, xmlpp::Element *element);
+    static std::vector<xmlpp::Element*> getPathAsElements(xmlpp::Element* rootNode, xmlpp::Element* element);
 
    private:
     static std::string loadSolution(std::string filename, std::vector<unsigned int> ids);
@@ -45,7 +46,7 @@ class XML
     static xmlpp::Element* getReferenceNodeForNetwork(xmlpp::Element *root, std::string md5);
     static bool findPath(std::vector<unsigned int> s, std::list<std::vector<unsigned int>> ignored_solutions);
 
-    static pthread_mutex_t mutex;
+    static boost::recursive_mutex mutex;
 
     struct TransitionHelper
     {

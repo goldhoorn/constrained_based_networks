@@ -84,9 +84,8 @@ class StateMachine : public Composition
     // Inherited from Composition
     virtual std::vector<std::pair<std::string, Component *>> getChildren();
 
-    std::vector<Transition> &getTransitions(){
-        return transitions;
-    }
+
+    std::vector<Transition> getTransitions();
 
    protected:
     std::vector<Transition> transitions;

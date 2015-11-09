@@ -50,6 +50,8 @@ class SpecializedComponentBase : private boost::noncopyable
     virtual const std::string& getName(bool b) const = 0;
     virtual const std::string& getName() const = 0;
 
+    std::map<std::string,Component*> replaced_children;
+
     unsigned int id;
     /*
     operator const Component*() const{

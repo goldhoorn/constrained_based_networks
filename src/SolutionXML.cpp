@@ -18,16 +18,30 @@ SolutionXML::~SolutionXML()
     delete parser;
 }
 
-std::string SolutionXML::getIdentifier(xmlpp::Element *c)
+std::string SolutionXML::getIdentifier(xmlpp::Node *c)
 {
     assert(c);
-    auto erg = XML::getPath(rootNode, c);
+    auto erg = XML::getPathAsElements(rootNode, dynamic_cast<xmlpp::Element *>(c));
     std::stringstream s;
-    s << "graph";
-    for (auto e : erg) {
-        s << "-" << e;
+    s << "Network" << std::endl;
+    for (size_t i = 0; i < erg.size(); ++i) {
+        auto e = erg[i];
+        if ((i % 3) == 0) {
+
+        } else if ((i % 3) == 1) {
+        } else if ((i % 3) == 2) {
+            s << e->get_attribute("causing_component")->get_value() << ":" << e->get_attribute("causing_event")->get_value() << std::endl;  //"<br/>";
+        }
     }
     return s.str();
+}
+
+void SolutionXML::addLabelIfNotExist(std::stringstream &s, std::string node, std::string label)
+{
+    if (labelExists.find(node) == labelExists.end()) {
+        s << "\"" << node << "\"[label = \"" <<  label << "\"];";
+        labelExists.insert(node);
+    }
 }
 
 /**
@@ -39,29 +53,35 @@ std::list<std::string> SolutionXML::parse(xmlpp::Element *c, std::stringstream &
     std::list<std::string> class_names;
 
     for (auto class_child : c->get_children("class_solution")) {
-        //Paint one allone to make sure everything is displayed
-        std::string class_name = "\"" + dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("filename")->get_value() + "\";";
-        s << class_name << std::endl;
+        auto class_id = atoi(dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("id")->get_value().c_str());
+        // Paint one allone to make sure everything is displayed
+        std::string class_name = dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("filename")->get_value();
+        addLabelIfNotExist(s,class_name, "C-" + std::to_string(class_id));
+
         class_names.push_back(class_name);
         for (auto instance_child : class_child->get_children("instance_solution")) {
-            //Paint connection
+            auto instance_id = atoi(dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("id")->get_value().c_str());
+            addLabelIfNotExist(s,dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() , "I-" + std::to_string(instance_id));
+
+            // Paint connection
             s << "\"" << dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("filename")->get_value() << "\" -> ";
             s << "\"" << dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() << "\";" << std::endl;
             std::list<std::string> childs;
             for (auto transition_child : instance_child->get_children("transition")) {
                 auto elem_t = dynamic_cast<xmlpp::Element *>(transition_child);
                 if (elem_t->get_attribute("resulting_pool")->get_value() != "") {
-                    //Write the connection for ONE resulting pool solution
+                    // Write the connection for ONE resulting pool solution
+                    addLabelIfNotExist(s,elem_t->get_attribute("resulting_pool")->get_value(), getIdentifier(transition_child));
+
                     s << "\"" << dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() << "\""
-                    << " -> \"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" [label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":"
-                    << elem_t->get_attribute("causing_event")->get_value() << "\"];" << std::endl;
-                    auto resultings = parse(elem_t,s);
-                    for(auto name : resultings){
-                        s << "\"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" -> " << name << std::endl;
+                      << " -> \"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" [label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":"
+                      << elem_t->get_attribute("causing_event")->get_value() << "\"];" << std::endl;
+                    auto resultings = parse(elem_t, s);
+                    for (auto name : resultings) {
+                        s << "\"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" -> \"" << name << "\";" << std::endl;
                     }
                 }
             }
-
         }
     }
     return class_names;

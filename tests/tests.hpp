@@ -272,6 +272,7 @@ std::string test_state_machinefailed(constrained_based_networks::Pool* pool)
     sm->addTransition(t1, c, t1, "event2");
     sm->addTransition(t2, t1, t2, "event1");
     sm->addTransition(c, t1, c, "failed");
+    sm->addTransition(c, t2, c, "success");
 //    sm->addEventForwards("t1_child", "event2", "failed");
 //    sm->addEventForwards("t2_child", "event2", "failed");
     

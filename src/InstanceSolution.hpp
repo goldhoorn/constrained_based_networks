@@ -56,8 +56,9 @@ class ConfiguredComponent : public graph_analysis::Vertex
 
     std::string serializeConfig()
     {
+
         std::stringstream str;
-        std::cout << "Serialize int_config with size: " << int_config.size() << " for " << underlaying_name << std::endl;
+//        std::cout << "Serialize int_config with size: " << int_config.size() << " for " << underlaying_name << std::endl;
         str << int_config.size() << " ";
         for (auto j : int_config) {
             str << j.name << " " << j.min << " " << j.max << " ";
@@ -80,29 +81,43 @@ class ConfiguredComponent : public graph_analysis::Vertex
     std::string printConfig()
     {
         std::stringstream str;
+        std::set<std::string> names;
+
         for (auto j : int_config) {
-            if (j.min != j.max) {
-                str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
-            } else {
-                str << j.name << ": " << j.min << std::endl;
+            if (names.find(j.name) == names.end()) {
+                names.insert(j.name);
+                if (j.min != j.max) {
+                    str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                } else {
+                    str << j.name << ": " << j.min << std::endl;
+                }
             }
         }
         for (auto j : double_config) {
-            if (j.min != j.max) {
-                str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
-            } else {
-                str << j.name << ": " << j.min << std::endl;
+            if (names.find(j.name) == names.end()) {
+                names.insert(j.name);
+                if (j.min != j.max) {
+                    str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                } else {
+                    str << j.name << ": " << j.min << std::endl;
+                }
             }
         }
         for (auto j : bool_config) {
-            if (j.min != j.max) {
-                str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
-            } else {
-                str << j.name << ": " << j.min << std::endl;
+            if (names.find(j.name) == names.end()) {
+                names.insert(j.name);
+                if (j.min != j.max) {
+                    str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                } else {
+                    str << j.name << ": " << j.min << std::endl;
+                }
             }
         }
         for (auto j : string_config) {
-            str << j.first << ": " << j.second << " " << std::endl;
+            if (names.find(j.first) == names.end()) {
+                names.insert(j.first);
+                str << j.first << ": " << j.second << " " << std::endl;
+            }
         }
         return str.str();
     }
@@ -144,10 +159,10 @@ class ConfiguredComponent : public graph_analysis::Vertex
         : underlaying_name(underlaying_component->getName())
     {
         component = underlaying_component;
-        //std::cout << "Debug for " << underlaying_component->getName() << std::endl;
-        //string_name << component->toString() << std::endl;
+        // std::cout << "Debug for " << underlaying_component->getName() << std::endl;
+        // string_name << component->toString() << std::endl;
         for (auto j : i) {
-            //std::cout << "\t-" << j.first << j.second << std::endl;
+            // std::cout << "\t-" << j.first << j.second << std::endl;
             int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
         }
         for (auto j : f) {
@@ -206,7 +221,7 @@ class ComponentInstanceHelper : public graph_analysis::Vertex
     }
     static graph_analysis::Vertex::Ptr make(graph_analysis::Vertex::Ptr o)
     {
-        //std::cout << o->getClassName() << std::endl;
+        // std::cout << o->getClassName() << std::endl;
         auto c = new ComponentInstanceHelper(o);
         auto p = c->getPtr();
         assert(p.get());

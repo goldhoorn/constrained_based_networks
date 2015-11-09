@@ -65,7 +65,7 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
             }
         }
     } while (!done);
-
+#if 0
     // Print final result:
     for (auto h1 : event_propagation_table) {
         auto causing_component_id = h1.first;
@@ -83,6 +83,7 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
         }
     }
     std::cout << "Jeha i'm done" << std::endl;
+#endif
 }
 
 double EventModelHandler::distance(graph_analysis::Vertex::Ptr source, graph_analysis::Vertex::Ptr target, double depth)
@@ -329,10 +330,9 @@ void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphI
             new_component->setActive(true);
         } else {
             if (auto sm = dynamic_cast<StateMachine *>(parent)) {
-
-                sm->replaceChild(new_component, c);
-
                 if(auto spec = dynamic_cast<SpecializedComponentBase*>(sm)){
+                    spec->replaced_children[c->getName()] =  new_component;
+
                     std::cout << "Warn we should have a state-machine here" << sm->getName() << std::endl;
                     for(auto conf : spec->configuration){
                         std::cout << "\t- " << conf.first << ": " << conf.second << std::endl;
