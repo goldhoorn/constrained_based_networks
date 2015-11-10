@@ -409,9 +409,27 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             e->setSourceVertex((pool->getItems<Composition*>()[cmp_id]->getPtr()));
             e->setTargetVertex(c->getPtr());
 
-            std::cout << e->getTargetVertex()->toString() << " vs. " <<  c->toString() << " vs. " << c->getName() << std::endl;
-            std::cout << "Label:" << std::endl;
-            std::cout << e->getTargetVertex()->getLabel() << " vs. " <<  c->getLabel() << " vs. " << c->getLabel() << std::endl;
+            assert(c->getPtr().get() == c);
+
+            std::cout << "a1" << std::endl;
+            std::string a1 = e->getTargetVertex()->toString();
+            std::cout << "a2" << std::endl;
+            std::string a2 =  c->toString();
+            std::cout << "a3" << std::endl;
+            std::string a3 = c->getName();
+            std::cout << "a4" << std::endl;
+            std::string a4 = c->getLabel();
+            std::cout << "a5" << std::endl;
+            std::string a5 = e->getTargetVertex()->getLabel();
+
+            std::cerr << "Label:" << std::endl;
+            std::cerr << a1 << " vs. " << a2 << " vs. " << a3 << " vs. " << a4 << " vs. " << a5 <<  std::endl;
+
+            assert(a1==a2);
+            assert(a3==a2);
+            assert(a3==a4);
+            assert(a5==a4);
+
             g->addEdge(e);
 
             if (auto cmp = dynamic_cast<Composition*>(c)) {
@@ -1026,7 +1044,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
         // std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         // std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         best = s;
-        if ((erg.size() == 2)) { //TODO hack
+        if ((erg.size() > 2)) { //TODO hack
             auto c = e.statistics();
             std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
             std::cerr << "Warn cancel search because we have too much solutions" << std::endl;

@@ -133,7 +133,8 @@ class Component : public graph_analysis::Vertex
 
     graph_analysis::Vertex::Ptr getPtr()
     {
-        if (self.get() == nullptr) {
+        //TODO hacky  please check why we need to check the pointer consistency here
+        if (self.get() == nullptr || self.get() != this ) {
             self = graph_analysis::Vertex::Ptr(this);
         }
         return self;

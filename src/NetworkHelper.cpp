@@ -48,7 +48,11 @@ void NetworkHelper::createClassSolution(std::string core_model, std::list<std::s
 }
 
 void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<unsigned int> ids){
-    Pool *pool = XML::load(core_model);
+    std::vector<unsigned int> ids_for_loading = ids;
+    ids_for_loading.pop_back();
+    std::string mode_to_load = XML::loadInstanceSolution(core_model,ids_for_loading);
+    std::cout << "Loading model: " << mode_to_load << std::endl;
+    Pool *pool = XML::load(mode_to_load);
     auto instance_graph_filename = XML::loadClassSolution(core_model, ids);
 
     graph_analysis::BaseGraph::Ptr graph_imported = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);

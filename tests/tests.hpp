@@ -260,6 +260,10 @@ std::string test_state_machinefailed(constrained_based_networks::Pool* pool)
     t2->addEvent("event2");
 
     auto c = new Composition("CmpInBetween",pool);
+    auto s = c->getSpecialized();
+    s->addConfig("composition_config", "5");
+    c = dynamic_cast<Composition*>(s);
+
     auto t3 = new Task("revover-task", pool);
     c->addChild(t3,"t3_child");
 

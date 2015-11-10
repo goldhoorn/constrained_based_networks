@@ -95,15 +95,15 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
                 spec_cmp->addConfig(config_name, config_value);
             }
 
- //           auto state_machine = dynamic_cast<StateMachine*>(spec_cmp);
+            //           auto state_machine = dynamic_cast<StateMachine*>(spec_cmp);
             for (const auto& event_node : child->get_children("replaced_child")) {
                 const xmlpp::Element* sub_element = dynamic_cast<const xmlpp::Element*>(event_node);
                 assert(sub_element);
                 std::string orginal_name = sub_element->get_attribute("orginal_name")->get_value();
                 std::string new_name = sub_element->get_attribute("new_name")->get_value();
                 auto new_child = ensureComponentAvailible(pool, new_name, root);
-//                auto old_child = ensureComponentAvailible(pool, orginal_name, root);
-                spec_cmp->replaced_children[orginal_name] = new_child;// (new_child, old_child);
+                //                auto old_child = ensureComponentAvailible(pool, orginal_name, root);
+                spec_cmp->replaced_children[orginal_name] = new_child;  // (new_child, old_child);
             }
         }
         // We do not need to continue, all children are generated based on the parent by getSpecialized
@@ -355,8 +355,15 @@ xmlpp::Element* XML::getUnresolvedForFollowNetwork(xmlpp::Element* root, xmlpp::
     }
 
     for (auto child : chilren) {
-        if (auto res = getUnresolvedForClassSolution(root, dynamic_cast<xmlpp::Element*>(child), ignored_solutions)) {
-            return res;
+        auto attr = dynamic_cast<xmlpp::Element*>(child)->get_attribute("unsolveable");
+        bool unsolveable = false;
+        if (attr) {
+            unsolveable = attr->get_value() == "true";
+        }
+        if (!unsolveable) {
+            if (auto res = getUnresolvedForClassSolution(root, dynamic_cast<xmlpp::Element*>(child), ignored_solutions)) {
+                return res;
+            }
         }
     }
 
@@ -477,18 +484,18 @@ xmlpp::Element* XML::findNodeForID(xmlpp::Element* root, const std::vector<unsig
         currentElement = dynamic_cast<xmlpp::Element*>(nodes[0]);
         assert(currentElement);
     }
-
-    // Sainity check to make sure we don't (yet) have anything calculated for this
-    if (currentElement->get_first_child("class_solution")) {
-        throw std::runtime_error("Searched next free node to append a Solution, but current node has already class-solutions");
-    }
-    if (currentElement->get_first_child("instance_solution")) {
-        throw std::runtime_error("Searched next free node to append a Solution, but current node has already instance-solutions");
-    }
-    if (currentElement->get_first_child("transition")) {
-        throw std::runtime_error("Searched next free node to append a Solution, but current node has already transitions");
-    }
-
+    /* //The sainity check is not used anymore, because we use this function also in different setups
+        // Sainity check to make sure we don't (yet) have anything calculated for this
+        if (currentElement->get_first_child("class_solution")) {
+            throw std::runtime_error("Searched next free node to append a Solution, but current node has already class-solutions");
+        }
+        if (currentElement->get_first_child("instance_solution")) {
+            throw std::runtime_error("Searched next free node to append a Solution, but current node has already instance-solutions");
+        }
+        if (currentElement->get_first_child("transition")) {
+            throw std::runtime_error("Searched next free node to append a Solution, but current node has already transitions");
+        }
+    */
     return currentElement;
 }
 
@@ -551,21 +558,21 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
         int cnt2 = -1;
         for (const auto& trigger : solution.second) {
             cnt2++;
-//            std::cout << "processing: " << i << "/" << instance_solutions.size() << " " << cnt2 << "/" << solution.second.size() << std::endl;
+            //            std::cout << "processing: " << i << "/" << instance_solutions.size() << " " << cnt2 << "/" << solution.second.size() << std::endl;
 
             auto transition_node = solution_node->add_child("transition");
             transition_node->set_attribute("id", std::to_string(cnt2));
             transition_node->set_attribute("causing_component", trigger.causing_component->getName());
             transition_node->set_attribute("causing_event", trigger.causing_event);
             if (trigger.resulting_requirement.network.size() == 0) {
-//                std::cout << "Ignoring follow network for : " << trigger.causing_component->getName() << " -> " << trigger.causing_event << std::endl;
+                //                std::cout << "Ignoring follow network for : " << trigger.causing_component->getName() << " -> " << trigger.causing_event << std::endl;
                 transition_node->set_attribute("resulting_pool", "");
                 continue;
             } else {
                 bool found = false;
                 for (auto e : calculationHelper) {
                     if (e.th == trigger) {
-                        std::cout << "!!!!!!!!!-------------------------------  Found a previous generated solution for our problem";
+                        std::cout << "!!!!!!!!!-------------------------------  Found a previous generated solution for our problem" << std::endl;
                         transition_node->set_attribute("resulting_pool", e.filename);
                         found = true;
                         if (auto node = getReferenceNodeForNetwork(rootNode, e.filename)) {
@@ -581,7 +588,10 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                 if (found) {
                     continue;
                 }
-                Pool* pool = XML::load(filename);
+                auto ids_for_loading = ids;
+                ids_for_loading.pop_back();
+                Pool* pool = XML::load(XML::loadInstanceSolution(filename, ids_for_loading));
+                //Pool* pool = XML::load(filename);
                 EventModelHandler::createFollowPool(trigger, pool);
                 std::string event_follow_network_filename = basePath + "/data/";
                 XML::save(pool, event_follow_network_filename, true);
@@ -679,18 +689,16 @@ void XML::createDatabase(std::string original_file)
 
     mkdir((boost::filesystem::path(original_file).remove_filename().string() + "/data/").c_str(), 0755);
 
-    //We save the original pool to the data/ folder to habe a unique link to the source-model. This makes loop-identification clearer
+    // We save the original pool to the data/ folder to habe a unique link to the source-model. This makes loop-identification clearer
     Pool* pool = XML::load(original_file);
-/*
-   TransitionTrigger trigger;
-   trigger.causing_component = 0;
-   trigger.causing_event = "start";
-   //TODO create base graph here
-   trigger.resulting_requirement.network.push_back();
-   EventModelHandler::createFollowPool(trigger, pool);
-   */
-
-
+    /*
+       TransitionTrigger trigger;
+       trigger.causing_component = 0;
+       trigger.causing_event = "start";
+       //TODO create base graph here
+       trigger.resulting_requirement.network.push_back();
+       EventModelHandler::createFollowPool(trigger, pool);
+       */
 
     std::string event_follow_network_filename = boost::filesystem::path(original_file).remove_filename().string() + "/data/";
     XML::save(pool, event_follow_network_filename, true);
@@ -739,7 +747,6 @@ bool XML::saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_s
     max_id++;
 #endif
 
-
     unsigned int solution_id = 0;
     for (auto solution : class_solutions) {
         // Generate the filename for the file
@@ -750,8 +757,14 @@ bool XML::saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_s
         class_solution_network_filename += std::to_string(solution_id) + ".gexf";
 
         auto solution_node = parent_node_for_solution->add_child("class_solution");
-        solution_node->set_attribute("filename", class_solution_network_filename);
-        graph_analysis::io::GraphIO::write(boost::filesystem::path(original_file).remove_filename().string() + "/" + class_solution_network_filename, solution, graph_analysis::representation::GEXF);
+        if (solution->size() != 0) {
+            solution_node->set_attribute("filename", class_solution_network_filename);
+            graph_analysis::io::GraphIO::write(boost::filesystem::path(original_file).remove_filename().string() + "/" + class_solution_network_filename, solution,
+                                               graph_analysis::representation::GEXF);
+        } else {
+            solution_node->set_attribute("unsolveable", "true");
+        }
+
         solution_node->set_attribute("id", std::to_string(solution_id));
         for (auto req : additionalRequirements) {
             solution_node->add_child("requirement", req);
@@ -786,7 +799,11 @@ void XML::addSpecialization(Component* comp, xmlpp::Element* const root)
         root->set_attribute("specialized", "true");
 
         // This is currently unsupported and should be resolved anywhere else before
-        assert(!dynamic_cast<SpecializedComponentBase*>(spec->getOrginal()));
+
+        // We do not support if a specialized component should be specialized
+        if (dynamic_cast<SpecializedComponentBase*>(spec->getOrginal())) {
+            throw std::runtime_error("We cannot handle a specialized component which is a specialized component: " + spec->getOrginal()->toString());
+        }
 
         root->set_attribute("base_class", spec->getOrginal()->getName());
         for (auto c : spec->configuration) {
@@ -795,7 +812,7 @@ void XML::addSpecialization(Component* comp, xmlpp::Element* const root)
             cNode->set_attribute("value", c.second);
         }
 
-        //Replace all chidren here on this node
+        // Replace all chidren here on this node
         for (auto replaced_child : spec->replaced_children) {
             auto r = root->add_child("replaced_child");
             r->set_attribute("orginal_name", replaced_child.first);

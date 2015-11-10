@@ -129,7 +129,6 @@ class SpecializedComponent : public SpecializedComponentBase, public T
     virtual const std::string& getName(bool base) const
     {
         if (base) return T::getName();
-
         return specialized_name;
     }
 

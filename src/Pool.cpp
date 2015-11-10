@@ -157,7 +157,7 @@ void Pool::mergeDoubles()
                         base = existing;
                     } else {
                         //This mean it's a different specialized component with the same base-class
-                        if (cmp->configuration == spec->configuration) {
+                        if (cmp->configuration == spec->configuration && cmp->isActive() == spec->isActive() && cmp->replaced_children == spec->replaced_children) {
   //                          std::cout << "Got a equal component between " << cmp->getName() << " and " << spec->getName() << std::endl;
                             // Skip this it already is part of the database, we can stop here
                             /*

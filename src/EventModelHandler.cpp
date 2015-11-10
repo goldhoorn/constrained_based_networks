@@ -65,7 +65,7 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
             }
         }
     } while (!done);
-#if 0
+#if 1
     // Print final result:
     for (auto h1 : event_propagation_table) {
         auto causing_component_id = h1.first;
@@ -185,10 +185,12 @@ void EventModelHandler::generateRequrementsGraphRecusivly(graph_analysis::BaseGr
                                                           unsigned int transition)
 {
     if (isOnPath(current, target)) {
+        std::cout << "Component is on path" << std::endl;
         // Searching each child of the composition, becasue we have to fix this
         // for a sub-solution. This prevents a generation of all requiremetns that could fit.
         // We only want to generate only solutions that are really close to out previous one.
         for (auto outEdgeOfCurrent : instancitaed_network->outEdges(current)) {
+            std::cout << "Begin for loop" << std::endl;
             // TODO not sure if we need a orginal child here to read the config from it
             auto parent = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(outEdgeOfCurrent->getSourceVertex())->getName()));
             auto child = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(outEdgeOfCurrent->getTargetVertex())->getName()));
@@ -196,7 +198,7 @@ void EventModelHandler::generateRequrementsGraphRecusivly(graph_analysis::BaseGr
             assert(child);
 
             if (outEdgeOfCurrent->getTargetVertex() != target) {
-
+                std::cout << "It is not the target" << std::endl;
 
                 graph->addEdge(outEdgeOfCurrent);
 
@@ -204,6 +206,9 @@ void EventModelHandler::generateRequrementsGraphRecusivly(graph_analysis::BaseGr
                 // becasue everything else we dont care in general
                 generateRequrementsGraphRecusivly(graph, pool, outEdgeOfCurrent->getTargetVertex(), target, transition);
             } else {
+
+                std::cout << "It is the target" << std::endl;
+
                 auto new_child = Vertex::Ptr(outEdgeOfCurrent->getTargetVertex()->clone());
                 auto sm = dynamic_cast<ConfiguredComponent *>(new_child.get());
                 assert(sm);
@@ -224,6 +229,7 @@ void EventModelHandler::generateRequrementsGraphRecusivly(graph_analysis::BaseGr
                     graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge(outEdgeOfCurrent->getLabel()));
                     e->setSourceVertex(current);
                     e->setTargetVertex(new_child);
+                    std::cout << "Adding edge from " << current->toString() << " to " << new_child->toString() << std::endl;
                     graph->addEdge(e);
                 }
             }
@@ -232,12 +238,19 @@ void EventModelHandler::generateRequrementsGraphRecusivly(graph_analysis::BaseGr
         // We don't care for everything else, expect we have to start it because we are on the root-level
         // which means the component must be started.
         if (current == root) {
+            std::cout << "current is root" << std::endl;
             graph_analysis::Edge::Ptr e = graph_analysis::Edge::Ptr(new graph_analysis::Edge("root-requirement"));
             e->setSourceVertex(current);
             e->setTargetVertex(target);
             graph->addEdge(e);
         }
     }
+    /*
+        if(graph->size() == 1){
+            //Somethign goes wonrg here we have no requirements?
+            throw std::runtime_error("Cannot create graph with no dependancies this is wrong");
+        }
+    */
 }
 
 void EventModelHandler::generateDBRecursive(graph_analysis::Vertex::Ptr current_node)
@@ -328,24 +341,25 @@ void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphI
         // We have to start this component IF parent is a root
         if (current_vertex->toString() == "root-knot") {
             new_component->setActive(true);
+            std::cout << "Set active on: " << new_component->toString() << std::endl;
         } else {
             if (auto sm = dynamic_cast<StateMachine *>(parent)) {
-                if(auto spec = dynamic_cast<SpecializedComponentBase*>(sm)){
-                    spec->replaced_children[c->getName()] =  new_component;
+                if (auto spec = dynamic_cast<SpecializedComponentBase *>(sm)) {
+                    spec->replaced_children[c->getName()] = new_component;
 
                     std::cout << "Warn we should have a state-machine here" << sm->getName() << std::endl;
-                    for(auto conf : spec->configuration){
+                    for (auto conf : spec->configuration) {
                         std::cout << "\t- " << conf.first << ": " << conf.second << std::endl;
                     }
-                }else{
+                } else {
                     throw std::runtime_error("All state-machines needs to be specialized here");
                 }
                 // Should not needed, solved by the spec
             } else if (auto composition = dynamic_cast<Composition *>(parent)) {
                 composition->replaceChild(new_component, child->toString());
             } else {
-                //Maybe a task we dont care here
-                //throw std::runtime_error("Unsupported");
+                // Maybe a task we dont care here
+                // throw std::runtime_error("Unsupported");
             }
         }
         createFollowPoolRecursive(graph, pool, child->getTargetVertex(), new_component);
@@ -370,16 +384,56 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
         }
     }
     assert(root.get());
+    /*
+    if(graph->size() == 1){
+        throw std::runtime_error("Got a empty requrement graph, this is not allowed");
+    }else{
+        std::cout << "Graph size is: " << graph->size() << std::endl;
+    }
+    */
 
     // Disable all current components in the network
+    /*
     for (auto e : graph->edges()) {
         if (e->getSourceVertex()->toString() == "root-knot") {
             const auto &active_child = pool->getComponent(e->getTargetVertex()->toString());
             active_child->setActive(false);
         }
     }
+    */
+
+    for(auto c : pool->getItems<Component*>()){
+        if(c->getName() != "root-knot"){
+            c->setActive(false);
+        }
+    }
 
     createFollowPoolRecursive(d_graph, pool, root, 0);
+
+    bool valid= false;
+    for(auto c : pool->getItems<Component*>()){
+        if(c->isActive() && c->getName() != "root-knot"){
+            std::cout << "Fond a active component: " << c->getName() << std::endl;
+            valid = true;
+        }
+    }
+    if(!valid){
+        throw std::runtime_error("Generated follow requiremtn without any component active");
+    }
+
+    pool->mergeDoubles();
+
+    valid= false;
+    for(auto c : pool->getItems<Component*>()){
+        if(c->isActive() && c->getName() != "root-knot"){
+            std::cout << "Fond a active component: " << c->getName() << std::endl;
+            valid = true;
+        }
+    }
+    if(!valid){
+        throw std::runtime_error("Merge doubles is again really bad");
+    }
+
     /*
         // Start to create our graph based on the imported graph
         for (auto e : graph->edges()) {
@@ -416,7 +470,6 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
             }
         }
     */
-    pool->mergeDoubles();
 }
 
 Component *EventModelHandler::setConfig(graph_analysis::Vertex::Ptr v, Component *c)

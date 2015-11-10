@@ -160,8 +160,13 @@ void StateMachine::addTransition(Component *source, Component *target, Component
 
 SpecializedComponentBase *StateMachine::getSpecialized(std::string name)
 {
-    if (dynamic_cast<SpecializedComponentBase *>(this)) {
-        throw std::runtime_error("We cannot specilaize a specialized component");
+    if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
+        auto s = new SpecializedComponent<StateMachine>(dynamic_cast<StateMachine*>(spec->getOrginal()), pool, name);
+        s->configuration = spec->configuration;
+        s->replaced_children = spec->replaced_children;
+        s->setActive(spec->isActive());
+        return s;
+//        throw std::runtime_error("We cannot specilaize a specialized component");
     }
     return new SpecializedComponent<StateMachine>(this, pool, name);
 }
