@@ -8,6 +8,7 @@
 #include "Pool.hpp"
 #include <graph_analysis/GraphAnalysis.hpp>
 #include <graph_analysis/DirectedGraphInterface.hpp>
+#include "SpecializedComponent.hpp"
 
 namespace constrained_based_networks
 {
@@ -152,6 +153,47 @@ class ConfiguredComponent : public graph_analysis::Vertex
             bool_config.push_back({bMin, bMax, name});
         }
         // TODO handle string
+    }
+    
+    
+    ConfiguredComponent(Component* underlaying_component)
+        : underlaying_name(underlaying_component->getName())
+    {
+        component = underlaying_component;
+        if(auto spec = dynamic_cast<SpecializedComponentBase*>(underlaying_component)){
+            throw std::runtime_error("Not implemented yet");
+        }
+        if(auto sm = dynamic_cast<StateMachine*>(underlaying_component)){
+            int_config.push_back(Config<int>{(int)sm->getCurrentTransition(), (int)sm->getCurrentTransition(), "current_state"});
+        }
+/*
+        // std::cout << "Debug for " << underlaying_component->getName() << std::endl;
+        // string_name << component->toString() << std::endl;
+        for (auto j : i) {
+            // std::cout << "\t-" << j.first << j.second << std::endl;
+            int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
+        }
+        for (auto j : f) {
+            double_config.push_back(Config<double>{j.second.min(), j.second.max(), j.first});
+        }
+        for (auto j : b) {
+            bool_config.push_back(Config<bool>{(bool)j.second.min(), (bool)j.second.max(), j.first});
+        }
+        for (auto e : s) {
+            std::string config_value = "ERR: N/A";
+            // TODO check unassigned values
+            if (e.second.assigned()) {
+                auto id = e.second.val();
+                for (auto v : *sh) {
+                    if (v.second == id) {
+                        config_value = v.first;
+                        break;
+                    }
+                }
+            }
+            string_config.push_back({e.first, config_value});
+        }
+        */
     }
 
     ConfiguredComponent(Component* underlaying_component, std::map<std::string, Gecode::FloatVar> f, std::map<std::string, Gecode::BoolVar> b, std::map<std::string, Gecode::IntVar> i,

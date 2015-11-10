@@ -9,6 +9,7 @@ StateMachine::StateMachine(std::string name, Pool *pool) : Composition(name, poo
 {
     addProperty("current_state", ConfigurationModel::INT);
     transitions.push_back(Transition(this, this, this, "no_start_state"));
+    assert(name != "SM1_5");
 }
 
 StateMachine::~StateMachine()
@@ -53,7 +54,7 @@ std::vector<Transition> StateMachine::getTransitions()
 
 unsigned int StateMachine::getCurrentTransition()
 {
-    std::vector<std::pair<std::string, Component *>> res;
+    //std::vector<std::pair<std::string, Component *>> res;
     if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
         //        std::cout << "Have a specialized StateMachine " << getName() << std::endl;
         if (spec->configuration.find("current_state") != spec->configuration.end()) {
@@ -66,22 +67,20 @@ unsigned int StateMachine::getCurrentTransition()
             assert(s);
             return current_state;
             //            std::cout << "New child is: " << s->getName() << std::endl;
-            res.push_back({"main", s});
+            //res.push_back({"main", s});
         } else {
             if (!getTransitions()[0].target) {
-                std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
+                throw std::runtime_error("State machine has a transition but no target");
+//                std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
             } else {
                 return 0;
-                res.push_back({"main", getTransitions()[0].target});
             }
         }
     } else {
         if (!getTransitions()[0].target) {
-            return 0;
-            std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
+            throw std::runtime_error("State machine has no transitions");
         } else {
             return 0;
-            res.push_back({"main", getTransitions()[0].target});
         }
     }
     throw std::runtime_error("Unknown error in getCurrentTransition()");

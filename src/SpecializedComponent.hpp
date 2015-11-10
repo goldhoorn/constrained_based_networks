@@ -109,7 +109,7 @@ class SpecializedComponent : public SpecializedComponentBase, public T
         //      std::cerr << "on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
         this->active = active;
         if (active && id != ID_ROOT_KNOT) {  // ID for the root-knot-composition
-            dynamic_cast<Composition*>((*pool)[1])->addChild(this, "child_" + getName());
+            dynamic_cast<Composition*>((*pool)[1])->addChild(this, getName(true));
         }
         //        std::cerr << " " << active << " " << this->active << " " << T::active  << std::endl;
     }

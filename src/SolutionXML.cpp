@@ -39,7 +39,7 @@ std::string SolutionXML::getIdentifier(xmlpp::Node *c)
 void SolutionXML::addLabelIfNotExist(std::stringstream &s, std::string node, std::string label)
 {
     if (labelExists.find(node) == labelExists.end()) {
-        //s << "\"" << node << "\"[label = \"" << label << "\"];";
+        // s << "\"" << node << "\"[label = \"" << label << "\"];";
         s << "\"" << node << "\"[label = \"" << node << "\n" << label << "\"];";
         labelExists.insert(node);
     }
@@ -82,23 +82,23 @@ std::list<std::string> SolutionXML::parse(xmlpp::Element *c, std::stringstream &
                 if (elem_t->get_attribute("resulting_pool")->get_value() != "") {
                     // Write the connection for ONE resulting pool solution
                     addLabelIfNotExist(s, elem_t->get_attribute("resulting_pool")->get_value(), getIdentifier(transition_child));
-                    std::string conn("\"" + dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value()
-                            + "\" -> \"" + elem_t->get_attribute("resulting_pool")->get_value() + "\" ");
+                    std::string conn("\"" + dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() + "\" -> \"" + elem_t->get_attribute("resulting_pool")->get_value() +
+                                     "\" ");
 
-                    //Need to initialize first
+                    // Need to initialize first
                     connections[conn] = connections[conn] + elem_t->get_attribute("causing_component")->get_value() + ":" + elem_t->get_attribute("causing_event")->get_value() + "\n";
-/*
-                    s << "\"" << dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() << "\""
-                      << " -> \"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" [label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":"
-                      << elem_t->get_attribute("causing_event")->get_value() << "\"];" << std::endl;
-                      */
+                    /*
+                                        s << "\"" << dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() << "\""
+                                          << " -> \"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" [label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":"
+                                          << elem_t->get_attribute("causing_event")->get_value() << "\"];" << std::endl;
+                                          */
                     auto resultings = parse(elem_t, s);
                     for (auto name : resultings) {
                         s << "\"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" -> \"" << name << "\";" << std::endl;
                     }
                 }
             }
-            for(auto c : connections){
+            for (auto c : connections) {
                 s << c.first << " [label=\"" << c.second << "\"];" << std::endl;
             }
         }
@@ -162,7 +162,13 @@ std::string SolutionXML::getDotGraph()
 
     result << "digraph G{" << std::endl;
     result << "compound=true;" << std::endl;
-    parse(rootNode, result);
+
+    auto initial_pool = rootNode->get_attribute("resulting_pool")->get_value();
+    addLabelIfNotExist(result, rootNode->get_attribute("resulting_pool")->get_value(), getIdentifier(rootNode));
+    auto resultings = parse(rootNode, result);
+    for (auto name : resultings) {
+        result << "\"" << rootNode->get_attribute("resulting_pool")->get_value() << "\" -> \"" << name << "\";" << std::endl;
+    }
     result << "}" << std::endl;
     return result.str();
 }

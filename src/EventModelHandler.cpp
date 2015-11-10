@@ -65,7 +65,7 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
             }
         }
     } while (!done);
-#if 1
+#if 0
     // Print final result:
     for (auto h1 : event_propagation_table) {
         auto causing_component_id = h1.first;
@@ -335,7 +335,17 @@ void EventModelHandler::replaceSMinGraph(graph_analysis::DirectedGraphInterface:
 void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphInterface::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current_vertex, Component *parent)
 {
     for (auto child : graph->outEdges(current_vertex)) {
-        auto c = pool->getComponent(child->getTargetVertex()->toString());
+        std::cout << child->getLabel() << std::endl;
+        std::cout << child->getTargetVertex()->getClassName() << std::endl;
+        Component *c=nullptr;
+        if (pool->hasComponent(child->getTargetVertex()->toString())) {
+            c = pool->getComponent(child->getTargetVertex()->toString());
+        } else if (pool->hasComponent(child->toString())) {  // Ugly hack special case see SpecializedComponent::setActive()
+            c = pool->getComponent(child->toString());
+        } else {
+            throw std::runtime_error("Cannot find the requested child in out pool");
+        }
+        assert(c);
         auto new_component = setConfig(child->getTargetVertex(), c);
 
         // We have to start this component IF parent is a root
@@ -384,53 +394,37 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
         }
     }
     assert(root.get());
-    /*
-    if(graph->size() == 1){
-        throw std::runtime_error("Got a empty requrement graph, this is not allowed");
-    }else{
-        std::cout << "Graph size is: " << graph->size() << std::endl;
-    }
-    */
 
     // Disable all current components in the network
-    /*
-    for (auto e : graph->edges()) {
-        if (e->getSourceVertex()->toString() == "root-knot") {
-            const auto &active_child = pool->getComponent(e->getTargetVertex()->toString());
-            active_child->setActive(false);
-        }
-    }
-    */
-
-    for(auto c : pool->getItems<Component*>()){
-        if(c->getName() != "root-knot"){
+    for (auto c : pool->getItems<Component *>()) {
+        if (c->getName() != "root-knot") {
             c->setActive(false);
         }
     }
 
     createFollowPoolRecursive(d_graph, pool, root, 0);
 
-    bool valid= false;
-    for(auto c : pool->getItems<Component*>()){
-        if(c->isActive() && c->getName() != "root-knot"){
+    bool valid = false;
+    for (auto c : pool->getItems<Component *>()) {
+        if (c->isActive() && c->getName() != "root-knot") {
             std::cout << "Fond a active component: " << c->getName() << std::endl;
             valid = true;
         }
     }
-    if(!valid){
+    if (!valid) {
         throw std::runtime_error("Generated follow requiremtn without any component active");
     }
 
     pool->mergeDoubles();
 
-    valid= false;
-    for(auto c : pool->getItems<Component*>()){
-        if(c->isActive() && c->getName() != "root-knot"){
+    valid = false;
+    for (auto c : pool->getItems<Component *>()) {
+        if (c->isActive() && c->getName() != "root-knot") {
             std::cout << "Fond a active component: " << c->getName() << std::endl;
             valid = true;
         }
     }
-    if(!valid){
+    if (!valid) {
         throw std::runtime_error("Merge doubles is again really bad");
     }
 

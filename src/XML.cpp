@@ -453,7 +453,7 @@ bool XML::findUnresolvedIDs(std::string filename, std::vector<unsigned int>& res
     xmlpp::DomParser parser;
     parser.parse_file(genDBFilename(filename));
     assert(parser);
-    auto rootNode = parser.get_document()->get_root_node();
+    auto rootNode = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node());
     auto element = getUnresolvedForFollowNetwork(rootNode, rootNode, ignored_solutions);
     if (!element) {
         // Everything is done, cannot find any node which is unresolved
@@ -507,7 +507,7 @@ std::string XML::loadSolution(std::string filename, std::vector<unsigned int> id
     parser.parse_file(genDBFilename(filename));
     assert(parser);
 
-    const auto rootNode = parser.get_document()->get_root_node();
+    const auto rootNode = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node());
     auto parent_node_for_solution = findNodeForID(rootNode, ids);
     // Search the current toplevel node for our class-solution
     std::cout << "DEBUG: " << parent_node_for_solution->get_line() << " attribute: " << attribute_names[ids.size() % 3] << " ids_size: " << ids.size() << std::endl;
@@ -531,9 +531,14 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
 
     xmlpp::Document doc;
     xmlpp::DomParser parser;
+    std::cout << "Loading: " << genDBFilename(filename) << std::endl;
     parser.parse_file(genDBFilename(filename));
     assert(parser);
-    const auto rootNode = parser.get_document()->get_root_node();
+    auto rootNode = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node());
+    if(rootNode->get_name() == "root"){
+        rootNode = dynamic_cast<xmlpp::Element*>(rootNode->get_first_child("initial_model"));
+    }
+    assert(rootNode);
 
     auto toplevelNode = findNodeForID(rootNode, ids);
 
@@ -590,8 +595,8 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                 }
                 auto ids_for_loading = ids;
                 ids_for_loading.pop_back();
-                Pool* pool = XML::load(XML::loadInstanceSolution(filename, ids_for_loading));
-                //Pool* pool = XML::load(filename);
+                // Pool* pool = XML::load(XML::loadInstanceSolution(filename, ids_for_loading));
+                Pool* pool = XML::load(filename);
                 EventModelHandler::createFollowPool(trigger, pool);
                 std::string event_follow_network_filename = basePath + "/data/";
                 XML::save(pool, event_follow_network_filename, true);
@@ -604,7 +609,9 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                 if (auto node = getReferenceNodeForNetwork(rootNode, event_follow_network_filename)) {
                     auto link = transition_node->add_child("link");
                     auto link_id = getPath(rootNode, node);
+                    std::cout << "We have a folow network for " << event_follow_network_filename << " link is: " << std::endl;
                     for (auto link_id_elem : link_id) {
+                        std::cout << "\t- " << link_id_elem << std::endl;
                         link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
                     }
                 }
@@ -629,6 +636,7 @@ xmlpp::Element* XML::getReferenceNodeForNetwork(xmlpp::Element* root, std::strin
 {
     auto nodes = root->find("//*[@resulting_pool='" + md5 + "']");
     for (auto n : nodes) {
+        std::cout << "Got a node " << n->get_name() << std::endl;
         if (n->get_children("class_solution").size() != 0) {
             return dynamic_cast<xmlpp::Element*>(n);
         }
@@ -691,14 +699,24 @@ void XML::createDatabase(std::string original_file)
 
     // We save the original pool to the data/ folder to habe a unique link to the source-model. This makes loop-identification clearer
     Pool* pool = XML::load(original_file);
-    /*
-       TransitionTrigger trigger;
-       trigger.causing_component = 0;
-       trigger.causing_event = "start";
-       //TODO create base graph here
-       trigger.resulting_requirement.network.push_back();
-       EventModelHandler::createFollowPool(trigger, pool);
-       */
+    TransitionTrigger trigger;
+    trigger.causing_component = 0;
+    trigger.causing_event = "start";
+    graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+    for (auto c : pool->getItems<Component*>()) {
+        if (c->getName() == "root-knot") {
+            for (auto child : pool->getItems<Component*>()) {
+                if (child->isActive()) {
+                    graph_analysis::Edge::Ptr e(new graph_analysis::Edge("root-requirement"));
+                    e->setSourceVertex(graph_analysis::Vertex::Ptr(new ConfiguredComponent(c)));
+                    e->setTargetVertex(graph_analysis::Vertex::Ptr(new ConfiguredComponent(child)));
+                    graph->addEdge(e);
+                }
+            }
+        }
+    }
+    trigger.resulting_requirement.network.push_back(graph);
+    EventModelHandler::createFollowPool(trigger, pool);
 
     std::string event_follow_network_filename = boost::filesystem::path(original_file).remove_filename().string() + "/data/";
     XML::save(pool, event_follow_network_filename, true);
@@ -730,7 +748,11 @@ bool XML::saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_s
     xmlpp::DomParser parser;
     parser.parse_file(genDBFilename(original_file));
     assert(parser);
-    auto orginal_root = parser.get_document()->get_root_node();
+    auto orginal_root = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node());
+    if(parser.get_document()->get_root_node()->get_name() == "root"){
+        orginal_root = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node()->get_first_child("initial_model"));
+    }
+    assert(orginal_root);
 
     auto parent_node_for_solution = findNodeForID(orginal_root, id);
 #if 0
