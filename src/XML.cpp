@@ -543,6 +543,8 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
     auto toplevelNode = findNodeForID(rootNode, ids);
 
     std::vector<TransitionHelper> calculationHelper;
+    std::map<std::string, std::vector<unsigned int>> linkHelper;
+
     for (size_t i = 0; i < instance_solutions.size(); ++i) {
         const auto& solution = instance_solutions[i];
 
@@ -579,15 +581,13 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                     if (e.th == trigger) {
                         std::cout << "!!!!!!!!!-------------------------------  Found a previous generated solution for our problem" << std::endl;
                         transition_node->set_attribute("resulting_pool", e.filename);
-                        found = true;
-                        if (auto node = getReferenceNodeForNetwork(rootNode, e.filename)) {
+                        if (auto node = getReferenceNodeForNetwork(rootNode, e.filename, transition_node)) {
+                            found = true;
                             auto link = transition_node->add_child("link");
-                            auto link_id = getPath(rootNode, node);
-                            for (auto link_id_elem : link_id) {
+                            for (auto link_id_elem : getPath(rootNode,node)) {
                                 link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
                             }
                         }
-                        continue;
                     }
                 }
                 if (found) {
@@ -605,8 +605,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
 
                 // We have to put only relative PATHs from the original file on in our solution file, we have to twesk the filename here
                 event_follow_network_filename = "data/" + boost::filesystem::path(event_follow_network_filename).filename().string();
-
-                if (auto node = getReferenceNodeForNetwork(rootNode, event_follow_network_filename)) {
+                if (auto node = getReferenceNodeForNetwork(rootNode, event_follow_network_filename,  transition_node)) {
                     auto link = transition_node->add_child("link");
                     auto link_id = getPath(rootNode, node);
                     std::cout << "We have a folow network for " << event_follow_network_filename << " link is: " << std::endl;
@@ -614,8 +613,18 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                         std::cout << "\t- " << link_id_elem << std::endl;
                         link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
                     }
+                }/*
+                else if(linkHelper.find(event_follow_network_filename) != linkHelper.end()){
+                    //Check if we had calculated this once
+                    auto link = transition_node->add_child("link");
+                    auto link_id = linkHelper[event_follow_network_filename];
+                    for (auto link_id_elem : link_id) {
+                        link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
+                    }
                 }
 
+                linkHelper[event_follow_network_filename] = getPath(rootNode, transition_node);
+                */
                 calculationHelper.push_back({trigger, pool, event_follow_network_filename});
                 transition_node->set_attribute("resulting_pool", event_follow_network_filename);
                 // delete pool;
@@ -632,12 +641,13 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
     return true;
 }
 
-xmlpp::Element* XML::getReferenceNodeForNetwork(xmlpp::Element* root, std::string md5)
+xmlpp::Element* XML::getReferenceNodeForNetwork(xmlpp::Element* root, std::string md5, xmlpp::Element *current)
 {
     auto nodes = root->find("//*[@resulting_pool='" + md5 + "']");
     for (auto n : nodes) {
         std::cout << "Got a node " << n->get_name() << std::endl;
-        if (n->get_children("class_solution").size() != 0) {
+        if(n != current){
+//        if (n->get_children("class_solution").size() != 0) {
             return dynamic_cast<xmlpp::Element*>(n);
         }
     }

@@ -43,7 +43,7 @@ class XML
     static xmlpp::Element* getUnresolvedForFollowNetwork(xmlpp::Element* root,xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions);
     static xmlpp::Element* getUnresolvedForInstanceSolution(xmlpp::Element* root,xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions);
     static xmlpp::Element* getUnresolvedForClassSolution(xmlpp::Element* root,xmlpp::Element* e,std::list<std::vector<unsigned int>> ignored_solutions);
-    static xmlpp::Element* getReferenceNodeForNetwork(xmlpp::Element *root, std::string md5);
+    static xmlpp::Element* getReferenceNodeForNetwork(xmlpp::Element* root, std::string md5, xmlpp::Element *current);
     static bool findPath(std::vector<unsigned int> s, std::list<std::vector<unsigned int>> ignored_solutions);
 
     static boost::recursive_mutex mutex;
