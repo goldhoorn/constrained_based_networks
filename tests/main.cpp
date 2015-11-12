@@ -149,9 +149,8 @@ int main(int argc, char *argv[])
     bool all = false;
     char c;
     char *testname = 0;
-    char *base_network_file= 0;
 
-    while ((c = getopt(argc, argv, "hadrt:n:f:e:")) != -1) {
+    while ((c = getopt(argc, argv, "hadrt:n:e:")) != -1) {
         switch (c) {
             case 'n':
                 testname = optarg;
@@ -172,9 +171,6 @@ int main(int argc, char *argv[])
             case 'h':
                 printTests();
                 return 0;
-            case 'f':
-                base_network_file = optarg;
-                break;
             case 'e':
                 export_name = optarg;
                 break;
@@ -187,6 +183,10 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    if(export_name.empty()){
+        std::cerr << "This tool should not used anymore, only for export so call it with -e" << std::endl;
+        exit(-1);
+    }
 
     if(all){
         size_t test_count = (sizeof(tests)/sizeof(Tests))-1;

@@ -33,16 +33,16 @@ void initializeExporter(){
 int main(int argc, char *argv[])
 {
     initializeExporter();
-    char *outfile=0;
     char *infile=0;
     char c;
-    while ((c = getopt(argc, argv, "i:o:")) != -1){
+    bool onlySolutions = false;
+    while ((c = getopt(argc, argv, "i:s")) != -1){
         switch (c) {
+            case 's':
+                onlySolutions = true;
+                break;
             case 'i':
                 infile= optarg;
-                break;
-            case 'o':
-                outfile = optarg;
                 break;
         }
     }
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     }
 
     SolutionXML xml(infile);
-    std::cout << xml.getDotGraph() << std::endl;
+    std::cout << xml.getDotGraph(onlySolutions) << std::endl;
     return 0;
 }
 

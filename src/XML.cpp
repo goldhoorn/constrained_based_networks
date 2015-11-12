@@ -193,6 +193,13 @@ void XML::importComposition(Pool* pool, xmlpp::Node* const child, xmlpp::Node* c
             composition->setActive(true);
         }
     }
+    for (const auto& sub_node : child->get_children("property")) {
+        const xmlpp::Element* sub_element = dynamic_cast<const xmlpp::Element*>(sub_node);
+        assert(sub_element);
+        std::string name = sub_element->get_attribute("name")->get_value();
+        std::string type = sub_element->get_attribute("type")->get_value();
+        composition->addProperty(name, type);
+    }
     for (const auto& event_node : child->get_children("event")) {
         const xmlpp::Element* event_node_element = dynamic_cast<const xmlpp::Element*>(event_node);
         assert(event_node_element);
@@ -213,6 +220,22 @@ void XML::importComposition(Pool* pool, xmlpp::Node* const child, xmlpp::Node* c
         DEBUG_XML << "Adding child " << child_name << " as " << child_role << " to " << composition_name << std::endl;
         Component* child_component = ensureComponentAvailible(pool, child_name, root);
         composition->addChild(child_component, child_role);
+    }
+    for (const auto& sub_node : child->get_children("argument_forward")) {
+        const xmlpp::Element* sub_element = dynamic_cast<const xmlpp::Element*>(sub_node);
+        assert(sub_element);
+        std::string child = sub_element->get_attribute("child")->get_value();
+        std::string source_argument = sub_element->get_attribute("source_argument")->get_value();
+        std::string target_argument = sub_element->get_attribute("target_argument")->get_value();
+        composition->addArgumentForwards(child, source_argument, target_argument);
+    }
+    for (const auto& sub_node : child->get_children("event_forward")) {
+        const xmlpp::Element* sub_element = dynamic_cast<const xmlpp::Element*>(sub_node);
+        assert(sub_element);
+        std::string child = sub_element->get_attribute("child")->get_value();
+        std::string source_event = sub_element->get_attribute("source_event")->get_value();
+        std::string target_event = sub_element->get_attribute("target_event")->get_value();
+        composition->addEventForwards(child, source_event, target_event);
     }
 }
 
@@ -535,7 +558,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
     parser.parse_file(genDBFilename(filename));
     assert(parser);
     auto rootNode = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node());
-    if(rootNode->get_name() == "root"){
+    if (rootNode->get_name() == "root") {
         rootNode = dynamic_cast<xmlpp::Element*>(rootNode->get_first_child("initial_model"));
     }
     assert(rootNode);
@@ -584,7 +607,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                         if (auto node = getReferenceNodeForNetwork(rootNode, e.filename, transition_node)) {
                             found = true;
                             auto link = transition_node->add_child("link");
-                            for (auto link_id_elem : getPath(rootNode,node)) {
+                            for (auto link_id_elem : getPath(rootNode, node)) {
                                 link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
                             }
                         }
@@ -605,7 +628,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
 
                 // We have to put only relative PATHs from the original file on in our solution file, we have to twesk the filename here
                 event_follow_network_filename = "data/" + boost::filesystem::path(event_follow_network_filename).filename().string();
-                if (auto node = getReferenceNodeForNetwork(rootNode, event_follow_network_filename,  transition_node)) {
+                if (auto node = getReferenceNodeForNetwork(rootNode, event_follow_network_filename, transition_node)) {
                     auto link = transition_node->add_child("link");
                     auto link_id = getPath(rootNode, node);
                     std::cout << "We have a folow network for " << event_follow_network_filename << " link is: " << std::endl;
@@ -613,18 +636,18 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                         std::cout << "\t- " << link_id_elem << std::endl;
                         link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
                     }
-                }/*
-                else if(linkHelper.find(event_follow_network_filename) != linkHelper.end()){
-                    //Check if we had calculated this once
-                    auto link = transition_node->add_child("link");
-                    auto link_id = linkHelper[event_follow_network_filename];
-                    for (auto link_id_elem : link_id) {
-                        link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
-                    }
-                }
+                } /*
+                 else if(linkHelper.find(event_follow_network_filename) != linkHelper.end()){
+                     //Check if we had calculated this once
+                     auto link = transition_node->add_child("link");
+                     auto link_id = linkHelper[event_follow_network_filename];
+                     for (auto link_id_elem : link_id) {
+                         link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
+                     }
+                 }
 
-                linkHelper[event_follow_network_filename] = getPath(rootNode, transition_node);
-                */
+                 linkHelper[event_follow_network_filename] = getPath(rootNode, transition_node);
+                 */
                 calculationHelper.push_back({trigger, pool, event_follow_network_filename});
                 transition_node->set_attribute("resulting_pool", event_follow_network_filename);
                 // delete pool;
@@ -641,13 +664,13 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
     return true;
 }
 
-xmlpp::Element* XML::getReferenceNodeForNetwork(xmlpp::Element* root, std::string md5, xmlpp::Element *current)
+xmlpp::Element* XML::getReferenceNodeForNetwork(xmlpp::Element* root, std::string md5, xmlpp::Element* current)
 {
     auto nodes = root->find("//*[@resulting_pool='" + md5 + "']");
     for (auto n : nodes) {
         std::cout << "Got a node " << n->get_name() << std::endl;
-        if(n != current){
-//        if (n->get_children("class_solution").size() != 0) {
+        if (n != current) {
+            //        if (n->get_children("class_solution").size() != 0) {
             return dynamic_cast<xmlpp::Element*>(n);
         }
     }
@@ -759,7 +782,7 @@ bool XML::saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_s
     parser.parse_file(genDBFilename(original_file));
     assert(parser);
     auto orginal_root = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node());
-    if(parser.get_document()->get_root_node()->get_name() == "root"){
+    if (parser.get_document()->get_root_node()->get_name() == "root") {
         orginal_root = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node()->get_first_child("initial_model"));
     }
     assert(orginal_root);
@@ -955,6 +978,25 @@ bool XML::save(Pool* pool, std::string& filename, bool md5)
             for (auto e : composition->getFullfillments()) {
                 cNode->add_child("fullfills")->set_attribute("service", e);
             }
+
+            for (auto e : composition->getArgumentForwards()) {
+                for (auto es : e.second) {
+                    auto childNode = cNode->add_child("argument_forward");
+                    childNode->set_attribute("child", e.first);
+                    childNode->set_attribute("source_argument", es.first);
+                    childNode->set_attribute("target_argument", es.second);
+                }
+            }
+
+            for (auto e : composition->getEventForwards()) {
+                for (auto es : e.second) {
+                    auto childNode = cNode->add_child("event_forward");
+                    childNode->set_attribute("child", e.first);
+                    childNode->set_attribute("source_event", es.first);
+                    childNode->set_attribute("target_event", es.second);
+                }
+            }
+
             for (auto c : composition->getChildren()) {
                 auto childNode = cNode->add_child("child");
                 childNode->set_attribute("name", c.second->getName());

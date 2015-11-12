@@ -59,7 +59,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
     {
 
         std::stringstream str;
-//        std::cout << "Serialize int_config with size: " << int_config.size() << " for " << underlaying_name << std::endl;
+        //        std::cout << "Serialize int_config with size: " << int_config.size() << " for " << underlaying_name << std::endl;
         str << int_config.size() << " ";
         for (auto j : int_config) {
             str << j.name << " " << j.min << " " << j.max << " ";
@@ -67,6 +67,8 @@ class ConfiguredComponent : public graph_analysis::Vertex
         str << double_config.size() << " ";
         for (auto j : double_config) {
             str << j.name << " " << j.min << " " << j.max << " ";
+            assert(j.max <= std::numeric_limits<double>::max());
+            //assert(j.max != std::numeric_limits<double>::max());
         }
         str << bool_config.size() << " ";
         for (auto j : bool_config) {
@@ -74,7 +76,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
         }
         str << string_config.size() << " ";
         for (auto j : string_config) {
-            str << j.first << " " << j.second << " ";
+            str << j.first << " " << j.second.size() << " " << j.second << " ";
         }
         return str.str();
     }
@@ -88,7 +90,11 @@ class ConfiguredComponent : public graph_analysis::Vertex
             if (names.find(j.name) == names.end()) {
                 names.insert(j.name);
                 if (j.min != j.max) {
-                    str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                    if(j.min == Gecode::Int::Limits::min && j.max == Gecode::Int::Limits::max){
+                        str << j.name << ": <undef>" << std::endl;
+                    }else{
+                        str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                    }
                 } else {
                     str << j.name << ": " << j.min << std::endl;
                 }
@@ -98,7 +104,11 @@ class ConfiguredComponent : public graph_analysis::Vertex
             if (names.find(j.name) == names.end()) {
                 names.insert(j.name);
                 if (j.min != j.max) {
-                    str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                    if((j.min == Gecode::Float::Limits::min || j.min == std::numeric_limits<double>::min()) && (j.max == Gecode::Float::Limits::max || j.max == std::numeric_limits<double>::max())){
+                        str << j.name << ": <undef>" << std::endl;
+                    }else{
+                        str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                    }
                 } else {
                     str << j.name << ": " << j.min << std::endl;
                 }
@@ -108,7 +118,11 @@ class ConfiguredComponent : public graph_analysis::Vertex
             if (names.find(j.name) == names.end()) {
                 names.insert(j.name);
                 if (j.min != j.max) {
-                    str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                    if(j.min == 0 && j.max == 1){
+                        str << j.name << ": " << ": <undef>" << std::endl;
+                    }else{
+                        str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
+                    }
                 } else {
                     str << j.name << ": " << j.min << std::endl;
                 }
@@ -136,14 +150,43 @@ class ConfiguredComponent : public graph_analysis::Vertex
             ifs >> max;
             int_config.push_back({min, max, name});
         }
-        double dmin, dmax;
+
+        double dmin = 0, dmax = 0;
+        name = "";
+
         ifs >> count;
+
         for (size_t i = 0; i < count; ++i) {
+            name = "";
+            dmin = 0;
+            dmax = 0;
             ifs >> name;
-            ifs >> dmin;
-            ifs >> dmax;
+            assert(ifs.good());
+            std::string sMin;
+            ifs >> sMin;
+            if (sMin == "-1.79769e+308") {  // workaround import problem
+                dmin = Gecode::Float::Limits::min;
+            } else {
+                dmin = atof(sMin.c_str());
+            }
+
+            assert(ifs.good());
+            std::string sMax;
+            ifs >> sMax;
+
+            if (sMax == "1.7977e+308") {  // workaround import problem
+                dmax = Gecode::Float::Limits::max;
+            } else {
+                dmax = atof(sMax.c_str());
+            }
+
+            assert(!ifs.eof());
+            assert(!ifs.fail());
+            assert(!ifs.bad());
+            assert(ifs.good());
             double_config.push_back({dmin, dmax, name});
         }
+
         bool bMin, bMax;
         ifs >> count;
         for (size_t i = 0; i < count; ++i) {
@@ -152,48 +195,57 @@ class ConfiguredComponent : public graph_analysis::Vertex
             ifs >> bMax;
             bool_config.push_back({bMin, bMax, name});
         }
-        // TODO handle string
+        size_t s_count;
+        ifs >> count;
+        for (size_t i = 0; i < count; ++i) {
+            ifs >> name;
+            ifs >> s_count;
+            char res[s_count];
+            for (size_t j = 0; j < s_count; ++j) {
+                ifs >> res[j];
+            }
+            string_config.push_back({name, res});
+        }
     }
-    
-    
-    ConfiguredComponent(Component* underlaying_component)
-        : underlaying_name(underlaying_component->getName())
+
+    ConfiguredComponent(Component* underlaying_component) : underlaying_name(underlaying_component->getName())
     {
         component = underlaying_component;
-        if(auto spec = dynamic_cast<SpecializedComponentBase*>(underlaying_component)){
-            throw std::runtime_error("Not implemented yet");
+        if (auto spec = dynamic_cast<SpecializedComponentBase*>(underlaying_component)) {
+            (void)spec;
+            throw std::runtime_error("Cannot create configuredComponent from a specialized component yet - Not implemented");
         }
-        if(auto sm = dynamic_cast<StateMachine*>(underlaying_component)){
+        if (auto sm = dynamic_cast<StateMachine*>(underlaying_component)) {
             int_config.push_back(Config<int>{(int)sm->getCurrentTransition(), (int)sm->getCurrentTransition(), "current_state"});
         }
-/*
-        // std::cout << "Debug for " << underlaying_component->getName() << std::endl;
-        // string_name << component->toString() << std::endl;
-        for (auto j : i) {
-            // std::cout << "\t-" << j.first << j.second << std::endl;
-            int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
-        }
-        for (auto j : f) {
-            double_config.push_back(Config<double>{j.second.min(), j.second.max(), j.first});
-        }
-        for (auto j : b) {
-            bool_config.push_back(Config<bool>{(bool)j.second.min(), (bool)j.second.max(), j.first});
-        }
-        for (auto e : s) {
-            std::string config_value = "ERR: N/A";
-            // TODO check unassigned values
-            if (e.second.assigned()) {
-                auto id = e.second.val();
-                for (auto v : *sh) {
-                    if (v.second == id) {
-                        config_value = v.first;
-                        break;
-                    }
+        /*
+                // std::cout << "Debug for " << underlaying_component->getName() << std::endl;
+                // string_name << component->toString() << std::endl;
+                for (auto j : i) {
+                    // std::cout << "\t-" << j.first << j.second << std::endl;
+                    int_config.push_back(Config<int>{j.second.min(), j.second.max(), j.first});
                 }
-            }
-            string_config.push_back({e.first, config_value});
-        }
-        */
+                for (auto j : f) {
+                    double_config.push_back(Config<double>{j.second.min(), j.second.max(), j.first});
+                }
+                for (auto j : b) {
+                    bool_config.push_back(Config<bool>{(bool)j.second.min(), (bool)j.second.max(), j.first});
+                }
+                for (auto e : s) {
+                    std::string config_value = "ERR: N/A";
+                    // TODO check unassigned values
+                    if (e.second.assigned()) {
+                        auto id = e.second.val();
+                        for (auto v : *sh) {
+                            if (v.second == id) {
+                                config_value = v.first;
+                                break;
+                            }
+                        }
+                    }
+                    string_config.push_back({e.first, config_value});
+                }
+                */
     }
 
     ConfiguredComponent(Component* underlaying_component, std::map<std::string, Gecode::FloatVar> f, std::map<std::string, Gecode::BoolVar> b, std::map<std::string, Gecode::IntVar> i,
@@ -214,17 +266,22 @@ class ConfiguredComponent : public graph_analysis::Vertex
             bool_config.push_back(Config<bool>{(bool)j.second.min(), (bool)j.second.max(), j.first});
         }
         for (auto e : s) {
-            std::string config_value = "ERR: N/A";
-            // TODO check unassigned values
+            std::string config_value = "ERR (FATAL)";
+            bool valid=false;
             if (e.second.assigned()) {
                 auto id = e.second.val();
                 for (auto v : *sh) {
                     if (v.second == id) {
                         config_value = v.first;
+                        valid = true;
                         break;
                     }
                 }
+            }else{
+                valid = true;
+                config_value = "<unassigned>";
             }
+            assert(valid);
             string_config.push_back({e.first, config_value});
         }
     }

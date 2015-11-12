@@ -45,6 +45,81 @@ void SolutionXML::addLabelIfNotExist(std::stringstream &s, std::string node, std
     }
 }
 
+void SolutionXML::addConnectionIfNotExist(std::stringstream &s, std::string source, std::string target)
+{
+    std::string conn = "\"" + source +  "\" -> \"" + target + "\";\n ";
+    if (connExists.find(conn) == connExists.end()) {
+        s << conn;
+        connExists.insert(conn);
+    }
+}
+
+/**
+ * This function walks throught incance-solution, to the input is a class-solution node
+ *  it paints the cluster around each instance and connects each instance with <this>
+ */
+std::list<std::string> SolutionXML::parseOnlyStates(xmlpp::Element *c, std::stringstream &s)
+{
+    std::list<std::string> class_names;
+
+    for (auto class_child : c->get_children("class_solution")) {
+        //        auto class_id = atoi(dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("id")->get_value().c_str());
+        // Paint one allone to make sure everything is displayed
+        if (dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("unsolveable") && dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("unsolveable")->get_value() == "true") {
+            //    addLabelIfNotExist(s, getIdentifier(class_child), "UNSOLVEABLE C-" + std::to_string(class_id));
+            //    class_names.push_back(getIdentifier(class_child));
+            continue;
+        }
+
+        // std::string class_name = dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("filename")->get_value();
+        // addLabelIfNotExist(s, class_name, "C-" + std::to_string(class_id));
+
+        // class_names.push_back(class_name);
+        for (auto instance_child : class_child->get_children("instance_solution")) {
+            //            auto instance_id = atoi(dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("id")->get_value().c_str());
+            // addLabelIfNotExist(s, dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value(), "I-" + std::to_string(instance_id));
+
+            // Paint connection
+            // s << "\"" << dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("filename")->get_value() << "\" -> ";
+            // s << "\"" << dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() << "\";" << std::endl;
+            std::list<std::string> childs;
+
+            std::map<std::string, std::string> connections;
+
+            for (auto transition_child : instance_child->get_children("transition")) {
+                auto elem_t = dynamic_cast<xmlpp::Element *>(transition_child);
+                if (elem_t->get_attribute("resulting_pool")->get_value() != "") {
+                    // Write the connection for ONE resulting pool solution
+                    addLabelIfNotExist(s, elem_t->get_attribute("resulting_pool")->get_value(), getIdentifier(transition_child));
+                    class_names.push_back(elem_t->get_attribute("resulting_pool")->get_value());
+
+                    std::string conn("\"" + dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() + "\" -> \"" + elem_t->get_attribute("resulting_pool")->get_value() +
+                                     "\" ");
+
+                    // Need to initialize first
+                    connections[conn] = connections[conn] + elem_t->get_attribute("causing_component")->get_value() + ":" + elem_t->get_attribute("causing_event")->get_value() + "\n";
+                    /*
+                                        s << "\"" << dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() << "\""
+                                          << " -> \"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" [label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":"
+                                          << elem_t->get_attribute("causing_event")->get_value() << "\"];" << std::endl;
+                                          */
+                    auto resultings = parseOnlyStates(elem_t, s);
+                    for (auto name : resultings) {
+                        addConnectionIfNotExist(s,elem_t->get_attribute("resulting_pool")->get_value(),name);
+                        // s << "[label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":" << elem_t->get_attribute("causing_event")->get_value() << "\"];" << std::endl;
+                    }
+                }
+            }
+            /*
+            for (auto c : connections) {
+                s << c.first << " [label=\"" << c.second << "\"];" << std::endl;
+            }
+            */
+        }
+    }
+    return class_names;
+}
+
 /**
  * This function walks throught incance-solution, to the input is a class-solution node
  *  it paints the cluster around each instance and connects each instance with <this>
@@ -156,7 +231,7 @@ std::list<std::string> SolutionXML::parseInstanceSolution(xmlpp::Element *c, std
 }
 #endif
 
-std::string SolutionXML::getDotGraph()
+std::string SolutionXML::getDotGraph(bool onlyStates)
 {
     std::stringstream result;
 
@@ -164,10 +239,17 @@ std::string SolutionXML::getDotGraph()
     result << "compound=true;" << std::endl;
 
     auto initial_pool = rootNode->get_attribute("resulting_pool")->get_value();
-    addLabelIfNotExist(result, rootNode->get_attribute("resulting_pool")->get_value(), getIdentifier(rootNode));
-    auto resultings = parse(rootNode, result);
-    for (auto name : resultings) {
-        result << "\"" << rootNode->get_attribute("resulting_pool")->get_value() << "\" -> \"" << name << "\";" << std::endl;
+    if (onlyStates) {
+        result << "Start;" << std::endl;
+        for(auto c : parseOnlyStates(rootNode, result)){
+            addConnectionIfNotExist(result,"Start",c);
+        }
+    } else {
+        addLabelIfNotExist(result, rootNode->get_attribute("resulting_pool")->get_value(), getIdentifier(rootNode));
+        auto resultings = parse(rootNode, result);
+        for (auto name : resultings) {
+            result << "\"" << rootNode->get_attribute("resulting_pool")->get_value() << "\" -> \"" << name << "\";" << std::endl;
+        }
     }
     result << "}" << std::endl;
     return result.str();

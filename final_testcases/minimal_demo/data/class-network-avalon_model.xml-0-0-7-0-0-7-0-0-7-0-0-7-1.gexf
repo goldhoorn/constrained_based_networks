@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gexf xmlns="http://www.gexf.net/1.1draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.1draft http://gexf.net/1.1draft/gexf.xsd" version="1.1">
+  <graph mode="static" defaultedgetype="directed">
+    <attributes class="node" mode="static">
+      <attribute id="0" title="class" type="string"/>
+      <attribute id="1" title="label" type="string"/>
+      <attribute id="constrained_based_networks::ConfiguredComponent-0" title="config" type="string"/>
+      <attribute id="constrained_based_networks::ConfiguredComponent-1" title="underlaying_name" type="string"/>
+    </attributes>
+    <attributes class="edge" mode="static">
+      <attribute id="0" title="class" type="string"/>
+      <attribute id="1" title="label" type="string"/>
+    </attributes>
+    <nodes>
+      <node id="0" label="root-knot">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Composition"/>
+          <attvalue for="1" value="root-knot"/>
+        </attvalues>
+      </node>
+      <node id="1" label="Main::MinimalDemo_606">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::StateMachine"/>
+          <attvalue for="1" value="Main::MinimalDemo_606"/>
+        </attvalues>
+      </node>
+      <node id="10" label="XsensImu::Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="XsensImu::Task"/>
+        </attvalues>
+      </node>
+      <node id="11" label="WallOrientationCorrection::OrientationInMap">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="WallOrientationCorrection::OrientationInMap"/>
+        </attvalues>
+      </node>
+      <node id="12" label="AuvHelper::DepthAndOrientationFusion">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="AuvHelper::DepthAndOrientationFusion"/>
+        </attvalues>
+      </node>
+      <node id="13" label="DepthReader::Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="DepthReader::Task"/>
+        </attvalues>
+      </node>
+      <node id="14" label="SonarTritech::Micron">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="SonarTritech::Micron"/>
+        </attvalues>
+      </node>
+      <node id="15" label="SonarFeatureEstimator::Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="SonarFeatureEstimator::Task"/>
+        </attvalues>
+      </node>
+      <node id="2" label="Wall::Follower_620">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Composition"/>
+          <attvalue for="1" value="Wall::Follower_620"/>
+        </attvalues>
+      </node>
+      <node id="3" label="AuvRelPosController::Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="AuvRelPosController::Task"/>
+        </attvalues>
+      </node>
+      <node id="4" label="Wall::Detector">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Composition"/>
+          <attvalue for="1" value="Wall::Detector"/>
+        </attvalues>
+      </node>
+      <node id="5" label="WallServoing::SingleSonarServoing">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="WallServoing::SingleSonarServoing"/>
+        </attvalues>
+      </node>
+      <node id="6" label="AuvControl::DepthFusionCmp">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Composition"/>
+          <attvalue for="1" value="AuvControl::DepthFusionCmp"/>
+        </attvalues>
+      </node>
+      <node id="7" label="PoseAuv::IKFOrientationEstimatorCmp">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Composition"/>
+          <attvalue for="1" value="PoseAuv::IKFOrientationEstimatorCmp"/>
+        </attvalues>
+      </node>
+      <node id="8" label="OrientationEstimator::BaseEstimator">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="OrientationEstimator::BaseEstimator"/>
+        </attvalues>
+      </node>
+      <node id="9" label="FogKvh::Dsp3000Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::Task"/>
+          <attvalue for="1" value="FogKvh::Dsp3000Task"/>
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge id="0" source="0" target="1" label="Main::MinimalDemo">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="Main::MinimalDemo"/>
+        </attvalues>
+      </edge>
+      <edge id="1" source="1" target="2" label="main">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="main"/>
+        </attvalues>
+      </edge>
+      <edge id="2" source="2" target="3" label="controlled_system">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="controlled_system"/>
+        </attvalues>
+      </edge>
+      <edge id="15" source="2" target="4" label="controller_local" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="controller_local"/>
+        </attvalues>
+      </edge>
+      <edge id="25" source="4" target="14" label="sonar" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="sonar"/>
+        </attvalues>
+      </edge>
+      <edge id="26" source="4" target="15" label="sonar_estimator" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="sonar_estimator"/>
+        </attvalues>
+      </edge>
+      <edge id="16" source="4" target="5" label="detector" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="detector"/>
+        </attvalues>
+      </edge>
+      <edge id="17" source="4" target="6" label="orientation_with_z" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="orientation_with_z"/>
+        </attvalues>
+      </edge>
+      <edge id="23" source="6" target="12" label="task" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="task"/>
+        </attvalues>
+      </edge>
+      <edge id="24" source="6" target="13" label="z" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="z"/>
+        </attvalues>
+      </edge>
+      <edge id="18" source="6" target="7" label="ori" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="ori"/>
+        </attvalues>
+      </edge>
+      <edge id="21" source="7" target="10" label="imu" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="imu"/>
+        </attvalues>
+      </edge>
+      <edge id="22" source="7" target="11" label="ori_in_map" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="ori_in_map"/>
+        </attvalues>
+      </edge>
+      <edge id="19" source="7" target="8" label="estimator" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="estimator"/>
+        </attvalues>
+      </edge>
+      <edge id="20" source="7" target="9" label="fog" weight="2">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="fog"/>
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>

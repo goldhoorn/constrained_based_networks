@@ -24,9 +24,26 @@ Component* Composition::clone(Pool *p) const{
     return c;
 };
 
-Forwards Composition::getArgumentForwards(Component *child)
+Forwards Composition::getArgumentForwards(Component *child, std::string name)
 {
-    return argument_forwards[child];
+    if (children.find(name) == children.end()) {
+        if (this->getName() != "root-knot") {
+            if(!dynamic_cast<StateMachine*>(this)){
+                std::cerr << "This is really bad !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! could not find child " << name << std::endl;
+                assert(false);
+            }else{
+                std::cerr << "WARN implement argumetn forwards for state-machines" << std::endl;
+            }
+        }
+        return Forwards();
+    }
+    if(children[name] != child){
+        if(!child->isFullfilling(children[name]->getName())){
+            throw std::invalid_argument("Cannot get argument forwards, the child " + children[name]->getName() + " does not equal the given child " + child->getName() + " for role " + name);
+        }
+    }
+
+    return argument_forwards[name];
 }
 
 bool Composition::hasChild(Component *child)
@@ -51,10 +68,15 @@ Forwards Composition::getEventForwards(Component *child, std::string name)
     if (children.find(name) == children.end()) {
         if (this->getName() != "root-knot") {
             std::cerr << "This is really bad !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! could not find child " << name << std::endl;
+            assert(false);
         }
         return Forwards();
     }
-    child = children[name];
+    if(children[name] != child){
+        if(!child->isFullfilling(children[name]->getName())){
+            throw std::invalid_argument("Cannot get argument forwards, the child " + children[name]->getName() + " does not equal the given child " + child->getName() + " for role " + name);
+        }
+    }
 
     /*
     std::cout << "Forwards for " << this->getName() << " and child " << child->getName() << std::endl;
@@ -68,7 +90,7 @@ Forwards Composition::getEventForwards(Component *child, std::string name)
     }
     */
 
-    return event_forwards[child];
+    return event_forwards[name];
 }
 
 bool Composition::operator==(const Composition &comp) const
@@ -80,8 +102,8 @@ void Composition::addArgumentForwards(std::string child, std::string source, std
 {
     try
     {
-        auto &c = children.at(child);
-        argument_forwards[c][source] = target;
+        children.at(child);
+        argument_forwards[child][source] = target;
     }
     catch (std::out_of_range e)
     {
@@ -130,7 +152,21 @@ void Composition::updateInternals(Pool *pool)
 
 void Composition::addEventForwards(std::string child, std::string source, std::string target)
 {
-    event_forwards[children[child]][source] = target;
+    try
+    {
+        children.at(child);
+        event_forwards[child][source] = target;
+    }
+    catch (std::out_of_range e)
+    {
+        std::cerr << "Could not find child \"" << child << "\"" << std::endl;
+        std::cerr << "Possible children are: " << std::endl;
+        for (auto child : children) {
+            std::cerr << "- " << child.first << std::endl;
+        }
+        std::cerr << std::endl;
+        throw e;
+    }
 }
 
 #if 0
@@ -187,6 +223,14 @@ void Composition::replaceChild(Component *c, std::string name)
         throw std::runtime_error("Cannot replace child, the requested child does not exist so far: " + name);
     }
     children[name] = c;
+}
+
+const std::map<std::string, Forwards>& Composition::getArgumentForwards() const{
+    return argument_forwards;
+}
+
+const std::map<std::string, Forwards>& Composition::getEventForwards() const{
+    return event_forwards;
 }
 
 void Composition::addChild(Component *c, std::string name)

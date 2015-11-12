@@ -323,32 +323,40 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                     }
 #endif
                 }
-                for (auto forward : current_graph_composition->getArgumentForwards(child_component)) {
+
+                //The name of the edge is the role of the assoziated child
+                std::string child_role = edge->toString();
+                for (auto forward : current_graph_composition->getArgumentForwards(child_component, child_role)) {
 
                     if (child_component->getProperty(forward.second) != current_graph_composition->getProperty(forward.first)) {
                         throw std::runtime_error("The properties of child and parend differ in type");
                     }
+                    std::cout << "Should forward: " << forward.second << " to " << forward.first << " between " << current_graph_composition->getName() << " and " << child_component->getName() << std::endl;
                     // Dont care which type we choose check is done before
                     switch (child_component->getProperty(forward.second)) {
                         case(constrained_based_networks::ConfigurationModel::INT) : {
+                                                                                        std::cout << "Int" << std::endl;
                             auto &var_source = int_config[graph->getVertexId(child_vertex)][forward.second];
                             auto &var_target = int_config[graph->getVertexId(current_graph_vertex)][forward.first];
                             rel(*this, var_source, IRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::STRING) : {
+                                                                                        std::cout << "string " << std::endl;
                             auto &var_source = string_config[graph->getVertexId(child_vertex)][forward.second];
                             auto &var_target = string_config[graph->getVertexId(current_graph_vertex)][forward.first];
                             rel(*this, var_source, IRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
+                                                                                        std::cout << "double" << std::endl;
                             auto &var_source = float_config[graph->getVertexId(child_vertex)][forward.second];
                             auto &var_target = float_config[graph->getVertexId(current_graph_vertex)][forward.first];
                             rel(*this, var_source, FRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::BOOL) : {
+                                                                                        std::cout << "bool" << std::endl;
                             auto &var_source = bool_config[graph->getVertexId(child_vertex)][forward.second];
                             auto &var_target = bool_config[graph->getVertexId(current_graph_vertex)][forward.first];
                             rel(*this, var_source, IRT_EQ, var_target);
@@ -682,7 +690,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
         if ((erg.size() > 2)) { //TODO hack
             auto c = e.statistics();
             std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
-            //        s->printToStream(std::cout);
+            s->printToStream(std::cout);
             std::cerr << "Warn cancel search because we have too much solutions" << std::endl;
             break;
         }

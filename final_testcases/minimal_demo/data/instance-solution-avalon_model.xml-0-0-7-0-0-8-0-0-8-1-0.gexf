@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gexf xmlns="http://www.gexf.net/1.1draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.1draft http://gexf.net/1.1draft/gexf.xsd" version="1.1">
+  <graph mode="static" defaultedgetype="directed">
+    <attributes class="node" mode="static">
+      <attribute id="0" title="class" type="string"/>
+      <attribute id="1" title="label" type="string"/>
+      <attribute id="constrained_based_networks::ConfiguredComponent-0" title="config" type="string"/>
+      <attribute id="constrained_based_networks::ConfiguredComponent-1" title="underlaying_name" type="string"/>
+    </attributes>
+    <attributes class="edge" mode="static">
+      <attribute id="0" title="class" type="string"/>
+      <attribute id="1" title="label" type="string"/>
+    </attributes>
+    <nodes>
+      <node id="0" label="root-knot">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 0 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="root-knot"/>
+        </attvalues>
+      </node>
+      <node id="1" label="Main::MinimalDemo_606">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="1 current_state 4 4 0 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="Main::MinimalDemo_606"/>
+        </attvalues>
+      </node>
+      <node id="10" label="DepthReader::Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="5 can_id -2147483646 2147483646 filter_param_external_pressure -2147483646 2147483646 filter_param_internal_pressure -2147483646 2147483646 filter_param_temperature -2147483646 2147483646 filter_param_water -2147483646 2147483646 8 covariance_depth -1.79769e+308 1.7977e+308 covariance_depth_velocity -1.79769e+308 1.7977e+308 externalPressureFactor -1.79769e+308 1.7977e+308 internalPressureFactor -1.79769e+308 1.7977e+308 internalPressureOffset -1.79769e+308 1.7977e+308 smooth_factor -1.79769e+308 1.7977e+308 temperatureFactor -1.79769e+308 1.7977e+308 temperatureOffset -1.79769e+308 1.7977e+308 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="DepthReader::Task"/>
+        </attvalues>
+      </node>
+      <node id="11" label="AuvHelper::DepthAndOrientationFusion">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="2 depth_correction_buffer_size -2147483646 2147483646 minimum_buffer_size -2147483646 2147483646 7 aggregator_max_latency -1.79769e+308 1.7977e+308 depth_samples_period -1.79769e+308 1.7977e+308 ground_depth -1.79769e+308 1.7977e+308 ground_distance_period -1.79769e+308 1.7977e+308 heading_offset -1.79769e+308 1.7977e+308 orientation_samples_period -1.79769e+308 1.7977e+308 stream_aligner_status_period -1.79769e+308 1.7977e+308 1 use_initial_heading 0 1 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="AuvHelper::DepthAndOrientationFusion"/>
+        </attvalues>
+      </node>
+      <node id="12" label="PoseEstimation::UWPoseEstimator">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 11 depth_samples_period -1.79769e+308 1.7977e+308 dvl_velocity_samples_period -1.79769e+308 1.7977e+308 gps_position_samples_period -1.79769e+308 1.7977e+308 lbl_position_samples_period -1.79769e+308 1.7977e+308 max_time_delta -1.79769e+308 1.7977e+308 model_velocity_samples_period -1.79769e+308 1.7977e+308 orientation_samples_period -1.79769e+308 1.7977e+308 transformer_max_latency -1.79769e+308 1.7977e+308 transformer_status_period -1.79769e+308 1.7977e+308 xy_position_samples_period -1.79769e+308 1.7977e+308 xyz_position_samples_period -1.79769e+308 1.7977e+308 0 7 body_frame 12 &lt;unassigned&gt; dvl_frame 12 &lt;unassigned&gt; gps_frame 12 &lt;unassigned&gt; imu_frame 12 &lt;unassigned&gt; lbl_frame 12 &lt;unassigned&gt; pressure_sensor_frame 12 &lt;unassigned&gt; target_frame 12 &lt;unassigned&gt; "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="PoseEstimation::UWPoseEstimator"/>
+        </attvalues>
+      </node>
+      <node id="13" label="Localization::DeadReckoning">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 0 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="Localization::DeadReckoning"/>
+        </attvalues>
+      </node>
+      <node id="14" label="AuvControl::DepthFusionCmp">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 0 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="AuvControl::DepthFusionCmp"/>
+        </attvalues>
+      </node>
+      <node id="15" label="PoseAuv::IKFOrientationEstimatorCmp">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 0 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="PoseAuv::IKFOrientationEstimatorCmp"/>
+        </attvalues>
+      </node>
+      <node id="16" label="FogKvh::Dsp3000Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="1 timeout -2147483646 2147483646 0 0 1 port 12 &lt;unassigned&gt; "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="FogKvh::Dsp3000Task"/>
+        </attvalues>
+      </node>
+      <node id="17" label="OrientationEstimator::BaseEstimator">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="1 magnetic_declination_mode -2147483646 2147483646 10 aggregator_max_latency -1.79769e+308 1.7977e+308 altitude -1.79769e+308 1.7977e+308 dip_angle -1.79769e+308 1.7977e+308 fog_samples_period -1.79769e+308 1.7977e+308 imu_orientation_period -1.79769e+308 1.7977e+308 initial_heading -1.79769e+308 1.7977e+308 latitude -1.79769e+308 1.7977e+308 longitude -1.79769e+308 1.7977e+308 magnetic_declination -1.79769e+308 1.7977e+308 stream_aligner_status_period -1.79769e+308 1.7977e+308 2 substract_earth_rotation 0 1 use_initial_heading 0 1 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="OrientationEstimator::BaseEstimator"/>
+        </attvalues>
+      </node>
+      <node id="18" label="WallOrientationCorrection::OrientationInMap">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 3 orientation_in_world_period -1.79769e+308 1.7977e+308 transformer_max_latency -1.79769e+308 1.7977e+308 transformer_status_period -1.79769e+308 1.7977e+308 0 2 map_frame 12 &lt;unassigned&gt; world_frame 12 &lt;unassigned&gt; "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="WallOrientationCorrection::OrientationInMap"/>
+        </attvalues>
+      </node>
+      <node id="19" label="XsensImu::Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="2 max_timeouts -2147483646 2147483646 timeout -2147483646 2147483646 0 0 4 imu_frame 12 &lt;unassigned&gt; port 12 &lt;unassigned&gt; scenario 12 &lt;unassigned&gt; world_frame 12 &lt;unassigned&gt; "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="XsensImu::Task"/>
+        </attvalues>
+      </node>
+      <node id="2" label="AuvControl::SimplePosMove_605">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 9 delta_timeout 20 20 delta_xy -1.79769e+308 1.7977e+308 delta_yaw -1.79769e+308 1.7977e+308 delta_z -1.79769e+308 1.7977e+308 depth -6 -6 heading 3.1416 3.1416 timeout -1.79769e+308 1.7977e+308 x 0.5 0.5 y 5.5 5.5 1 finish_when_reached 0 0 1 event_on_timeout 12 &lt;unassigned&gt; "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="AuvControl::SimplePosMove_605"/>
+        </attvalues>
+      </node>
+      <node id="20" label="DepthReader::Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="5 can_id -2147483646 2147483646 filter_param_external_pressure -2147483646 2147483646 filter_param_internal_pressure -2147483646 2147483646 filter_param_temperature -2147483646 2147483646 filter_param_water -2147483646 2147483646 8 covariance_depth -1.79769e+308 1.7977e+308 covariance_depth_velocity -1.79769e+308 1.7977e+308 externalPressureFactor -1.79769e+308 1.7977e+308 internalPressureFactor -1.79769e+308 1.7977e+308 internalPressureOffset -1.79769e+308 1.7977e+308 smooth_factor -1.79769e+308 1.7977e+308 temperatureFactor -1.79769e+308 1.7977e+308 temperatureOffset -1.79769e+308 1.7977e+308 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="DepthReader::Task"/>
+        </attvalues>
+      </node>
+      <node id="21" label="AuvHelper::DepthAndOrientationFusion">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="2 depth_correction_buffer_size -2147483646 2147483646 minimum_buffer_size -2147483646 2147483646 7 aggregator_max_latency -1.79769e+308 1.7977e+308 depth_samples_period -1.79769e+308 1.7977e+308 ground_depth -1.79769e+308 1.7977e+308 ground_distance_period -1.79769e+308 1.7977e+308 heading_offset -1.79769e+308 1.7977e+308 orientation_samples_period -1.79769e+308 1.7977e+308 stream_aligner_status_period -1.79769e+308 1.7977e+308 1 use_initial_heading 0 1 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="AuvHelper::DepthAndOrientationFusion"/>
+        </attvalues>
+      </node>
+      <node id="22" label="UwParticleLocalization::MotionModel">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 8 aggregator_max_latency -1.79769e+308 1.7977e+308 orientation_samples_period -1.79769e+308 1.7977e+308 param_length -1.79769e+308 1.7977e+308 param_mass -1.79769e+308 1.7977e+308 param_radius -1.79769e+308 1.7977e+308 param_thrusterVoltage -1.79769e+308 1.7977e+308 stream_aligner_status_period -1.79769e+308 1.7977e+308 thruster_samples_period -1.79769e+308 1.7977e+308 2 advanced_motion_model 0 1 param_floating 0 1 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="UwParticleLocalization::MotionModel"/>
+        </attvalues>
+      </node>
+      <node id="23" label="Hbridge::SensorReader">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="2 comTimeout -2147483646 2147483646 isBusMaster -2147483646 2147483646 0 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="Hbridge::SensorReader"/>
+        </attvalues>
+      </node>
+      <node id="24" label="AvalonControl::RelFakeWriter">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 4 heading 3.1416 3.1416 x 0.5 0.5 y 5.5 5.5 z -6 -6 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="AvalonControl::RelFakeWriter"/>
+        </attvalues>
+      </node>
+      <node id="25" label="AvalonControl::MotionControlTask&lt;Base::AUVMotionControllerSrv&gt;">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 8 min_ground_distance -1.79769e+308 1.7977e+308 pitch_target -1.79769e+308 1.7977e+308 timeout -1.79769e+308 1.7977e+308 turn_coupling_factor -1.79769e+308 1.7977e+308 x_factor -1.79769e+308 1.7977e+308 y_coupling_factor -1.79769e+308 1.7977e+308 y_factor -1.79769e+308 1.7977e+308 z_coupling_factor -1.79769e+308 1.7977e+308 2 dagon_mode 0 1 use_min_ground_distance 0 1 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="AvalonControl::MotionControlTask&lt;Base::AUVMotionControllerSrv&gt;"/>
+        </attvalues>
+      </node>
+      <node id="3" label="PoseAuv::PoseEstimatorCmp">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 0 1 reset 0 1 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="PoseAuv::PoseEstimatorCmp"/>
+        </attvalues>
+      </node>
+      <node id="4" label="AuvControl::DepthFusionCmp">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 0 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="AuvControl::DepthFusionCmp"/>
+        </attvalues>
+      </node>
+      <node id="5" label="PoseAuv::IKFOrientationEstimatorCmp">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 0 0 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="PoseAuv::IKFOrientationEstimatorCmp"/>
+        </attvalues>
+      </node>
+      <node id="6" label="FogKvh::Dsp3000Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="1 timeout -2147483646 2147483646 0 0 1 port 12 &lt;unassigned&gt; "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="FogKvh::Dsp3000Task"/>
+        </attvalues>
+      </node>
+      <node id="7" label="OrientationEstimator::BaseEstimator">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="1 magnetic_declination_mode -2147483646 2147483646 10 aggregator_max_latency -1.79769e+308 1.7977e+308 altitude -1.79769e+308 1.7977e+308 dip_angle -1.79769e+308 1.7977e+308 fog_samples_period -1.79769e+308 1.7977e+308 imu_orientation_period -1.79769e+308 1.7977e+308 initial_heading -1.79769e+308 1.7977e+308 latitude -1.79769e+308 1.7977e+308 longitude -1.79769e+308 1.7977e+308 magnetic_declination -1.79769e+308 1.7977e+308 stream_aligner_status_period -1.79769e+308 1.7977e+308 2 substract_earth_rotation 0 1 use_initial_heading 0 1 0 "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="OrientationEstimator::BaseEstimator"/>
+        </attvalues>
+      </node>
+      <node id="8" label="WallOrientationCorrection::OrientationInMap">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="0 3 orientation_in_world_period -1.79769e+308 1.7977e+308 transformer_max_latency -1.79769e+308 1.7977e+308 transformer_status_period -1.79769e+308 1.7977e+308 0 2 map_frame 12 &lt;unassigned&gt; world_frame 12 &lt;unassigned&gt; "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="WallOrientationCorrection::OrientationInMap"/>
+        </attvalues>
+      </node>
+      <node id="9" label="XsensImu::Task">
+        <attvalues>
+          <attvalue for="0" value="constrained_based_networks::ConfiguredComponent"/>
+          <attvalue for="1" value=""/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-0" value="2 max_timeouts -2147483646 2147483646 timeout -2147483646 2147483646 0 0 4 imu_frame 12 &lt;unassigned&gt; port 12 &lt;unassigned&gt; scenario 12 &lt;unassigned&gt; world_frame 12 &lt;unassigned&gt; "/>
+          <attvalue for="constrained_based_networks::ConfiguredComponent-1" value="XsensImu::Task"/>
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge id="0" source="0" target="1" label="Main::MinimalDemo">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="Main::MinimalDemo"/>
+        </attvalues>
+      </edge>
+      <edge id="1" source="1" target="2" label="main">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="main"/>
+        </attvalues>
+      </edge>
+      <edge id="13" source="13" target="14" label="ori">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="ori"/>
+        </attvalues>
+      </edge>
+      <edge id="21" source="13" target="22" label="main">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="main"/>
+        </attvalues>
+      </edge>
+      <edge id="22" source="13" target="23" label="hb">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="hb"/>
+        </attvalues>
+      </edge>
+      <edge id="14" source="14" target="15" label="ori">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="ori"/>
+        </attvalues>
+      </edge>
+      <edge id="19" source="14" target="20" label="z">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="z"/>
+        </attvalues>
+      </edge>
+      <edge id="20" source="14" target="21" label="task">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="task"/>
+        </attvalues>
+      </edge>
+      <edge id="15" source="15" target="16" label="fog">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="fog"/>
+        </attvalues>
+      </edge>
+      <edge id="16" source="15" target="17" label="estimator">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="estimator"/>
+        </attvalues>
+      </edge>
+      <edge id="17" source="15" target="18" label="ori_in_map">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="ori_in_map"/>
+        </attvalues>
+      </edge>
+      <edge id="18" source="15" target="19" label="imu">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="imu"/>
+        </attvalues>
+      </edge>
+      <edge id="23" source="2" target="24" label="controller">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="controller"/>
+        </attvalues>
+      </edge>
+      <edge id="24" source="2" target="25" label="controlled_system">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="controlled_system"/>
+        </attvalues>
+      </edge>
+      <edge id="2" source="2" target="3" label="pose">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="pose"/>
+        </attvalues>
+      </edge>
+      <edge id="11" source="3" target="12" label="pose_estimator">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="pose_estimator"/>
+        </attvalues>
+      </edge>
+      <edge id="12" source="3" target="13" label="model">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="model"/>
+        </attvalues>
+      </edge>
+      <edge id="3" source="3" target="4" label="ori">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="ori"/>
+        </attvalues>
+      </edge>
+      <edge id="9" source="4" target="10" label="z">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="z"/>
+        </attvalues>
+      </edge>
+      <edge id="10" source="4" target="11" label="task">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="task"/>
+        </attvalues>
+      </edge>
+      <edge id="4" source="4" target="5" label="ori">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="ori"/>
+        </attvalues>
+      </edge>
+      <edge id="5" source="5" target="6" label="fog">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="fog"/>
+        </attvalues>
+      </edge>
+      <edge id="6" source="5" target="7" label="estimator">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="estimator"/>
+        </attvalues>
+      </edge>
+      <edge id="7" source="5" target="8" label="ori_in_map">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="ori_in_map"/>
+        </attvalues>
+      </edge>
+      <edge id="8" source="5" target="9" label="imu">
+        <attvalues>
+          <attvalue for="0" value="graph_analysis::Edge"/>
+          <attvalue for="1" value="imu"/>
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>

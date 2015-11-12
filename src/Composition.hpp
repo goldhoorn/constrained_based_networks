@@ -31,8 +31,10 @@ class Composition : public constrained_based_networks::Component, public constra
     std::map<std::string, Component *> children;
 
    private:
-    std::map<Component *, Forwards> argument_forwards;
-    std::map<Component *, Forwards> event_forwards;
+    std::map<std::string, Forwards> argument_forwards;
+    std::map<std::string, Forwards> event_forwards;
+    //std::map<Component *, Forwards> argument_forwards;
+    //std::map<Component *, Forwards> event_forwards;
     std::list<std::string> emitations;
 
     //    size_t cmp_id;
@@ -56,7 +58,19 @@ class Composition : public constrained_based_networks::Component, public constra
      */
     Composition(std::string name, Pool *pool);
 
-    virtual Forwards getArgumentForwards(Component *child);
+    /*
+     * Warning this function is sligly wrong becasue it does not separate between a child and a component,
+     * rework this but this might have a larger influence
+     */
+    virtual Forwards getArgumentForwards(Component *child, std::string name);
+
+    virtual const std::map<std::string, Forwards>& getArgumentForwards() const;
+    virtual const std::map<std::string, Forwards>& getEventForwards() const;
+
+    /*
+     * Warning this function is sligly wrong becasue it does not separate between a child and a component,
+     * rework this but this might have a larger influence
+     */
     virtual Forwards getEventForwards(Component *child, std::string name);
     bool hasChild(Component *child);
 
