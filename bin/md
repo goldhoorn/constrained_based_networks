@@ -1,0 +1,9 @@
+#/bin/bash
+FILE=`mktemp`.dot
+if [ ${1: -4} == ".xml" ]; then
+	cbn_solution_to_dot -i $*  > $FILE 
+else
+	cbn_gexf_to_dot -i $* -o $FILE
+fi
+xdot $FILE
+rm $FILE
