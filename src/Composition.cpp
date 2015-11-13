@@ -7,38 +7,42 @@
 namespace constrained_based_networks
 {
 
-Composition::Composition(Pool *pool) : Component(pool)
+CompositionObj::CompositionObj(Pool *pool) : ComponentObj(pool)
 {
 }
 
-Composition::Composition(std::string name, Pool *pool) : Component(pool)
+CompositionObj::CompositionObj(std::string name, Pool *pool) : ComponentObj(pool)
 {
     this->name = name;
-    // cmp_id = pool->getItems<Composition *>().size() - 1;
+    // cmp_id = pool->getItems<CompositionObj *>().size() - 1;
     //    std::cout << "Creating composition: " << name << std::endl;
 }
 
-Component* Composition::clone(Pool *p) const{
-    Composition *c = new Composition(name,p);
+Component CompositionObj::clone(Pool *p) const
+{
     throw std::runtime_error("Implement me");
+    return 0;
+    /*
+    CompositionObj *c = new CompositionObj(name,p);
     return c;
+    */
 };
 
-Forwards Composition::getArgumentForwards(Component *child, std::string name)
+Forwards CompositionObj::getArgumentForwards(Component child, std::string name)
 {
     if (children.find(name) == children.end()) {
         if (this->getName() != "root-knot") {
-            if(!dynamic_cast<StateMachine*>(this)){
+            if (!dynamic_cast<StateMachine *>(this)) {
                 std::cerr << "This is really bad !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! could not find child " << name << std::endl;
                 assert(false);
-            }else{
+            } else {
                 std::cerr << "WARN implement argumetn forwards for state-machines" << std::endl;
             }
         }
         return Forwards();
     }
-    if(children[name] != child){
-        if(!child->isFullfilling(children[name]->getName())){
+    if (children[name] != child) {
+        if (!child->isFullfilling(children[name]->getName())) {
             throw std::invalid_argument("Cannot get argument forwards, the child " + children[name]->getName() + " does not equal the given child " + child->getName() + " for role " + name);
         }
     }
@@ -46,11 +50,17 @@ Forwards Composition::getArgumentForwards(Component *child, std::string name)
     return argument_forwards[name];
 }
 
-bool Composition::hasChild(Component *child)
+bool CompositionObj::hasChild(Component child)
 {
     std::cout << this->getName() << "<->" << child->getName() << std::endl;
-    Component *c = child;
-    while (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
+    Component c = child;
+//    auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
+    //while ((std::shared_ptr<SpecializedComponentObjBase> spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c)) && spec.get()) {
+    SpecializedComponentBase spec;
+
+    //TODO try this
+    //for(auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c); spec.get(); c=spec->getOrginal());
+    while ((spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c)) && spec.get()) {
         c = spec->getOrginal();
     }
 
@@ -63,7 +73,7 @@ bool Composition::hasChild(Component *child)
     return false;
 }
 
-Forwards Composition::getEventForwards(Component *child, std::string name)
+Forwards CompositionObj::getEventForwards(Component child, std::string name)
 {
     if (children.find(name) == children.end()) {
         if (this->getName() != "root-knot") {
@@ -72,8 +82,8 @@ Forwards Composition::getEventForwards(Component *child, std::string name)
         }
         return Forwards();
     }
-    if(children[name] != child){
-        if(!child->isFullfilling(children[name]->getName())){
+    if (children[name] != child) {
+        if (!child->isFullfilling(children[name]->getName())) {
             throw std::invalid_argument("Cannot get argument forwards, the child " + children[name]->getName() + " does not equal the given child " + child->getName() + " for role " + name);
         }
     }
@@ -93,12 +103,12 @@ Forwards Composition::getEventForwards(Component *child, std::string name)
     return event_forwards[name];
 }
 
-bool Composition::operator==(const Composition &comp) const
+bool CompositionObj::operator==(const CompositionObj &comp) const
 {
     return name == comp.name;
 }
 
-void Composition::addArgumentForwards(std::string child, std::string source, std::string target)
+void CompositionObj::addArgumentForwards(std::string child, std::string source, std::string target)
 {
     try
     {
@@ -117,12 +127,14 @@ void Composition::addArgumentForwards(std::string child, std::string source, std
     }
 }
 
-Component *Composition::searchCorresponding(Component *c, Pool *pool)
+Component CompositionObj::searchCorresponding(Component c, Pool *pool)
 {
-    if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
+    auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
+    if (spec.get()) {
         // search for object in DB
-        for (auto pci : pool->getItems<Component *>()) {
-            if (auto pc = dynamic_cast<SpecializedComponentBase *>(pci)) {
+        for (auto pci : pool->getItems<ComponentObj>()) {
+            auto pc = std::dynamic_pointer_cast<SpecializedComponentObjBase>(pci);
+            if (pc.get()) {
                 if (pc->getName(true) == spec->getName(true) && pc->configuration == spec->configuration) {
                     //                            std::cout << "pc: " << pc << " pci: " << pci << std::endl;
                     //                            std::cout << "pc: " << sizeof(*pc) << " pci: " << sizeof(*pci)  << " " << std::abs((long int)pc-(long int)pci) << std::endl;
@@ -143,14 +155,14 @@ Component *Composition::searchCorresponding(Component *c, Pool *pool)
     }
 }
 
-void Composition::updateInternals(Pool *pool)
+void CompositionObj::updateInternals(Pool *pool)
 {
     for (auto &t : children) {
         t.second = searchCorresponding(t.second, pool);
     }
 }
 
-void Composition::addEventForwards(std::string child, std::string source, std::string target)
+void CompositionObj::addEventForwards(std::string child, std::string source, std::string target)
 {
     try
     {
@@ -170,7 +182,7 @@ void Composition::addEventForwards(std::string child, std::string source, std::s
 }
 
 #if 0
-std::string Composition::toString() const
+std::string CompositionObj::toString() const
 {
     std::ostringstream ss;
     ss << name;
@@ -189,30 +201,37 @@ std::string Composition::toString() const
 #endif
 
 /*
-size_t Composition::getCmpID() const
+size_t CompositionObj::getCmpID() const
 {
     return cmp_id;
 }
 */
 
-int Composition::getType() const
+int CompositionObj::getType() const
 {
     return 0;
 }
 
+Composition CompositionObj::make(Pool *pool, std::string name)
+{
+    auto res = CompositionObj::make(pool, name);
+    pool->addComponent(res);
+    return res;
+}
+
 #if 0
-const std::vector<std::string>& Composition::getConfiguration() const
+const std::vector<std::string>& CompositionObj::getConfiguration() const
 {
     return configurations;
 }
 
-void Composition::setConfiguration(const std::vector<std::string>& configurations)
+void CompositionObj::setConfiguration(const std::vector<std::string>& configurations)
 {
     this->configurations = configurations;
 }
 #endif
 
-void Composition::replaceChild(Component *c, std::string name)
+void CompositionObj::replaceChild(Component c, std::string name)
 {
     if (isIgnored()) return;
     if (children.find(name) == children.end()) {
@@ -225,15 +244,17 @@ void Composition::replaceChild(Component *c, std::string name)
     children[name] = c;
 }
 
-const std::map<std::string, Forwards>& Composition::getArgumentForwards() const{
+const std::map<std::string, Forwards> &CompositionObj::getArgumentForwards() const
+{
     return argument_forwards;
 }
 
-const std::map<std::string, Forwards>& Composition::getEventForwards() const{
+const std::map<std::string, Forwards> &CompositionObj::getEventForwards() const
+{
     return event_forwards;
 }
 
-void Composition::addChild(Component *c, std::string name)
+void CompositionObj::addChild(Component c, std::string name)
 {
     if (isIgnored()) return;
     children[name] = c;
@@ -246,7 +267,7 @@ void Composition::addChild(Component *c, std::string name)
     addEventForwards(name, "fatal_error", "failed");
 }
 
-void Composition::addConstraint(std::string child, std::string target)
+void CompositionObj::addConstraint(std::string child, std::string target)
 {
 
     if (children.find(child) == children.end()) {
@@ -267,14 +288,14 @@ void Composition::addConstraint(std::string child, std::string target)
     //    children[child] = pool->getComponent(name);
 }
 
-std::vector<std::string> Composition::unsolveableChildren()
+std::vector<std::string> CompositionObj::unsolveableChildren()
 {
     std::vector<std::string> res;
     // Pool *pool = Pool::getInstance();
 
     for (auto child : children) {
         bool valid = false;
-        for (auto provider : pool->getItems<Component *>()) {
+        for (auto provider : pool->getItems<ComponentObj>()) {
             if (provider->abstract()) {
                 continue;
             }
@@ -299,7 +320,7 @@ std::vector<std::string> Composition::unsolveableChildren()
     return res;
 }
 
-Gecode::IntVarArray Composition::getPossibleTaskAssignments(Gecode::Space *space)
+Gecode::IntVarArray CompositionObj::getPossibleTaskAssignments(Gecode::Space *space)
 {
     // auto arr =
     // Gecode::IntVarArray(*space,children.size(),0,pool->getNonAbstractCount()-1);
@@ -307,18 +328,19 @@ Gecode::IntVarArray Composition::getPossibleTaskAssignments(Gecode::Space *space
     return arr;
 }
 
-std::vector<std::pair<std::string, Component *>> Composition::getChildren()
+std::vector<std::pair<std::string, Component>> CompositionObj::getChildren()
 {
-    std::vector<std::pair<std::string, Component *>> erg;
+    std::vector<std::pair<std::string, Component>> erg;
     for (auto i : children) {
-        erg.push_back(std::pair<std::string, Component *>(i.first, i.second));
+        erg.push_back(std::pair<std::string, Component>(i.first, i.second));
     }
     return erg;
 };
 
-SpecializedComponentBase *Composition::getSpecialized(std::string name)
-{
-    return new SpecializedComponent<Composition>(this, pool, name);
+SpecializedComponentBase CompositionObj::getSpecialized(std::shared_ptr<ComponentObj> _obj, std::string name){
+    Composition obj = std::dynamic_pointer_cast<CompositionObj>(_obj);
+    assert(obj.get());
+    return SpecializedComponentObj<CompositionObj>::make(obj, pool,name);
 }
 
 }  // end namespace constrained_based_networks

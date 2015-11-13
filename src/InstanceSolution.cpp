@@ -28,10 +28,10 @@ void InstanceSolution::gatherAllStringConfigs()
     strings.insert("");
     for (const auto &v : graph->getAllVertices()) {
         //        std::cout << "Hallo " << v->toString() << std::endl;
-        auto current_graph_vertex = boost::static_pointer_cast<ComponentInstanceHelper>(v);
-        auto component = dynamic_cast<Component *>(current_graph_vertex->component.get());
+        auto current_graph_vertex = std::static_pointer_cast<ComponentInstanceHelper>(v);
+        auto component = std::dynamic_pointer_cast<ComponentObj>(current_graph_vertex->component);
         if (!component) throw std::runtime_error("Cannot get component from graph");
-        auto spec_component = dynamic_cast<SpecializedComponentBase *>(component);
+        auto spec_component = std::dynamic_pointer_cast<SpecializedComponentObjBase>(component);
 
         for (const auto &prop : component->getProperties()) {
             //            std::cout << "\t- " << prop.name << std::endl;
@@ -86,7 +86,7 @@ graph_analysis::Vertex::Ptr InstanceSolution::getRoot(const graph_analysis::Base
 {
     graph_analysis::Vertex::Ptr root;
     for (auto v : _graph->getAllVertices()) {
-        auto component = dynamic_cast<Component *>(v.get());
+        auto component = std::dynamic_pointer_cast<ComponentObj>(v);
         auto spec = dynamic_cast<ConfiguredComponent *>(v.get());
         if (spec) {
             // std::cout << "Got a configures component " << spec->toString() << std::endl;
@@ -119,7 +119,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
 {
     graph_analysis::Vertex::Ptr root = getRoot(_graph);
 
-    graph = boost::static_pointer_cast<graph_analysis::DirectedGraphInterface>(graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH));
+    graph = std::static_pointer_cast<graph_analysis::DirectedGraphInterface>(graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH));
     auto orig = dynamic_cast<graph_analysis::DirectedGraphInterface *>(_graph.get());
     assert(orig);
     assert(root.get());
@@ -138,12 +138,12 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
 //    std::cout << "New graph has: " << graph->getAllVertices().size() << std::endl;
 #endif
     for (auto v : graph->vertices()) {
-        auto current_graph_component = boost::static_pointer_cast<ComponentInstanceHelper>(v);
-        auto c = InstanceSolution::get<Component>(current_graph_component->component);
-        auto s = InstanceSolution::get<SpecializedComponentBase>(current_graph_component->component);
-        if (s) {
+        auto current_graph_component = std::static_pointer_cast<ComponentInstanceHelper>(v);
+        auto c = InstanceSolution::get<ComponentObj>(current_graph_component->component);
+        auto s = InstanceSolution::get<SpecializedComponentObjBase>(current_graph_component->component);
+        if (s.get()) {
             //            std::cout << "Spec (3): " << s->getName() << std::endl;
-        } else if (c) {
+        } else if (c.get()) {
             //            std::cout << "ERR(3): " << c->getName() << std::endl;
         } else {
             //            std::cout << "WFT(3): " << v->getClassName() << std::endl;
@@ -167,14 +167,14 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     // (currently) where a configuiration is actually filled
     // with values. Later a extension based on configurations is needed
     for (auto current_graph_vertex : graph->getAllVertices()) {
-        auto current_graph_component = dynamic_cast<Component *>(boost::static_pointer_cast<ComponentInstanceHelper>(current_graph_vertex)->component.get());
+        auto current_graph_component = std::dynamic_pointer_cast<ComponentObj>(std::static_pointer_cast<ComponentInstanceHelper>(current_graph_vertex)->component);
         if (!current_graph_component) throw std::runtime_error("Cannot get component from graph");
 
         // We need only to separate between this types, al other types should not occur anymore in the graph
         // Like DataServices are replaced with actual current_graph_task-contexts
-        auto current_graph_composition = dynamic_cast<Composition *>(current_graph_component);
-        auto current_graph_task = dynamic_cast<Task *>(current_graph_component);
-        auto current_graph_specialized = dynamic_cast<SpecializedComponentBase *>(current_graph_component);
+        auto current_graph_composition = std::dynamic_pointer_cast<CompositionObj>(current_graph_component);
+        auto current_graph_task = std::dynamic_pointer_cast<TaskObj>(current_graph_component);
+        auto current_graph_specialized = std::dynamic_pointer_cast<SpecializedComponentObjBase>(current_graph_component);
         if (!current_graph_task && !current_graph_composition) throw std::runtime_error("We have some unresolved or unknown elements within the graph");
 
         if (current_graph_composition) {
@@ -184,14 +184,14 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
             // This meanc we are walking throught all edges of this compoennt which must be a compotiiosn (otherwise it would have no children)
             for (auto edge : graph->outEdges(current_graph_vertex)) {
                 assert(current_graph_composition);
-                auto child_vertex = boost::static_pointer_cast<ComponentInstanceHelper>(edge->getTargetVertex());
-                auto child_component = dynamic_cast<Component *>(child_vertex->component.get());
+                auto child_vertex = std::static_pointer_cast<ComponentInstanceHelper>(edge->getTargetVertex());
+                auto child_component = std::dynamic_pointer_cast<ComponentObj>(child_vertex->component);
                 assert(child_component);
 
                 // If our current_graph_task is a child and we are NOT a specialized component
                 // (which would assume that we are not support this?, maybe we we would set a specific configuration then?!
-                auto child_task = dynamic_cast<Task *>(child_component);
-                auto child_specialized = dynamic_cast<SpecializedComponentBase *>(child_component);
+                auto child_task = std::dynamic_pointer_cast<TaskObj>(child_component);
+                auto child_specialized = std::dynamic_pointer_cast<SpecializedComponentObjBase>(child_component);
 
                 if (child_task && child_specialized) {
                     throw std::runtime_error("We got a specialized current_graph_task as child, this is not (Yet) supported");
@@ -324,39 +324,40 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
 #endif
                 }
 
-                //The name of the edge is the role of the assoziated child
+                // The name of the edge is the role of the assoziated child
                 std::string child_role = edge->toString();
                 for (auto forward : current_graph_composition->getArgumentForwards(child_component, child_role)) {
 
                     if (child_component->getProperty(forward.second) != current_graph_composition->getProperty(forward.first)) {
                         throw std::runtime_error("The properties of child and parend differ in type");
                     }
-                    std::cout << "Should forward: " << forward.second << " to " << forward.first << " between " << current_graph_composition->getName() << " and " << child_component->getName() << std::endl;
+                    std::cout << "Should forward: " << forward.second << " to " << forward.first << " between " << current_graph_composition->getName() << " and " << child_component->getName()
+                              << std::endl;
                     // Dont care which type we choose check is done before
                     switch (child_component->getProperty(forward.second)) {
                         case(constrained_based_networks::ConfigurationModel::INT) : {
-                                                                                        std::cout << "Int" << std::endl;
+                            std::cout << "Int" << std::endl;
                             auto &var_source = int_config[graph->getVertexId(child_vertex)][forward.second];
                             auto &var_target = int_config[graph->getVertexId(current_graph_vertex)][forward.first];
                             rel(*this, var_source, IRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::STRING) : {
-                                                                                        std::cout << "string " << std::endl;
+                            std::cout << "string " << std::endl;
                             auto &var_source = string_config[graph->getVertexId(child_vertex)][forward.second];
                             auto &var_target = string_config[graph->getVertexId(current_graph_vertex)][forward.first];
                             rel(*this, var_source, IRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
-                                                                                        std::cout << "double" << std::endl;
+                            std::cout << "double" << std::endl;
                             auto &var_source = float_config[graph->getVertexId(child_vertex)][forward.second];
                             auto &var_target = float_config[graph->getVertexId(current_graph_vertex)][forward.first];
                             rel(*this, var_source, FRT_EQ, var_target);
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::BOOL) : {
-                                                                                        std::cout << "bool" << std::endl;
+                            std::cout << "bool" << std::endl;
                             auto &var_source = bool_config[graph->getVertexId(child_vertex)][forward.second];
                             auto &var_target = bool_config[graph->getVertexId(current_graph_vertex)][forward.first];
                             rel(*this, var_source, IRT_EQ, var_target);
@@ -372,7 +373,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
 
         // Special handling for StateMachines if they are unconfigured, we set the startin state-explicitly
         // This could also be done by subclassing the state-machine by default, but we do this now here...
-        if (dynamic_cast<StateMachine *>(current_graph_component) && !current_graph_specialized) {
+        if (std::dynamic_pointer_cast<StateMachineObj>(current_graph_component) && !current_graph_specialized) {
             rel(*this, int_config[graph->getVertexId(current_graph_vertex)]["current_state"], IRT_EQ, 0);
         }
 
@@ -413,11 +414,11 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     interleaved = Gecode::BoolVarArray(*this, verticies_in_tree * verticies_in_tree, 0, 1);
     for (auto _n1 : graph->vertices()) {
         auto i = graph->getVertexId(_n1);
-        auto n1 = boost::static_pointer_cast<ComponentInstanceHelper>(_n1);
-        assert(n1);
+        auto n1 = std::static_pointer_cast<ComponentInstanceHelper>(_n1);
+        assert(n1.get());
         for (auto _n2 : graph->vertices()) {
-            auto n2 = boost::static_pointer_cast<ComponentInstanceHelper>(_n2);
-            assert(n2);
+            auto n2 = std::static_pointer_cast<ComponentInstanceHelper>(_n2);
+            assert(n2.get());
             auto j = graph->getVertexId(_n2);
 
             // The relation interleaved is symetric, if we are the same than another, the another is the same than we
@@ -439,8 +440,8 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                 } else {
                     // Ok the components are equal in her name, make sure that they are
                     // interleaved only if the configuration is consistent
-                    auto component = dynamic_cast<Component *>(n2->component.get());
-                    assert(component);
+                    auto component = std::dynamic_pointer_cast<ComponentObj>(n2->component);
+                    assert(component.get());
 
                     for (auto prop : component->getProperties()) {
                         switch (prop.t) {
@@ -545,8 +546,9 @@ Space *InstanceSolution::copy(bool share)
 void InstanceSolution::printToDot(std::ostream &os) const
 {
     for (auto node : graph->getAllVertices()) {
-        auto component = dynamic_cast<Component *>(node.get());
-        if (auto composition = dynamic_cast<Composition *>(component)) {
+        auto component = std::dynamic_pointer_cast<ComponentObj>(node);
+        auto composition = std::dynamic_pointer_cast<CompositionObj>(component);
+        if (composition.get()) {
             os << "Cmp::" << composition->getName() << std::endl;
             for (auto c : float_config[graph->getVertexId(node)]) {
                 std::cout << c.first.c_str() << std::endl;
@@ -564,7 +566,9 @@ void InstanceSolution::printToDot(std::ostream &os) const
                 std::cout << c.first.c_str() << std::endl;
                 os << "-- " << c.first << ": " << c.second << std::endl;
             }
-        } else if (auto current_graph_task = dynamic_cast<Task *>(component)) {
+        }
+        auto current_graph_task = std::dynamic_pointer_cast<TaskObj>(component);
+        if (current_graph_task.get()) {
             os << current_graph_task->getName() << std::endl;
             for (auto c : float_config[graph->getVertexId(node)]) {
                 std::cout << c.first.c_str() << std::endl;
@@ -591,10 +595,11 @@ void InstanceSolution::printToDot(std::ostream &os) const
 void InstanceSolution::printToStream(std::ostream &os) const
 {
     for (auto _node : graph->vertices()) {
-        auto node = boost::reinterpret_pointer_cast<ComponentInstanceHelper>(_node);
-        auto component = dynamic_cast<Component *>(node->component.get());
+        auto node = std::static_pointer_cast<ComponentInstanceHelper>(_node);
+        auto component = std::dynamic_pointer_cast<ComponentObj>(node->component);
         std::cout << "- " << component->toString() << std::endl;
-        if (auto current_graph_task = dynamic_cast<Task *>(component)) {
+        auto current_graph_task = std::dynamic_pointer_cast<TaskObj>(component);
+        if (current_graph_task.get()) {
             (void)current_graph_task;
             //            os << current_graph_task->getName() << std::endl;
             for (auto c : int_config[graph->getVertexId(node)]) {
@@ -637,9 +642,9 @@ graph_analysis::Vertex::Ptr InstanceSolution::getConfiguredComponent(graph_analy
 
     // Never created yet such Configured Component, let's create one
     if (configured_component_helper.find(id) == configured_component_helper.end()) {
-        auto helper = boost::static_pointer_cast<ComponentInstanceHelper>(vertex).get()->component.get();
-        assert(helper);
-        auto component = dynamic_cast<Component *>(helper);
+        auto helper = std::static_pointer_cast<ComponentInstanceHelper>(vertex).get()->component;
+        assert(helper.get());
+        auto component = std::dynamic_pointer_cast<ComponentObj>(helper);
         assert(component);
         auto &s = string_config[id];
         auto &i = int_config[id];
@@ -681,19 +686,20 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
             best = 0;
         }
         // Got a solution print statistics
-        //if ((erg.size() % 1000) == 0) {
+        // if ((erg.size() % 1000) == 0) {
         graph_analysis::BaseGraph::Ptr out_graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
         s->build_tree(out_graph, graph_analysis::Vertex::Ptr());
         erg.push_back(out_graph);
         best = s;
-
-        if ((erg.size() > 2)) { //TODO hack
+#if LIMIT_SOLUTIONS
+        if ((erg.size() >= LIMIT_SOLUTIONS)) {  // TODO hack
             auto c = e.statistics();
             std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
             s->printToStream(std::cout);
             std::cerr << "Warn cancel search because we have too much solutions" << std::endl;
             break;
         }
+#endif
     }
 
     if (best == NULL) {

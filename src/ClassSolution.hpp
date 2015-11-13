@@ -5,9 +5,9 @@
 #include <gecode/int.hh>
 #include <gecode/search.hh>
 #include "Pool.hpp"
+#include "Composition.hpp"
 
 namespace constrained_based_networks {
-    class Composition;
 
 #define CONSTRAIN
 
@@ -41,7 +41,7 @@ protected:
     void markAbstractAsInactive();
     void markActiveAsActive();
     void removeSelfCompositonsFromDepends();
-    bool markCompositionAsChildless(Composition *composition);
+    bool markCompositionAsChildless(Composition composition);
     //Ids are the composition ids that are used within the core-root
     bool allDepsResolved(unsigned int cmp_id, std::vector<size_t> &ids);
 
@@ -50,10 +50,10 @@ protected:
     //pass all USED compotions, all other ones will be removed
     void removeAllUnsedCmps(std::vector<size_t> ids);
     void doMissingBranching();
-    void createConstraintsForComposition(Composition *cmp);
+    void createConstraintsForComposition(Composition cmp);
     //std::map<Composition*, unsigned int> cmp_ids;
     //std::vector<bool> cmp_constraints_done;
-    void prepareCompositionConstraints(Composition *composition);
+    void prepareCompositionConstraints(Composition composition);
 
 public:
     std::vector<Gecode::IntVarArray> ir_assignments;

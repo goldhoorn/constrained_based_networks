@@ -7,79 +7,91 @@
 #include "Port.hpp"
 #include "Component.hpp"
 
-
 #include <gecode/int.hh>
 #include <gecode/search.hh>
 
-namespace constrained_based_networks {
+namespace constrained_based_networks
+{
 
 /**
  * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,
  * on which it can be connected to other components.
  */
-class DataService : public constrained_based_networks::Component{
-protected:
-
+class DataServiceObj : public constrained_based_networks::ComponentObj
+{
+   protected:
     /**
      * The configuration consists of a variable sized vector of strings, naming one configuration profile.
      *
      * empty means not configured / no constraint on configuration.
      */
     std::vector<std::string> configurations;
-
-public:
     /**
      *Default constructor to be able to use components as map value type.
      */
-    DataService(Pool *pool);
-    
-    virtual Component* clone(Pool *p) const;
-
+    DataServiceObj(Pool *pool);
     /**
      * Construct component with type and name.
      */
-    DataService(const std::string &name, Pool *pool) ;
+    DataServiceObj(const std::string &name, Pool *pool);
 
-    void addConfig(std::string name, std::string value){
-        if(auto c = dynamic_cast<DataService*>(this)){
-            c->addConfig(name,value);
-        }else{
+   public:
+    virtual ~DataServiceObj() {};
+
+    static std::shared_ptr<DataServiceObj> make(Pool *pool, std::string name);
+
+    virtual Component clone(Pool *p) const;
+
+
+    void addConfig(std::string name, std::string value)
+    {
+        if (auto c = dynamic_cast<DataServiceObj *>(this)) {
+            c->addConfig(name, value);
+        } else {
             throw std::runtime_error("Called addConfig on invalid class");
         }
     }
-    SpecializedComponentBase *getSpecialized(std::string name="");
+    std::shared_ptr<SpecializedComponentObjBase> getSpecialized(std::shared_ptr<ComponentObj> obj, std::string name = "");
 
     /*
     Component* getSpecialized()
     {
-        return new SpecializedComponent<DataService>(this, pool);
+        return new SpecializedComponent<DataServiceObj>(this, pool);
     }
     */
 
     /**
      * Components are equal if their name and type equal.
      */
-    bool operator ==( const DataService &comp ) const;
+    bool operator==(const DataServiceObj &comp) const;
 
     /**
      * String representation of a component
      */
-//    std::string toString() const;
-  
-    virtual std::string getClassName() const { return "constrained_based_networks::DataService"; }
+    //    std::string toString() const;
+
+    virtual std::string getClassName() const
+    {
+        return "constrained_based_networks::DataService";
+    }
 
     /**
      * Get the configuration
      */
-    const std::vector<std::string>& getConfiguration() const;
+    const std::vector<std::string> &getConfiguration() const;
 
     /**
      * Push back a configuration value
      */
-    void setConfiguration(const std::vector<std::string>& configuration);
+    void setConfiguration(const std::vector<std::string> &configuration);
 
-    virtual bool abstract() const{return true;};
+    virtual bool abstract() const
+    {
+        return true;
+    };
 };
 
-} // end namespace constrained_based_networks
+typedef std::shared_ptr<DataServiceObj> DataService;
 
+
+}  // end namespace constrained_based_networks

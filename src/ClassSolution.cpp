@@ -26,23 +26,23 @@ void ClassSolution::markInactiveAsInactive()
 {
     /*
     //Remove all loops that are unneeded by a master requirement
-    for(auto c: pool->getItems<Component*>()){
+    for(auto c: pool->getItems<ComponentObj>()){
         size_t id_child= c->getID();
-        for(unsigned int id_parent=0;id_parent != pool->getItems<Composition*>().size();id_parent++){
-            Composition *cmp = pool->getItems<Composition*>()[id_parent];
+        for(unsigned int id_parent=0;id_parent != pool->getItems<CompositionObj>().size();id_parent++){
+            Composition *cmp = pool->getItems<CompositionObj>()[id_parent];
             unsigned int id = cmp->getID();
         }
     }
     */
     /*
     //Nothing can depend on the DUMMY node
-    for(auto c: pool->getItems<Component*>()){
+    for(auto c: pool->getItems<ComponentObj>()){
 
     }
     */
 
     // Remove all unneeded depends
-    for (auto c : pool->getItems<Component*>()) {
+    for (auto c : pool->getItems<ComponentObj>()) {
         unsigned int cmp_id = pool->getId(c);
 
 // Remove all recursive depends if a component is inactive
@@ -60,7 +60,7 @@ void ClassSolution::markInactiveAsInactive()
 void ClassSolution::markAbstractAsInactive()
 {
     rel(*this, active[0], IRT_EQ, 0);
-    for (auto provider : pool->getItems<DataService*>()) {
+    for (auto provider : pool->getItems<DataServiceObj>()) {
         if (provider->abstract()) {
             rel(*this, active[pool->getId(provider)], IRT_EQ, 0);
             rel(*this, depends[pool->getId(provider)] == IntSet::empty);
@@ -72,7 +72,7 @@ void ClassSolution::markAbstractAsInactive()
 
 void ClassSolution::markActiveAsActive()
 {
-    for (auto c : pool->getItems<Component*>()) {
+    for (auto c : pool->getItems<ComponentObj>()) {
         if (c->getID() == ID_ROOT_KNOT) {
             // If a component is active it must depend on THIS
             rel(*this, active[c->getID()], IRT_EQ, 1);
@@ -86,9 +86,9 @@ void ClassSolution::markActiveAsActive()
 
 void ClassSolution::removeSelfCompositonsFromDepends()
 {
-    for (auto child : pool->getItems<Component*>()) {
-        for (auto component : pool->getItems<Component*>()) {
-            if (!dynamic_cast<Composition*>(component)) {
+    for (auto child : pool->getItems<ComponentObj>()) {
+        for (auto component : pool->getItems<ComponentObj>()) {
+            if (!std::dynamic_pointer_cast<CompositionObj>(component)) {
                 dom(*this, depends[child->getID()], SRT_DISJ, component->getID());
             }
         }
@@ -97,7 +97,7 @@ void ClassSolution::removeSelfCompositonsFromDepends()
 
 void ClassSolution::depsOnlyOnCmp()
 {
-    for (auto component : pool->getItems<Component*>()) {
+    for (auto component : pool->getItems<ComponentObj>()) {
         // Nothing can depend on the dummy task
         dom(*this, depends[pool->getId(component)], SRT_DISJ, ID_NIL);
 #ifdef REMOVE_REC
@@ -111,11 +111,11 @@ void ClassSolution::depsOnlyOnCmp()
 #endif
 }
 
-bool ClassSolution::markCompositionAsChildless(Composition* composition)
+bool ClassSolution::markCompositionAsChildless(Composition composition)
 {
     if (composition->getChildren().size() == 0) {
         std::cout << "Composition (cmp id:" << composition->getID() << ", component id " << composition->getID() << "): " << composition->getName() << " is childless" << std::endl;
-        for (auto provider : pool->getItems<Component*>()) {
+        for (auto provider : pool->getItems<ComponentObj>()) {
             //            std::cout << "- Forbidding: " << provider->getName() << " (" << provider->getID() << ")" << std::endl;
             dom(*this, depends[provider->getID()], SRT_DISJ, composition->getID());
         }
@@ -126,16 +126,15 @@ bool ClassSolution::markCompositionAsChildless(Composition* composition)
 
 int ClassSolution::print_count = 0;
 
-void ClassSolution::prepareCompositionConstraints(Composition* composition)
+void ClassSolution::prepareCompositionConstraints(Composition composition)
 {
     ir_assignments.push_back(composition->getPossibleTaskAssignments(this));
 }
 
-
-//TODO this is the expensive part
-void ClassSolution::createConstraintsForComposition(Composition* composition)
+// TODO this is the expensive part
+void ClassSolution::createConstraintsForComposition(Composition composition)
 {
-    auto cmp_counter = pool->getTypeSpecificId<Composition*>(composition);
+    auto cmp_counter = pool->getTypeSpecificId<CompositionObj>(composition);
     //    if (cmp_constraints_done[cmp_counter]) return;
     //    cmp_constraints_done[cmp_counter] = true;
     //    cmp_ids[composition] = cmp_counter;
@@ -166,7 +165,7 @@ void ClassSolution::createConstraintsForComposition(Composition* composition)
         }
 #endif
 
-        for (auto provider : pool->getItems<Component*>()) {
+        for (auto provider : pool->getItems<ComponentObj>()) {
             // Remove all children That are NOT used as dependancy
             // Unfourtnalty it is not possible to have a mini-model for membership constraints
             // this make this ugly and the workaround needed
@@ -230,7 +229,7 @@ ClassSolution::ClassSolution(Pool* _pool)
 
     // Trivial check if we should generate a NIL network (which is valid!)
     {
-        auto root = dynamic_cast<Composition*>((*pool)[1]);
+        auto root = std::dynamic_pointer_cast<CompositionObj>((*pool)[1]);
         assert(root->getName() == "root-knot");
         if (root->getChildren().size() == 0) {
             std::cout << "Warning, root-knot has no children, this will result in a empty network" << std::endl;
@@ -241,10 +240,11 @@ ClassSolution::ClassSolution(Pool* _pool)
                     rel(*this, active[i], IRT_EQ, 0);
                 }
             }
-            for (auto composition : pool->getItems<Component*>()) {
-                if (auto c_ = dynamic_cast<Composition*>(composition)) {
+            for (auto composition : pool->getItems<ComponentObj>()) {
+                auto c_ = std::dynamic_pointer_cast<CompositionObj>(composition);
+                if (c_.get()) {
                     prepareCompositionConstraints(c_);
-                    for( auto &constraint : ir_assignments[pool->getTypeSpecificId<Composition*>(c_)]){
+                    for (auto& constraint : ir_assignments[pool->getTypeSpecificId<CompositionObj>(c_)]) {
                         rel(*this, constraint == 0);
                     }
                 }
@@ -262,7 +262,7 @@ ClassSolution::ClassSolution(Pool* _pool)
 #if 0  // Does not work but yould optimize the search
         // A optimization for the branching, if something is not active it has no dependancies
         for (size_t i = 0; i != active.size(); i++) {
-            for (auto composition : pool->getItems<Composition*>()) {
+            for (auto composition : pool->getItems<CompositionObj>()) {
                 if(composition == root) continue;
 
                 auto cmp_id = pool->getTypeSpecificId<Composition*>(composition);
@@ -273,12 +273,12 @@ ClassSolution::ClassSolution(Pool* _pool)
     }
 #endif
 
-    auto compositions = pool->getItems<Composition*>();
+    auto compositions = pool->getItems<CompositionObj>();
     //    cmp_constraints_done.resize(compositions.size(), false);
 
     for (size_t cmp_counter = 0; cmp_counter != compositions.size(); cmp_counter++) {
         auto composition = compositions[cmp_counter];
-        assert(cmp_counter == pool->getTypeSpecificId<Composition*>(composition));
+        assert(cmp_counter == pool->getTypeSpecificId<CompositionObj>(composition));
         prepareCompositionConstraints(composition);
         // cmp_ids[composition] = cmp_counter;
     }
@@ -296,9 +296,9 @@ ClassSolution::ClassSolution(Pool* _pool)
     // No composition can directly be assigned as parent to another one becasue this would create a loop in the dependancy graph
     // TODO re-think if this is always valid
     for (size_t p = 0; p < ir_assignments.size(); p++) {
-        Composition* parent = pool->getItems<Composition*>()[p];
+        Composition parent = pool->getItems<CompositionObj>()[p];
         for (size_t c = 0; c < ir_assignments.size(); c++) {
-            Composition* child = pool->getItems<Composition*>()[c];
+            Composition child = pool->getItems<CompositionObj>()[c];
             if (c == p) continue;
 
             // Walk throught childs of first
@@ -325,11 +325,11 @@ ClassSolution::ClassSolution(Pool* _pool)
     //        ir_assignments_brancher.push_back(branch(*this, ir_assignments[i], INT_VAR_SIZE_MIN(), INT_VAL_MIN()));
     // ir_assignments_brancher.push_back(branch(*this, ir_assignments[i], INT_VAR_ACTIVITY_MAX(0.8), INT_VAL_MIN()));
     // branch(*this, &ClassSolution::postBranching);
-    //        branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
-    // branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MAX_EXC());
+    //        branch(*this, depends_recursive[pool->getItems<CompositionObj>()[i]->getID()], SET_VAL_MIN_INC());
+    // branch(*this, depends_recursive[pool->getItems<CompositionObj>()[i]->getID()], SET_VAL_MAX_EXC());
     //    }
     // branch(*this, &ClassSolution::postBranching);
-    // branch(*this, depends_recursive[pool->getItems<Composition*>()[i]->getID()], SET_VAL_MIN_INC());
+    // branch(*this, depends_recursive[pool->getItems<CompositionObj>()[i]->getID()], SET_VAL_MIN_INC());
     //    depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
     // depends_brancher = branch(*this, depends, SET_VAR_SIZE_MAX(), SET_VAL_MIN_EXC());
 
@@ -359,14 +359,15 @@ ClassSolution::ClassSolution(Pool* _pool)
 
 bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t>& ids)
 {
-    //    std::cout << "checking root " << pool->getItems<Composition*>()[cmp_id]->getName() << std::endl;
+    //    std::cout << "checking root " << pool->getItems<CompositionObj>()[cmp_id]->getName() << std::endl;
     for (int i = 0; i < ir_assignments[cmp_id].size(); i++) {
         if (ir_assignments[cmp_id][i].assigned()) {
             unsigned int id = ir_assignments[cmp_id][i].val();
             //            std::cout << "checking " << id << std::endl;
             //            std::cout << "pool size is: " << pool->size() << std::endl;
             auto c = (*pool)[id];
-            if (auto cmp = dynamic_cast<Composition*>(c)) {
+            auto cmp = std::dynamic_pointer_cast<CompositionObj>(c);
+            if (cmp.get()) {
                 for (auto id2 : ids)
                     if (id == id2) {
                         std::cout << "This cannot be we depend and outself?" << std::endl;
@@ -376,7 +377,7 @@ bool ClassSolution::allDepsResolved(unsigned int cmp_id, std::vector<size_t>& id
                         return false;  // TODO forbit this solution
                     }
                 ids.push_back(id);
-                if (!allDepsResolved(pool->getTypeSpecificId<Composition*>(cmp), ids)) {
+                if (!allDepsResolved(pool->getTypeSpecificId<CompositionObj>(cmp), ids)) {
                     return false;
                 } else {
                 }
@@ -397,24 +398,22 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             auto c = (*pool)[id];
 
             std::stringstream edge_name;
-            edge_name << pool->getItems<Composition*>()[cmp_id]->getChildren()[i].first;  // << "_child";
+            edge_name << pool->getItems<CompositionObj>()[cmp_id]->getChildren()[i].first;  // << "_child";
 
             graph_analysis::Edge::Ptr e(new graph_analysis::Edge(edge_name.str()));
-            // auto a = pool->getItems<Composition*>()[cmp_id];
-            // auto b = (pool->getItems<Composition*>()[cmp_id]->getPtr());
+            // auto a = pool->getItems<CompositionObj>()[cmp_id];
+            // auto b = (pool->getItems<CompositionObj>()[cmp_id]->getPtr());
             // std::string aa = (dynamic_cast<SpecializedComponentBase*>(a) == 0) ? "true" : "false";
             // std::string bb = (dynamic_cast<SpecializedComponentBase*>(b.get()) == 0) ? "true" : "false";
             // std::cout << "Must equal: " << aa << " vs. " << bb << " " << a->getName() << "(" << a->getID() << ")" << std::endl;
             // std::cout << "pointer in CS: " << a << " | " << dynamic_cast<SpecializedComponentBase*>(a) << std::endl;
-            e->setSourceVertex((pool->getItems<Composition*>()[cmp_id]->getPtr()));
-            e->setTargetVertex(c->getPtr());
-
-            assert(c->getPtr().get() == c);
+            e->setSourceVertex((pool->getItems<CompositionObj>()[cmp_id]));
+            e->setTargetVertex(c);
 
             std::cout << "a1" << std::endl;
             std::string a1 = e->getTargetVertex()->toString();
             std::cout << "a2" << std::endl;
-            std::string a2 =  c->toString();
+            std::string a2 = c->toString();
             std::cout << "a3" << std::endl;
             std::string a3 = c->getName();
             std::cout << "a4" << std::endl;
@@ -423,16 +422,17 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             std::string a5 = e->getTargetVertex()->getLabel();
 
             std::cerr << "Label:" << std::endl;
-            std::cerr << a1 << " vs. " << a2 << " vs. " << a3 << " vs. " << a4 << " vs. " << a5 <<  std::endl;
+            std::cerr << a1 << " vs. " << a2 << " vs. " << a3 << " vs. " << a4 << " vs. " << a5 << std::endl;
 
-            assert(a1==a2);
-            assert(a3==a2);
-            assert(a3==a4);
-            assert(a5==a4);
+            assert(a1 == a2);
+            assert(a3 == a2);
+            assert(a3 == a4);
+            assert(a5 == a4);
 
             g->addEdge(e);
 
-            if (auto cmp = dynamic_cast<Composition*>(c)) {
+            auto cmp = std::dynamic_pointer_cast<CompositionObj>(c);
+            if (cmp.get()) {
                 /* //We don't need this check here was already done before
                 for(auto id2 : ids) if(id == id2){
                     std::cout << "This cannot be we depend and outself?" << std::endl;
@@ -443,7 +443,7 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
                 }
                 */
                 // ids.push_back(id);
-                build_tree(g, pool->getTypeSpecificId<Composition*>(cmp));
+                build_tree(g, pool->getTypeSpecificId<CompositionObj>(cmp));
             } else {
                 // Nothing to do, the child is a leaf, which got added by the block before this if
                 //
@@ -465,7 +465,7 @@ void ClassSolution::removeAllUnsedCmps(std::vector<size_t> ids)
     std::cout << "#########################" << std::endl;
 */
     std::cout << "__FUNCTION_" << std::endl;
-    for (auto cmp : pool->getItems<Composition*>()) {
+    for (auto cmp : pool->getItems<CompositionObj>()) {
         bool contain = false;
         for (auto id : ids) {
             //           std::cout << "Cmp " << cmp->getName() << " has id: " << pool->getTypeSpecificId<Composition*>(cmp) << std::endl;
@@ -536,7 +536,9 @@ bool ClassSolution::findNextBrancher(unsigned int id)
 {
     bool finish = true;
     DEBUG_CLASS_SOLUTION << "Checking " << pool->operator[](id)->getName() << std::endl;
-    if (auto cmp = dynamic_cast<Composition*>((*pool)[id])) {
+    auto obj = pool->operator[](id);
+    auto cmp = std::dynamic_pointer_cast<CompositionObj>(obj);
+    if (cmp.get()) {
         if (!depends[id].assigned()) {
             DEBUG_CLASS_SOLUTION << "The dependencies not resolved" << std::endl;
             finish = false;
@@ -554,9 +556,9 @@ bool ClassSolution::findNextBrancher(unsigned int id)
             //        for(auto child_p : cmp->getChildren()){
             auto child = cmp->getChildren()[c_id].second;
             DEBUG_CLASS_SOLUTION << "Checking Child" << child->getName() << std::endl;
-            if (!ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].assigned()) {
+            if (!ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id].assigned()) {
                 DEBUG_CLASS_SOLUTION << "-- Not assigned yet" << std::endl;
-                branch(*this, ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id], INT_VAL_MIN());
+                branch(*this, ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id], INT_VAL_MIN());
 
                 if (!active[child->getID()].assigned()) {
                     DEBUG_CLASS_SOLUTION << "-- What?" << std::endl;
@@ -567,9 +569,9 @@ bool ClassSolution::findNextBrancher(unsigned int id)
             } else {
                 // Child is resolved for us
                 // printf("-- Got here id: %lu (%lu,%lu)\n",ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].val(),pool->getTypeSpecificId<Composition*>(cmp),c_id);
-                DEBUG_CLASS_SOLUTION << "Child is assigned to " << pool->operator[](ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].val())->getName() << std::endl;
+                DEBUG_CLASS_SOLUTION << "Child is assigned to " << pool->operator[](ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id].val())->getName() << std::endl;
                 DEBUG_CLASS_SOLUTION << "Checking now children " << std::endl;
-                if (!findNextBrancher(ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].val())) {
+                if (!findNextBrancher(ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id].val())) {
                     DEBUG_CLASS_SOLUTION << "Returned from lower layer to << resolving of " << pool->operator[](id)->getName() << std::endl;
                     DEBUG_CLASS_SOLUTION << "And Child constraints are not yet resolved" << std::endl;
                     finish = false;
@@ -703,7 +705,7 @@ void ClassSolution::compare(const Space& _s, std::ostream& os) const
     std::ofstream file(buff);
     file << "digraph G {" << std::endl;
     size_t cmp_id = 0;
-    for (auto composition : pool->getItems<Composition*>()) {
+    for (auto composition : pool->getItems<CompositionObj>()) {
         size_t child_id = 0;
         for (auto child : composition->getChildren()) {
             if (ir_assignments[cmp_id][child_id].assigned() && s.ir_assignments[cmp_id][child_id].assigned()) {
@@ -794,12 +796,12 @@ void ClassSolution::printToDot(std::ostream& os) const
     std::ofstream file(buff);
     file << "digraph G {" << std::endl;
     size_t cmp_id = 0;
-    for (auto composition : pool->getItems<Composition*>()) {
+    for (auto composition : pool->getItems<CompositionObj>()) {
         size_t child_id = 0;
         for (auto child : composition->getChildren()) {
             if (ir_assignments[cmp_id][child_id].assigned()) {
                 if (ir_assignments[cmp_id][child_id].val() > ID_START) {  // Only print assigned solutions
-                    auto s = dynamic_cast<SpecializedComponentBase*>(composition);
+                    auto s = std::dynamic_pointer_cast<SpecializedComponentObjBase>(composition);
                     if (s) {
                         std::string str = composition->getName() + "(!)";
                         for (auto c : s->configuration) {
@@ -916,7 +918,7 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
 
     os << "Child Selection: { " << std::endl;
     size_t cmp_id = 0;
-    for (auto composition : pool->getItems<Composition*>()) {
+    for (auto composition : pool->getItems<CompositionObj>()) {
         size_t child_id = 0;
         for (auto child : composition->getChildren()) {
             if (ir_assignments[cmp_id][child_id].assigned()) {
@@ -936,7 +938,7 @@ void ClassSolution::printToStream(std::ostream& os, bool full) const
 #if 1
     os << "Dependencies { " << std::endl;
     for (int i = full ? 0 : ID_START; i < depends.size(); i++) {
-        // auto o = pool->getItems<Composition*>()[i];//(*pool)[i];
+        // auto o = pool->getItems<CompositionObj>()[i];//(*pool)[i];
         auto o = (*pool)[i];
         // os << "Deps for " << o->getName() << ": " << std::endl;//<< depends << std::endl;
 
@@ -1044,12 +1046,14 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
         // std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         // std::cout << "------------------------------------------------------------------------------------------" << std::endl;
         best = s;
-        if ((erg.size() > 2)) { //TODO hack
+#if LIMIT_SOLUTIONS
+        if ((erg.size() >= LIMIT_SOLUTIONS)) {  // TODO hack
             auto c = e.statistics();
             std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
             std::cerr << "Warn cancel search because we have too much solutions" << std::endl;
             break;
         }
+#endif
     }
 
     // throw exception if there is no solution

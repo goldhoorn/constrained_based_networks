@@ -25,13 +25,13 @@ struct Configuration : public std::map<std::string, std::string>
     }
 };
 
-class SpecializedComponentBase : private boost::noncopyable
+class SpecializedComponentObjBase : private boost::noncopyable
 {
    public:
-    SpecializedComponentBase()
+    SpecializedComponentObjBase()
     {
     }
-    virtual ~SpecializedComponentBase()
+    virtual ~SpecializedComponentObjBase()
     {
     }
 
@@ -42,15 +42,15 @@ class SpecializedComponentBase : private boost::noncopyable
         configuration.add(name, value);
     };
 
-    virtual constrained_based_networks::Component* getComponent() = 0;
-    virtual constrained_based_networks::Component* getOrginal() = 0;
+    virtual constrained_based_networks::Component getComponent() = 0;
+    virtual Component getOrginal() = 0;
     virtual bool isActive() = 0;
     virtual void setActive(bool active = true) = 0;
     virtual unsigned int getID() const = 0;
     virtual const std::string& getName(bool b) const = 0;
     virtual const std::string& getName() const = 0;
 
-    std::map<std::string,Component*> replaced_children;
+    std::map<std::string, Component> replaced_children;
 
     unsigned int id;
     /*
@@ -63,34 +63,44 @@ class SpecializedComponentBase : private boost::noncopyable
     friend class Pool;
 };
 
+typedef std::shared_ptr<SpecializedComponentObjBase> SpecializedComponentBase;
+
 template <class T>
-class SpecializedComponent : public SpecializedComponentBase, public T
+class SpecializedComponentObj : public SpecializedComponentObjBase, public T
 {
-   public:
-    SpecializedComponent(T* t, Pool* pool, std::string name)
-        : T(*t)
+   private:
+    SpecializedComponentObj(std::shared_ptr<T> t, Pool* pool, std::string name)
+        : T(pool)
         , pool(pool)
     {
         // classScope = false;
         org = t;
         active = false;
-//        std::cout << "Should add a specialized component with name: '" << name << "' and its base-class '" << t->getName() << "'" << std::endl;
-
-        pool->addComponent(this);
-
-        if (name.empty()) {
-            std::stringstream s;
-            s << T::getName() << "_" << getID();
-            specialized_name = s.str();
-        } else {
-            if (pool->hasComponent(name)) {
-                throw std::invalid_argument("Cannot add Specialized component " + name + ", it already exists");
-            }
-            specialized_name = name;
-        }
+        //        std::cout << "Should add a specialized component with name: '" << name << "' and its base-class '" << t->getName() << "'" << std::endl;
     };
 
-    virtual Component* clone(Pool* p) const
+   public:
+    static SpecializedComponentBase make(std::shared_ptr<T> t, Pool* pool, std::string name)
+    {
+        auto c = new SpecializedComponentObj<T>(t,pool,name);
+        if (name.empty()) {
+            std::stringstream s;
+            s << c->T::getName() << "_" << c->getID();
+            c->specialized_name = s.str();
+        } else {
+            if (pool->hasComponent(name)){
+                throw std::invalid_argument("Cannot add Specialized component " + name + ", it already exists");
+            }
+            c->specialized_name = name;
+        }
+
+        auto ptr = std::shared_ptr<SpecializedComponentObj<T> >(c);
+
+        pool->addComponent((Component)(c));
+        return std::static_pointer_cast<SpecializedComponentObjBase>(ptr);
+    }
+
+    virtual Component clone(Pool* p) const
     {
         (void)p;
         throw std::runtime_error("Implement me");
@@ -99,27 +109,32 @@ class SpecializedComponent : public SpecializedComponentBase, public T
 
     virtual bool isActive()
     {
-        //        std::cerr << "Is Active on specialized called " << active << " on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
+        //        std::cerr << "Is Active on specialized called " << active << " on " << getName(false) << " " << dynamic_cast<SpecializedComponentObjBase*>(this) << std::endl;
         return active;
     };
 
     virtual void setActive(bool active = true)
     {
         //       std::cerr << "----------------############ Set active on specialized called " << active << std::endl;
-        //      std::cerr << "on " << getName(false) << " " << dynamic_cast<SpecializedComponentBase*>(this) << std::endl;
+        //      std::cerr << "on " << getName(false) << " " << dynamic_cast<SpecializedComponentObjBase*>(this) << std::endl;
         this->active = active;
         if (active && id != ID_ROOT_KNOT) {  // ID for the root-knot-composition
-            dynamic_cast<Composition*>((*pool)[1])->addChild(this, getName(true));
+            assert((*pool)[id].get() == this);
+            Composition c = std::dynamic_pointer_cast<CompositionObj>((*pool)[1]);
+            assert(c);
+            c->addChild((*pool)[id], getName(true));
         }
         //        std::cerr << " " << active << " " << this->active << " " << T::active  << std::endl;
     }
 
-    virtual ~SpecializedComponent() {};
+    virtual ~SpecializedComponentObj() {};
 
-    virtual constrained_based_networks::Component* getComponent()
+    virtual constrained_based_networks::Component getComponent()
     {
-        return this;
+        assert((*pool)[id].get() == this);
+        return (*pool)[id];
     };
+
 
     virtual const std::string& getName() const
     {
@@ -134,28 +149,32 @@ class SpecializedComponent : public SpecializedComponentBase, public T
 
     // This is ugly helper function to recover the IDs from mergeComponent
     // should not used somewhere else, a cast should be sufficent
-    virtual constrained_based_networks::Component* getOrginal()
+    virtual constrained_based_networks::Component getOrginal()
     {
         return org;
     };
 
     virtual unsigned int getID() const
     {
-        return SpecializedComponentBase::id;
+        return SpecializedComponentObjBase::id;
         /*
       if (classScope) {
         return T::getID();
       } else {
-        return SpecializedComponentBase::id;
+        return SpecializedComponentObjBase::id;
       }
     */
     };
 
    private:
-    T* org;
+    std::shared_ptr<T> org;
     bool active;
     Pool* pool;
     std::string specialized_name;
     //  bool classScope;
 };
+
+template <class T>
+using SpecializedComponent = std::shared_ptr<SpecializedComponentObj<T> >;
+
 };

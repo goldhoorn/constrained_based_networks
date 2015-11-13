@@ -3,7 +3,7 @@
 #include "NetworkHelper.hpp"
 #include <stdexcept>
 
-#define NUM_THREADS 3
+#define NUM_THREADS 1
 
 using namespace constrained_based_networks;
 

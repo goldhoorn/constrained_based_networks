@@ -19,7 +19,7 @@ namespace constrained_based_networks {
  * A component is uniquely defined by its type and name. It can be configured. It has output and input ports,
  * on which it can be connected to other components.
  */
-class Task : public constrained_based_networks::Component, public constrained_based_networks::PortHandler{
+class TaskObj : public constrained_based_networks::ComponentObj, public constrained_based_networks::PortHandler{
 protected:
     /**
      * The configuration consists of a variable sized vector of strings, naming one configuration profile.
@@ -29,24 +29,26 @@ protected:
     //std::vector<std::string> configurations;
 
 
-public:
     /**
      *Default constructor to be able to use components as map value type.
      */
-    Task(Pool *pool);
-    Task(Pool *pool, std::string name);
+    TaskObj(Pool *pool);
+    TaskObj(Pool *pool, std::string name);
+    TaskObj(std::string name, Pool *pool) ;
+
+public:
+    static std::shared_ptr<TaskObj> make(Pool *pool, std::string name);
 
     /**
      * Construct component with type and name.
      */
-    Task(std::string name, Pool *pool) ;
-    
-    virtual Component* clone(Pool *p) const;
 
-    SpecializedComponentBase* getSpecialized(std::string name="");
+    virtual Component clone(Pool *p) const;
+
+    std::shared_ptr<SpecializedComponentObjBase> getSpecialized(std::shared_ptr<ComponentObj> obj, std::string name="");
 /*
     void addConfig(std::string name, std::string value){
-        if(auto c = dynamic_cast<Task*>(this)){
+        if(auto c = dynamic_cast<TaskObj*>(this)){
             c->addConfig(name,value);
         }else{
             throw std::runtime_error("Called addConfig on invalid class");
@@ -58,14 +60,14 @@ public:
     /**
      * Components are equal if their name and type equal.
      */
-    bool operator ==( const Task &comp ) const;
+    bool operator ==( const TaskObj &comp ) const;
 
     /**
      * String representation of a component
      */
 //    std::string toString() const;
 
-    virtual std::string getClassName() const { return "constrained_based_networks::Task"; }
+    virtual std::string getClassName() const { return "constrained_based_networks::TaskObj"; }
 
 #if 0
     /**
@@ -81,6 +83,8 @@ public:
     bool abstract() const{return false;};
 
 };
+
+typedef std::shared_ptr<TaskObj> Task;
 
 } // end namespace constrained_based_networks
 

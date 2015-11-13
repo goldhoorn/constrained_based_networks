@@ -27,8 +27,8 @@ class XML
     static bool saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std::string original_file, std::list<std::string> additionalRequirements, std::vector<unsigned int> id);
     static bool addInstanceSolutions(const std::string filename, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> instance_solutions,
                                      std::vector<unsigned int> ids);
-    static Component* ensureComponentAvailible(Pool* pool, std::string component_name, xmlpp::Node* const root);
-    static void addSpecialization(Component* comp, xmlpp::Element* const root);
+    static Component ensureComponentAvailible(Pool* pool, std::string component_name, xmlpp::Node* const root);
+    static void addSpecialization(Component comp, xmlpp::Element* const root);
     static std::string toMD5(const std::string input);
     static void createDatabase(std::string original_file);
     static bool findUnresolvedIDs(std::string filename, std::vector<unsigned int> &res_v, std::list<std::vector<unsigned int>> ignored_solutions);

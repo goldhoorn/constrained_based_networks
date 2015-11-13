@@ -7,31 +7,38 @@
 
 namespace constrained_based_networks {
 
-DataService::DataService(Pool *pool): Component(pool) {}
+DataServiceObj::DataServiceObj(Pool *pool): ComponentObj(pool) {}
 
-DataService::DataService(const std::string &name, Pool *pool)
-    : Component(pool)
+DataServiceObj::DataServiceObj(const std::string &name, Pool *pool)
+    : ComponentObj(pool)
 {
     this->name = name;
-    auto c = new Composition(name + "_cmp", pool);
-    c->addChild(this,"virtual_main_child");
+    //auto c = new Composition(name + "_cmp", pool);
+    //c->addChild(this,"virtual_main_child");
 }
 
-Component* DataService::clone(Pool *p) const {
-    auto ds = new DataService(name,p);
-    return ds;
+Component DataServiceObj::clone(Pool *p) const {
+    throw std::runtime_error("Not implemented");
+    return 0;
 }
 
-bool DataService::operator ==( const DataService &comp ) const
+DataService DataServiceObj::make(Pool *pool, std::string name)
+{
+    auto res = std::shared_ptr<DataServiceObj>(new DataServiceObj(name, pool));
+    pool->addComponent(res);
+    return res;
+}
+
+bool DataServiceObj::operator ==( const DataServiceObj &comp ) const
 {
     return name == comp.name;
 }
 
 #if 0
-std::string DataService::toString() const
+std::string DataServiceObj::toString() const
 {
     std::ostringstream ss;
-//    ss << "DataService " << name << " of type " << type << ".\n";
+//    ss << "DataServiceObj " << name << " of type " << type << ".\n";
 /*
     ss << "  Configuration: [";
     for(int i = 0; i < configurations.size(); i++)
@@ -45,27 +52,29 @@ std::string DataService::toString() const
 #endif
 
 /*
-int DataService::getType() const
+int DataServiceObj::getType() const
 {
     return type;
 }
 */
 
 /*
-const std::vector<std::string>& DataService::getConfiguration() const
+const std::vector<std::string>& DataServiceObj::getConfiguration() const
 {
     return configurations;
 }
 */
 /*
-void DataService::setConfiguration(const std::vector<std::string>& configurations)
+void DataServiceObj::setConfiguration(const std::vector<std::string>& configurations)
 {
     this->configurations = configurations;
 }
 */
 
-SpecializedComponentBase *DataService::getSpecialized(std::string name){
-    return new SpecializedComponent<DataService>(this, pool,name);
+std::shared_ptr<SpecializedComponentObjBase> DataServiceObj::getSpecialized(std::shared_ptr<ComponentObj> _obj, std::string name){
+    DataService obj = std::dynamic_pointer_cast<DataServiceObj>(_obj);
+    assert(obj.get());
+    return SpecializedComponentObj<DataServiceObj>::make(obj, pool, name);
 }
 
 } // end namespace constrained_based_networks

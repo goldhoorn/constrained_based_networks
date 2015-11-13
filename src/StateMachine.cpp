@@ -5,30 +5,36 @@
 
 using namespace constrained_based_networks;
 
-StateMachine::StateMachine(std::string name, Pool *pool) : Composition(name, pool)
+StateMachineObj::StateMachineObj(Pool *pool, std::string name) : CompositionObj(name, pool)
 {
     addProperty("current_state", ConfigurationModel::INT);
-    transitions.push_back(Transition(this, this, this, "no_start_state"));
-    assert(name != "SM1_5");
+    transitions.push_back(Transition(0, 0, 0, "no_start_state"));
 }
 
-StateMachine::~StateMachine()
+StateMachineObj::~StateMachineObj()
 {
 }
 
-void StateMachine::setStart(std::string name)
+StateMachine StateMachineObj::make(Pool *pool, std::string name)
+{
+    auto res = std::shared_ptr<StateMachineObj>(new StateMachineObj(pool, name));
+    pool->addComponent(res);
+    return res;
+}
+
+void StateMachineObj::setStart(std::string name)
 {
     setStart(pool->getComponent(name));
 }
 
-void StateMachine::setStart(Component *c)
+void StateMachineObj::setStart(Component c)
 {
-    transitions[0] = Transition(this, c, this, "start");
+    transitions[0] = Transition(0, c, 0, "start");
 }
 
-std::vector<Transition> StateMachine::getTransitions()
+std::vector<Transition> StateMachineObj::getTransitions()
 {
-    if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
+    if (auto spec = dynamic_cast<SpecializedComponentObjBase *>(this)) {
         std::vector<Transition> res = transitions;
         for (const auto &replacement : spec->replaced_children) {
             auto old = pool->getComponent(replacement.first);
@@ -52,11 +58,11 @@ std::vector<Transition> StateMachine::getTransitions()
     }
 }
 
-unsigned int StateMachine::getCurrentTransition()
+unsigned int StateMachineObj::getCurrentTransition()
 {
-    //std::vector<std::pair<std::string, Component *>> res;
-    if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
-        //        std::cout << "Have a specialized StateMachine " << getName() << std::endl;
+    // std::vector<std::pair<std::string, Component *>> res;
+    if (auto spec = dynamic_cast<SpecializedComponentObjBase *>(this)) {
+        //        std::cout << "Have a specialized StateMachineObj " << getName() << std::endl;
         if (spec->configuration.find("current_state") != spec->configuration.end()) {
             auto current_state = (size_t)atoi(spec->configuration["current_state"].c_str());
             auto states = getStates();
@@ -67,11 +73,11 @@ unsigned int StateMachine::getCurrentTransition()
             assert(s);
             return current_state;
             //            std::cout << "New child is: " << s->getName() << std::endl;
-            //res.push_back({"main", s});
+            // res.push_back({"main", s});
         } else {
             if (!getTransitions()[0].target) {
                 throw std::runtime_error("State machine has a transition but no target");
-//                std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
+                //                std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
             } else {
                 return 0;
             }
@@ -86,9 +92,9 @@ unsigned int StateMachine::getCurrentTransition()
     throw std::runtime_error("Unknown error in getCurrentTransition()");
 }
 
-std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
+std::vector<std::pair<std::string, Component>> StateMachineObj::getChildren()
 {
-    std::vector<std::pair<std::string, Component *>> res;
+    std::vector<std::pair<std::string, Component >> res;
     res.push_back({"main", getTransitions()[getCurrentTransition()].target});
     // std::cout << "Returning child " << res[0].second->getName() << " for " << getName() << " current transition is: " << getCurrentTransition() << std::endl;
     // std::cout << "Transition size is: " << transitions.size() << std::endl;
@@ -98,12 +104,14 @@ std::vector<std::pair<std::string, Component *>> StateMachine::getChildren()
     return res;
 }
 
-Component *StateMachine::searchCorresponding(Component *c, Pool *pool)
+Component StateMachineObj::searchCorresponding(Component c, Pool *pool)
 {
-    if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
+    auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
+    if (spec.get()) {
         // search for object in DB
-        for (auto pci : pool->getItems<Component *>()) {
-            if (auto pc = dynamic_cast<SpecializedComponentBase *>(pci)) {
+        for (auto pci : pool->getItems<ComponentObj>()) {
+            auto pc = std::dynamic_pointer_cast<SpecializedComponentObjBase>(pci);
+            if (pc.get()) {
                 if (pc->getName(true) == spec->getName(true) && pc->configuration == spec->configuration && pc->replaced_children == spec->replaced_children) {
 
                     // This check should not be needed
@@ -120,10 +128,10 @@ Component *StateMachine::searchCorresponding(Component *c, Pool *pool)
     }
 }
 
-void StateMachine::updateInternals(Pool *pool)
+void StateMachineObj::updateInternals(Pool *pool)
 {
     // Update the specialized child replacement
-    if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
+    if (auto spec = dynamic_cast<SpecializedComponentObjBase*>(this)) {
         for (auto &replacement : spec->replaced_children) {
             replacement.second = searchCorresponding(replacement.second, pool);
         }
@@ -144,7 +152,7 @@ void StateMachine::updateInternals(Pool *pool)
 #endif
 }
 
-void StateMachine::addTransition(std::string s, std::string t, std::string event_s, std::string event_name)
+void StateMachineObj::addTransition(std::string s, std::string t, std::string event_s, std::string event_name)
 {
     auto source = pool->getComponent(s);
     auto target = pool->getComponent(t);
@@ -152,25 +160,32 @@ void StateMachine::addTransition(std::string s, std::string t, std::string event
     addTransition(source, target, ev_s, event_name);
 }
 
-void StateMachine::addTransition(Component *source, Component *target, Component *event_source, std::string ev)
+void StateMachineObj::addTransition(Component source, Component target, Component event_source, std::string ev)
 {
     transitions.push_back(Transition(source, target, event_source, ev));
 }
 
-SpecializedComponentBase *StateMachine::getSpecialized(std::string name)
-{
-    if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
-        auto s = new SpecializedComponent<StateMachine>(dynamic_cast<StateMachine*>(spec->getOrginal()), pool, name);
+SpecializedComponentBase StateMachineObj::getSpecialized(std::shared_ptr<ComponentObj> _obj, std::string name){
+    assert(this == _obj.get());
+    if (auto spec = dynamic_cast<SpecializedComponentObjBase *>(this)) {
+        auto obj = std::dynamic_pointer_cast<StateMachineObj>(spec->getOrginal());
+        assert(obj);
+
+        auto s = SpecializedComponentObj<StateMachineObj>::make(obj, pool, name);
         s->configuration = spec->configuration;
         s->replaced_children = spec->replaced_children;
         s->setActive(spec->isActive());
         return s;
-//        throw std::runtime_error("We cannot specilaize a specialized component");
     }
-    return new SpecializedComponent<StateMachine>(this, pool, name);
+
+    auto obj = std::dynamic_pointer_cast<StateMachineObj>(_obj);
+    assert(obj);
+    auto res = SpecializedComponentObj<StateMachineObj>::make(obj, pool, name);
+    return res;
 }
 
-int StateMachine::getNewState(Component *child, std::string event)
+
+int StateMachineObj::getNewState(Component child, std::string event)
 {
     for (size_t i = 0; i < getTransitions().size(); i++) {
         auto t = getTransitions()[i];
@@ -181,14 +196,17 @@ int StateMachine::getNewState(Component *child, std::string event)
     return -1;
 }
 
-Component *StateMachine::clone(Pool *p) const
+Component StateMachineObj::clone(Pool *p) const
 {
-    auto *c = new StateMachine(name, p);
     throw std::runtime_error("Implement me");
+    return 0;
+    /*
+    auto *c = new StateMachineObj(name, p);
     return c;
+    */
 };
 
-Forwards StateMachine::getEventForwards(Component *child, std::string name)
+Forwards StateMachineObj::getEventForwards(Component child, std::string name)
 {
     (void)child;
     Forwards forwards;
@@ -207,12 +225,12 @@ Forwards StateMachine::getEventForwards(Component *child, std::string name)
     }
 
     auto current_transition_id = getCurrentTransition();
-//    auto current_state = getTransitions()[current_transition_id].target;
+    //    auto current_state = getTransitions()[current_transition_id].target;
     auto current_state = child;
     std::cerr << "STATE MACHINE IS IN STATE: " << current_transition_id << " THE STATE IS " << current_state->getName() << " Child is " << child->getName() << std::endl;
 
     for (size_t i = 0; i < getTransitions().size(); i++) {
-        //auto t = getTransitions()[i];
+        // auto t = getTransitions()[i];
         auto t = transitions[i];
         // We only support this so far:
         if (t.event_source != t.source) {
@@ -223,7 +241,7 @@ Forwards StateMachine::getEventForwards(Component *child, std::string name)
             s << "transition-" << i;
             std::cerr << "success" << t.event_source->getName() << " -> " << s.str() << std::endl;
             forwards[t.event] = s.str();  // This overloads the normal propagation
-        }else{
+        } else {
             std::cerr << "Failed " << t.event_source->getName() << "vs. " << current_state->getName() << std::endl;
         }
     }
@@ -266,9 +284,9 @@ Forwards StateMachine::getEventForwards(Component *child, std::string name)
 }
 #endif
 
-std::vector<Component *> StateMachine::getStates()
+std::vector<Component > StateMachineObj::getStates()
 {
-    std::vector<Component *> erg;
+    std::vector<Component > erg;
     for (auto tr : getTransitions()) {
         // Make sure target states are all what we need
         auto t = tr.target;
@@ -286,7 +304,7 @@ std::vector<Component *> StateMachine::getStates()
     return erg;
 }
 
-void StateMachine::replaceChild(Component *child, Component *old)
+void StateMachineObj::replaceChild(Component child, Component old)
 {
     (void)child;
     (void)old;
@@ -312,7 +330,7 @@ void StateMachine::replaceChild(Component *child, Component *old)
     */
 }
 
-void StateMachine::replaceChild(Component *child, std::string name)
+void StateMachineObj::replaceChild(Component child, std::string name)
 {
     (void)name;
     (void)child;
@@ -336,31 +354,31 @@ void StateMachine::replaceChild(Component *child, std::string name)
     */
 }
 
-void StateMachine::addTransition(SpecializedComponentBase *source, SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev)
+void StateMachineObj::addTransition(SpecializedComponentBase source, SpecializedComponentBase target, SpecializedComponentBase event_source, std::string ev)
 {
     addTransition(source->getComponent(), target->getComponent(), event_source->getComponent(), ev);
 }
-void StateMachine::addTransition(Component *source, SpecializedComponentBase *target, SpecializedComponentBase *event_source, std::string ev)
+void StateMachineObj::addTransition(Component source, SpecializedComponentBase target, SpecializedComponentBase event_source, std::string ev)
 {
     addTransition(source, target->getComponent(), event_source->getComponent(), ev);
 }
-void StateMachine::addTransition(SpecializedComponentBase *source, Component *target, SpecializedComponentBase *event_source, std::string ev)
+void StateMachineObj::addTransition(SpecializedComponentBase source, Component target, SpecializedComponentBase event_source, std::string ev)
 {
     addTransition(source->getComponent(), target, event_source->getComponent(), ev);
 }
-void StateMachine::addTransition(SpecializedComponentBase *source, SpecializedComponentBase *target, Component *event_source, std::string ev)
+void StateMachineObj::addTransition(SpecializedComponentBase source, SpecializedComponentBase target, Component event_source, std::string ev)
 {
     addTransition(source->getComponent(), target->getComponent(), event_source, ev);
 }
-void StateMachine::addTransition(Component *source, SpecializedComponentBase *target, Component *event_source, std::string ev)
+void StateMachineObj::addTransition(Component source, SpecializedComponentBase target, Component event_source, std::string ev)
 {
     addTransition(source, target->getComponent(), event_source, ev);
 }
-void StateMachine::addTransition(SpecializedComponentBase *source, Component *target, Component *event_source, std::string ev)
+void StateMachineObj::addTransition(SpecializedComponentBase source, Component target, Component event_source, std::string ev)
 {
     addTransition(source->getComponent(), target, event_source, ev);
 }
-void StateMachine::setStart(SpecializedComponentBase *c)
+void StateMachineObj::setStart(SpecializedComponentBase c)
 {
     setStart(c->getComponent());
 }

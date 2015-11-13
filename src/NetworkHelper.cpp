@@ -22,8 +22,9 @@ void NetworkHelper::initializeExporter()
                                 (graph_analysis::VertexTypeManager::print_func_t) & ConfiguredComponent::serializeName);
 }
 
-void NetworkHelper::createClassSolution(std::string core_model, std::list<std::string> additionalRequirements, std::vector<unsigned int> ids){
-    Pool *pool = XML::load(XML::loadInstanceSolution(core_model,ids));
+void NetworkHelper::createClassSolution(std::string core_model, std::list<std::string> additionalRequirements, std::vector<unsigned int> ids)
+{
+    Pool *pool = XML::load(XML::loadInstanceSolution(core_model, ids));
 
     for (auto s : additionalRequirements) {
         if (!pool->hasComponent(s)) {
@@ -32,25 +33,27 @@ void NetworkHelper::createClassSolution(std::string core_model, std::list<std::s
         pool->getComponent(s)->setActive(true);
     }
 
-    for(auto c : pool->getItems<Component*>()){
-        if(c->isActive()){
+    for (auto c : pool->getItems<ComponentObj>()) {
+        if (c->isActive()) {
             std::cout << "Should start: " << c->getName() << std::endl;
-            if(auto cmp = dynamic_cast<Composition*>(c)){
-                for(auto child : cmp->getChildren()){
+            auto cmp = std::dynamic_pointer_cast<CompositionObj>(c);
+            if (cmp.get()) {
+                for (auto child : cmp->getChildren()) {
                     std::cout << "\t -child: " << child.second->getName() << std::endl;
                 }
             }
         }
     }
     auto solutions = ClassSolution::babSearch(pool);
-    XML::saveClassSolutions(solutions,core_model, additionalRequirements, ids);
+    XML::saveClassSolutions(solutions, core_model, additionalRequirements, ids);
     delete pool;
 }
 
-void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<unsigned int> ids){
+void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<unsigned int> ids)
+{
     std::vector<unsigned int> ids_for_loading = ids;
     ids_for_loading.pop_back();
-    std::string mode_to_load = XML::loadInstanceSolution(core_model,ids_for_loading);
+    std::string mode_to_load = XML::loadInstanceSolution(core_model, ids_for_loading);
     std::cout << "Loading model: " << mode_to_load << std::endl;
     Pool *pool = XML::load(mode_to_load);
     auto instance_graph_filename = XML::loadClassSolution(core_model, ids);
@@ -64,10 +67,10 @@ void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<u
         graph_analysis::Edge::Ptr e(new graph_analysis::Edge(node->getLabel()));
         const auto &v1 = pool->getComponent(node->getSourceVertex()->getLabel());
         const auto &v2 = pool->getComponent(node->getTargetVertex()->getLabel());
-        assert(v1->getPtr());
-        assert(v2->getPtr());
-        e->setSourceVertex(v1->getPtr());
-        e->setTargetVertex(v2->getPtr());
+        assert(v1.get());
+        assert(v2.get());
+        e->setSourceVertex(v1);
+        e->setTargetVertex(v2);
         graph->addEdge(e);
     }
 
@@ -77,7 +80,7 @@ void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<u
 
     std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> results;
     for (auto solution : is) {
-        graph_analysis::DirectedGraphInterface::Ptr g = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
+        graph_analysis::DirectedGraphInterface::Ptr g = std::dynamic_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(pool, g);
         auto events = trigger_events.getTrigger();
         /*
@@ -86,7 +89,7 @@ void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<u
             std::cout << "\t- " << e.resulting_requirement.network.size() << std::endl;
         }
         */
-        results.push_back({solution,events});
+        results.push_back({solution, events});
     }
     std::cout << "Calculated all follow solutions " << results.size() << std::endl;
     XML::addInstanceSolutions(core_model, results, ids);
@@ -94,6 +97,7 @@ void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<u
     delete pool;
 }
 
-bool NetworkHelper::getNextUncalculatedIDs(std::string core_model, std::vector<unsigned int> &ids, std::list<std::vector<unsigned int>> id){
-    return XML::findUnresolvedIDs(core_model,ids,id);
+bool NetworkHelper::getNextUncalculatedIDs(std::string core_model, std::vector<unsigned int> &ids, std::list<std::vector<unsigned int>> id)
+{
+    return XML::findUnresolvedIDs(core_model, ids, id);
 }

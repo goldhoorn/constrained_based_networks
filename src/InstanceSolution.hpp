@@ -68,7 +68,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
         for (auto j : double_config) {
             str << j.name << " " << j.min << " " << j.max << " ";
             assert(j.max <= std::numeric_limits<double>::max());
-            //assert(j.max != std::numeric_limits<double>::max());
+            // assert(j.max != std::numeric_limits<double>::max());
         }
         str << bool_config.size() << " ";
         for (auto j : bool_config) {
@@ -90,9 +90,9 @@ class ConfiguredComponent : public graph_analysis::Vertex
             if (names.find(j.name) == names.end()) {
                 names.insert(j.name);
                 if (j.min != j.max) {
-                    if(j.min == Gecode::Int::Limits::min && j.max == Gecode::Int::Limits::max){
+                    if (j.min == Gecode::Int::Limits::min && j.max == Gecode::Int::Limits::max) {
                         str << j.name << ": <undef>" << std::endl;
-                    }else{
+                    } else {
                         str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
                     }
                 } else {
@@ -104,9 +104,9 @@ class ConfiguredComponent : public graph_analysis::Vertex
             if (names.find(j.name) == names.end()) {
                 names.insert(j.name);
                 if (j.min != j.max) {
-                    if((j.min == Gecode::Float::Limits::min || j.min == std::numeric_limits<double>::min()) && (j.max == Gecode::Float::Limits::max || j.max == std::numeric_limits<double>::max())){
+                    if ((j.min == Gecode::Float::Limits::min || j.min == std::numeric_limits<double>::min()) && (j.max == Gecode::Float::Limits::max || j.max == std::numeric_limits<double>::max())) {
                         str << j.name << ": <undef>" << std::endl;
-                    }else{
+                    } else {
                         str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
                     }
                 } else {
@@ -118,9 +118,10 @@ class ConfiguredComponent : public graph_analysis::Vertex
             if (names.find(j.name) == names.end()) {
                 names.insert(j.name);
                 if (j.min != j.max) {
-                    if(j.min == 0 && j.max == 1){
-                        str << j.name << ": " << ": <undef>" << std::endl;
-                    }else{
+                    if (j.min == 0 && j.max == 1) {
+                        str << j.name << ": "
+                            << ": <undef>" << std::endl;
+                    } else {
                         str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;
                     }
                 } else {
@@ -208,14 +209,16 @@ class ConfiguredComponent : public graph_analysis::Vertex
         }
     }
 
-    ConfiguredComponent(Component* underlaying_component) : underlaying_name(underlaying_component->getName())
+    ConfiguredComponent(Component underlaying_component) : underlaying_name(underlaying_component->getName())
     {
         component = underlaying_component;
-        if (auto spec = dynamic_cast<SpecializedComponentBase*>(underlaying_component)) {
+        auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(underlaying_component);
+        if (spec.get()) {
             (void)spec;
             throw std::runtime_error("Cannot create configuredComponent from a specialized component yet - Not implemented");
         }
-        if (auto sm = dynamic_cast<StateMachine*>(underlaying_component)) {
+        auto sm = std::dynamic_pointer_cast<StateMachineObj>(underlaying_component);
+        if (sm.get()) {
             int_config.push_back(Config<int>{(int)sm->getCurrentTransition(), (int)sm->getCurrentTransition(), "current_state"});
         }
         /*
@@ -248,7 +251,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
                 */
     }
 
-    ConfiguredComponent(Component* underlaying_component, std::map<std::string, Gecode::FloatVar> f, std::map<std::string, Gecode::BoolVar> b, std::map<std::string, Gecode::IntVar> i,
+    ConfiguredComponent(Component underlaying_component, std::map<std::string, Gecode::FloatVar> f, std::map<std::string, Gecode::BoolVar> b, std::map<std::string, Gecode::IntVar> i,
                         std::map<std::string, Gecode::IntVar> s, std::shared_ptr<std::map<std::string, int>> sh)
         : underlaying_name(underlaying_component->getName())
     {
@@ -267,7 +270,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
         }
         for (auto e : s) {
             std::string config_value = "ERR (FATAL)";
-            bool valid=false;
+            bool valid = false;
             if (e.second.assigned()) {
                 auto id = e.second.val();
                 for (auto v : *sh) {
@@ -277,7 +280,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
                         break;
                     }
                 }
-            }else{
+            } else {
                 valid = true;
                 config_value = "<unassigned>";
             }
@@ -286,7 +289,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
         }
     }
 
-    Component* component;
+    Component component;
     virtual std::string getClassName() const
     {
         return "constrained_based_networks::ConfiguredComponent";
@@ -335,8 +338,6 @@ class ComponentInstanceHelper : public graph_analysis::Vertex
     graph_analysis::Vertex::Ptr self;
 };
 
-class Composition;
-
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real
  * solutions are of type InstanceSolution.
@@ -376,10 +377,14 @@ class InstanceSolution : public Gecode::Space
     static void print(const Space& home, const Gecode::BrancherHandle& bh, unsigned int a, Gecode::IntVar x, int i, const int& n, std::ostream& o);
 
     template <typename C>
-    static C* get(graph_analysis::Vertex::Ptr v)
+    static std::shared_ptr<C> get(graph_analysis::Vertex::Ptr v)
     {
-        auto component = dynamic_cast<C*>(v.get());
-        if (auto c = dynamic_cast<ConfiguredComponent*>(v.get())) component = dynamic_cast<C*>(c->component);
+        if(0){
+            //Compile time check, make sure we request only Components
+            ((C*)0)->getName();
+        }
+        auto component = std::dynamic_pointer_cast<C>(v);
+        if (auto c = std::dynamic_pointer_cast<ConfiguredComponent>(v)) component = std::dynamic_pointer_cast<C>(c->component);
         return component;
     }
 

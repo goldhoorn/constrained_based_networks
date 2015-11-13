@@ -7,14 +7,15 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/noncopyable.hpp>
 #include <graph_analysis/GraphAnalysis.hpp>
+//#include "SpecializedComponent.hpp"
 //#include <graph_analysis/lemon/Graph.hpp>
 
 namespace constrained_based_networks
 {
 
 class Pool;
-class SpecializedComponentBase;
-class Component;
+class SpecializedComponentObjBase;
+class ComponentObj;
 
 class ConfigurationModel
 {
@@ -52,11 +53,12 @@ class ConfigurationModel
     Type t;
 };
 
-class Component : public graph_analysis::Vertex
+class ComponentObj : public graph_analysis::Vertex
 {
    public:
-    Component(Pool *pool);
-    virtual ~Component();
+    ComponentObj(Pool *pool);
+
+    virtual ~ComponentObj();
     virtual unsigned int getID() const;
     virtual bool abstract() const = 0;
 
@@ -66,7 +68,7 @@ class Component : public graph_analysis::Vertex
     virtual void setActive(bool active = true);
     virtual const std::string &getName() const;
 
-    virtual Component* clone(Pool *p) const = 0;
+    virtual std::shared_ptr<ComponentObj> clone(Pool *p) const = 0;
 
     std::string toString() const
     {
@@ -75,7 +77,7 @@ class Component : public graph_analysis::Vertex
 
     virtual std::string getClassName() const
     {
-        return "constrained_based_networks::Component";
+        return "constrained_based_networks::ComponentObj";
     }
 
     virtual const std::string &getLabel() const
@@ -88,7 +90,7 @@ class Component : public graph_analysis::Vertex
 
     void addEvent(const std::string &name);
 
-    Component *getComponent(std::string s);
+    std::shared_ptr<ComponentObj> getComponent(std::string s);
 
     void addProperty(const std::string &_name, std::string t)
     {
@@ -111,7 +113,8 @@ class Component : public graph_analysis::Vertex
     }
 
     // virtual void addConfig(std::string name, std::string value)=0;
-    virtual SpecializedComponentBase *getSpecialized(std::string name="") = 0;
+    //virtual SpecializedComponentBase getSpecialized(std::shared_ptr<ComponentObj> obj, std::string name="") = 0;
+    virtual std::shared_ptr<SpecializedComponentObjBase>  getSpecialized(std::shared_ptr<ComponentObj> obj, std::string name="") = 0;
 
     ConfigurationModel::Type getProperty(std::string _name) const
     {
@@ -126,11 +129,10 @@ class Component : public graph_analysis::Vertex
     {
         return properties;
     }
-
+/*
     void prepareDelete(){
         self.reset();
     }
-
     graph_analysis::Vertex::Ptr getPtr()
     {
         //TODO hacky  please check why we need to check the pointer consistency here
@@ -139,6 +141,7 @@ class Component : public graph_analysis::Vertex
         }
         return self;
     }
+    */
 
     void addConfFileProperty(std::string section, std::string name, std::string value)
     {
@@ -176,7 +179,7 @@ class Component : public graph_analysis::Vertex
     std::vector<std::string> fullfillments;
     std::vector<std::string> events;
     std::vector<ConfigurationModel> properties;
-    graph_analysis::Vertex::Ptr self;
+    //graph_analysis::Vertex::Ptr self;
 
     std::map<std::string, std::map<std::string, std::string>> saved_conf;
 
@@ -189,4 +192,7 @@ class Component : public graph_analysis::Vertex
 
     friend class Pool;
 };
+
+typedef std::shared_ptr<ComponentObj> Component;
+
 }

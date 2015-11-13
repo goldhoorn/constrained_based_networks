@@ -26,10 +26,8 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
         done = true;
         for (auto h1 : event_propagation_table) {
             auto causing_component_id = h1.first;
-
-            auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(causing_component_id).get());
-            if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(causing_component_id).get())) causing_component = c->component;
-            assert(causing_component);
+            auto causing_component = get<ComponentObj>(instancitaed_network->getVertex(causing_component_id));
+            assert(causing_component.get());
             for (auto h2 : h1.second) {
                 auto causing_event = h2.first;
 
@@ -108,7 +106,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
     for (auto affected : event_propagation_table[causing_component][causing_event]) {
         auto affected_event = affected.event;
         auto affected_component_id = affected.component_graph_id;
-        auto affected_component = EventModelHandler::get<StateMachine>(instancitaed_network->getVertex(affected_component_id));
+        auto affected_component = EventModelHandler::get<StateMachineObj>(instancitaed_network->getVertex(affected_component_id));
 
         // Ok we found a state-machine which is affected no we have to search for the followup state of it
         if (affected_component) {
@@ -192,10 +190,10 @@ void EventModelHandler::generateRequrementsGraphRecusivly(graph_analysis::BaseGr
         for (auto outEdgeOfCurrent : instancitaed_network->outEdges(current)) {
             std::cout << "Begin for loop" << std::endl;
             // TODO not sure if we need a orginal child here to read the config from it
-            auto parent = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(outEdgeOfCurrent->getSourceVertex())->getName()));
-            auto child = dynamic_cast<Composition *>(pool->getComponent(EventModelHandler::get<Component>(outEdgeOfCurrent->getTargetVertex())->getName()));
-            assert(parent);
-            assert(child);
+            auto parent = std::dynamic_pointer_cast<CompositionObj>(pool->getComponent(EventModelHandler::get<ComponentObj>(outEdgeOfCurrent->getSourceVertex())->getName()));
+            auto child = std::dynamic_pointer_cast<CompositionObj>(pool->getComponent(EventModelHandler::get<ComponentObj>(outEdgeOfCurrent->getTargetVertex())->getName()));
+            assert(parent.get());
+            assert(child.get());
 
             if (outEdgeOfCurrent->getTargetVertex() != target) {
                 std::cout << "It is not the target" << std::endl;
@@ -255,19 +253,20 @@ void EventModelHandler::generateRequrementsGraphRecusivly(graph_analysis::BaseGr
 
 void EventModelHandler::generateDBRecursive(graph_analysis::Vertex::Ptr current_node)
 {
-    auto cc = dynamic_cast<ConfiguredComponent *>(current_node.get());
-    assert(cc);
+    auto cc = std::dynamic_pointer_cast<ConfiguredComponent>(current_node);
+    assert(cc.get());
     for (auto _child : instancitaed_network->outEdges(current_node)) {
-        auto child = dynamic_cast<Component *>(_child->getTargetVertex().get());
-        if (auto spec = dynamic_cast<ConfiguredComponent *>(_child->getTargetVertex().get())) {
+        auto child = std::dynamic_pointer_cast<ComponentObj>(_child->getTargetVertex());
+        auto spec = std::dynamic_pointer_cast<ConfiguredComponent>(_child->getTargetVertex());
+        if (spec.get()) {
             child = spec->component;
         }
         assert(child);
         std::string role = _child->getLabel();
 
         // This should be a composition because it has children
-        auto composition = dynamic_cast<Composition *>(cc->component);
-        assert(composition);
+        auto composition = std::dynamic_pointer_cast<CompositionObj>(cc->component);
+        assert(composition.get());
 
         for (auto forwards : composition->getEventForwards(child, role)) {
             event_propagation_table[instancitaed_network->getVertexId(_child->getTargetVertex())][forwards.first].insert({instancitaed_network->getVertexId(current_node), forwards.second});
@@ -281,8 +280,8 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
     std::list<TransitionTrigger> res;
     for (auto component : event_propagation_table) {
         for (auto event : component.second) {
-            auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(component.first).get());
-            if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(component.first).get())) causing_component = c->component;
+            auto causing_component = get<ComponentObj>(instancitaed_network->getVertex(component.first));
+            /*
             bool valid = dynamic_cast<Task *>(causing_component);
             if (auto c = dynamic_cast<Composition *>(causing_component)) {
                 // TODO maybe be more precise here
@@ -290,10 +289,11 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
             };
 
             if (valid || true) {
-                auto p = getFollowRequirementGraph(component.first, event.first);
-                // std::cout << "Graph size: " << p.size() << std::endl;
-                res.push_back({causing_component, event.first, {p}});
-            }
+            */
+            auto p = getFollowRequirementGraph(component.first, event.first);
+            // std::cout << "Graph size: " << p.size() << std::endl;
+            res.push_back({causing_component, event.first, {p}});
+            //}
         }
     }
     return res;
@@ -303,7 +303,7 @@ void EventModelHandler::replaceSMinGraph(graph_analysis::DirectedGraphInterface:
 
     if(auto parent_sm = dynamic_cast<StateMachine*>(pool->getComponent(current->toString()))){
         auto new_sm = setConfig(current, old);
-         
+
         throw std::runtime_error("Implement me");
         (void)graph;
         (void)parent_sm;
@@ -332,12 +332,12 @@ void EventModelHandler::replaceSMinGraph(graph_analysis::DirectedGraphInterface:
 }
 #endif
 
-void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphInterface::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current_vertex, Component *parent)
+void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphInterface::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current_vertex, Component parent)
 {
     for (auto child : graph->outEdges(current_vertex)) {
         std::cout << child->getLabel() << std::endl;
         std::cout << child->getTargetVertex()->getClassName() << std::endl;
-        Component *c=nullptr;
+        Component c;
         if (pool->hasComponent(child->getTargetVertex()->toString())) {
             c = pool->getComponent(child->getTargetVertex()->toString());
         } else if (pool->hasComponent(child->toString())) {  // Ugly hack special case see SpecializedComponent::setActive()
@@ -345,7 +345,7 @@ void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphI
         } else {
             throw std::runtime_error("Cannot find the requested child in out pool");
         }
-        assert(c);
+        assert(c.get());
         auto new_component = setConfig(child->getTargetVertex(), c);
 
         // We have to start this component IF parent is a root
@@ -353,8 +353,10 @@ void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphI
             new_component->setActive(true);
             std::cout << "Set active on: " << new_component->toString() << std::endl;
         } else {
-            if (auto sm = dynamic_cast<StateMachine *>(parent)) {
-                if (auto spec = dynamic_cast<SpecializedComponentBase *>(sm)) {
+            auto sm = std::dynamic_pointer_cast<StateMachineObj>(parent);
+            if (sm.get()) {
+                auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(sm);
+                if (spec.get()) {
                     spec->replaced_children[c->getName()] = new_component;
 
                     std::cout << "Warn we should have a state-machine here" << sm->getName() << std::endl;
@@ -365,8 +367,10 @@ void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphI
                     throw std::runtime_error("All state-machines needs to be specialized here");
                 }
                 // Should not needed, solved by the spec
-            } else if (auto composition = dynamic_cast<Composition *>(parent)) {
-                composition->replaceChild(new_component, child->toString());
+            } else if (auto composition = std::dynamic_pointer_cast<CompositionObj>(parent)) {
+                if (composition.get()) {
+                    composition->replaceChild(new_component, child->toString());
+                }
             } else {
                 // Maybe a task we dont care here
                 // throw std::runtime_error("Unsupported");
@@ -384,7 +388,7 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
     }
     graph_analysis::BaseGraph::Ptr graph = trigger.resulting_requirement.network[0];
 
-    auto d_graph = boost::reinterpret_pointer_cast<graph_analysis::DirectedGraphInterface>(graph);
+    auto d_graph = std::static_pointer_cast<graph_analysis::DirectedGraphInterface>(graph);
     assert(d_graph);
     graph_analysis::Vertex::Ptr root;
     for (auto k : d_graph->vertices()) {
@@ -396,7 +400,7 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
     assert(root.get());
 
     // Disable all current components in the network
-    for (auto c : pool->getItems<Component *>()) {
+    for (auto c : pool->getItems<ComponentObj>()) {
         if (c->getName() != "root-knot") {
             c->setActive(false);
         }
@@ -405,7 +409,7 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
     createFollowPoolRecursive(d_graph, pool, root, 0);
 
     bool valid = false;
-    for (auto c : pool->getItems<Component *>()) {
+    for (auto c : pool->getItems<ComponentObj>()) {
         if (c->isActive() && c->getName() != "root-knot") {
             std::cout << "Fond a active component: " << c->getName() << std::endl;
             valid = true;
@@ -418,7 +422,7 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
     pool->mergeDoubles();
 
     valid = false;
-    for (auto c : pool->getItems<Component *>()) {
+    for (auto c : pool->getItems<ComponentObj>()) {
         if (c->isActive() && c->getName() != "root-knot") {
             std::cout << "Fond a active component: " << c->getName() << std::endl;
             valid = true;
@@ -466,11 +470,11 @@ void EventModelHandler::createFollowPool(const TransitionTrigger &trigger, Pool 
     */
 }
 
-Component *EventModelHandler::setConfig(graph_analysis::Vertex::Ptr v, Component *c)
+Component EventModelHandler::setConfig(graph_analysis::Vertex::Ptr v, Component c)
 {
-    auto conf = dynamic_cast<ConfiguredComponent *>(v.get());
-    assert(conf);
-    auto new_active_child = c->getSpecialized();
+    auto conf = std::dynamic_pointer_cast<ConfiguredComponent>(v);
+    assert(conf.get());
+    auto new_active_child = c->getSpecialized(c);
     for (auto i : conf->int_config) {
         std::stringstream s;
         // TODO rething of limits
@@ -494,5 +498,5 @@ Component *EventModelHandler::setConfig(graph_analysis::Vertex::Ptr v, Component
         // TODO rething of limits
         new_active_child->addConfig(i.first, i.second);
     }
-    return dynamic_cast<Component *>(new_active_child);
+    return std::dynamic_pointer_cast<ComponentObj>(new_active_child);
 }

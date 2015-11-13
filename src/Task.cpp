@@ -4,41 +4,53 @@
 #include "Pool.hpp"
 #include "SpecializedComponent.hpp"
 
-namespace constrained_based_networks {
+namespace constrained_based_networks
+{
 
-Task::Task(Pool *pool): Component(pool) {}
+TaskObj::TaskObj(Pool *pool) : ComponentObj(pool)
+{
+}
 
-Task::Task(Pool *pool, std::string name)
-    : Component(pool)
+TaskObj::TaskObj(Pool *pool, std::string name) : ComponentObj(pool)
 {
     this->name = name;
     addFullfillment(name);
 }
 
-Task::Task(std::string name, Pool *pool)
-    : Component(pool)
+TaskObj::TaskObj(std::string name, Pool *pool) : ComponentObj(pool)
 {
     this->name = name;
     addFullfillment(name);
 }
 
-bool Task::operator ==( const Task &comp ) const
+Task TaskObj::make(Pool *pool, std::string name)
+{
+    auto res = std::shared_ptr<TaskObj>(new TaskObj(pool, name));
+    pool->addComponent(res);
+    return res;
+}
+
+bool TaskObj::operator==(const TaskObj &comp) const
 {
     return name == comp.name;
 }
 
-Component* Task::clone(Pool *p) const{
-    Component::clone(p);
+Component TaskObj::clone(Pool *p) const
+{
     throw std::runtime_error("IMPLEMENT ME");
-    auto *c = new Task(name,p);
+    return 0;
+    /*
+    Component::clone(p);
+    auto *c = new TaskObj(name,p);
     return c;
+    */
 };
 
 #if 0
-std::string Task::toString() const
+std::string TaskObj::toString() const
 {
     std::ostringstream ss;
-//    ss << "Task " << name << " of type " << type << ".\n";
+//    ss << "TaskObj " << name << " of type " << type << ".\n";
     ss << name;
     /*<< "  Configuration: [";
     for(int i = 0; i < configurations.size(); i++)
@@ -52,28 +64,29 @@ std::string Task::toString() const
 #endif
 
 /*
-int Task::getType() const
+int TaskObj::getType() const
 {
     return type;
 }
 */
 
 /*
-const std::vector<std::string>& Task::getConfiguration() const
+const std::vector<std::string>& TaskObj::getConfiguration() const
 {
     return configurations;
 }
 
-void Task::setConfiguration(const std::vector<std::string>& configurations)
+void TaskObj::setConfiguration(const std::vector<std::string>& configurations)
 {
     this->configurations = configurations;
 }
 */
 
-SpecializedComponentBase* Task::getSpecialized(std::string name)
+SpecializedComponentBase TaskObj::getSpecialized(std::shared_ptr<ComponentObj> _obj, std::string name)
 {
-    return new SpecializedComponent<Task>(this, pool,name);
+    Task obj = std::dynamic_pointer_cast<TaskObj>(_obj);
+    assert(obj.get());
+    return SpecializedComponentObj<TaskObj>::make(obj, pool, name);
 }
 
-
-} // end namespace constrained_based_networks
+}  // end namespace constrained_based_networks

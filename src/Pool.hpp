@@ -29,7 +29,7 @@ class Pool
 
     //std::string (*dupFunction)(constrained_based_networks::Pool*);
 
-    size_t addComponent(Component* c);
+    size_t addComponent(Component c);
 
     //    static Pool* getInstance();
 
@@ -58,22 +58,27 @@ class Pool
     unsigned int getNonAbstractCount();
     unsigned int getComponentCount();
 
-    Component* operator[](unsigned int id);
+    Component operator[](unsigned int id);
 
     template <typename T>
-    std::vector<T> getItems()
+    std::vector<std::shared_ptr<T>> getItems()
     {
+        if(0){
+            //getName is not valid for boot pointer prevent this struct called with a non-ClassSolution Object
+            ((T*)(nullptr))->getName();
+        }
         for (size_t i = 0; i < component_names.size(); i++) {
             if (component_names[i] == typeid(T).name()) {
-                return *reinterpret_cast<std::vector<T>*>(&component_helper[i]);
+                return *reinterpret_cast<std::vector<std::shared_ptr<T>>*>(&component_helper[i]);
             }
         }
 
-        std::vector<Component*> erg;
+        std::vector<Component> erg;
         for (auto c : components) {
-            T comp = dynamic_cast<T>(c);
-            if (comp != nullptr) {
-                erg.push_back(comp);
+            auto comp = std::dynamic_pointer_cast<T>(c);
+            if (comp.get()) {
+                Component entry = std::static_pointer_cast<ComponentObj>(comp);
+                erg.push_back(entry);
             }
         }
 
@@ -89,19 +94,23 @@ class Pool
     }
 
     std::vector<std::string> component_names;
-    std::vector<std::vector<Component*>> component_helper;
+    std::vector<std::vector<Component>> component_helper;
 
-    std::map<Component*, size_t> component_ids;
+    std::map<Component, size_t> component_ids;
 
-    Component* getComponent(std::string);
+    Component getComponent(std::string);
 
     bool hasComponent(std::string);
 
-    unsigned int getId(const Component* obj) const;
+    unsigned int getId(const Component obj) const;
 
     template <typename T>
-    unsigned int getTypeSpecificId(const T t)
+    unsigned int getTypeSpecificId(const std::shared_ptr<T> t)
     {
+        if(0){
+            //getName is not valid for boot pointer prevent this struct called with a non-ClassSolution Object
+            ((T*)(nullptr))->getName();
+        }
         size_t cnt = 0;
         for (auto i : getItems<T>()) {
             if (i == t) {
@@ -113,8 +122,8 @@ class Pool
     }
 
    private:
-    std::vector<Component*> components;
-    std::vector<StateMachine*> state_machines;
+    std::vector<Component> components;
+    std::vector<StateMachine> state_machines;
     // static Pool* pool;
     void setDirty();
 };

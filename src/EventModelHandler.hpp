@@ -15,7 +15,7 @@ struct Network
 
 struct TransitionTrigger
 {
-    Component *causing_component;
+    Component causing_component;
     std::string causing_event;
     Network resulting_requirement;
 
@@ -78,10 +78,14 @@ class EventModelHandler
     std::list<TransitionTrigger> getTrigger();
 
     template <typename C>
-    static C *get(graph_analysis::Vertex::Ptr v)
+    static std::shared_ptr<C> get(graph_analysis::Vertex::Ptr v)
     {
-        auto component = dynamic_cast<C *>(v.get());
-        if (auto c = dynamic_cast<ConfiguredComponent *>(v.get())) component = dynamic_cast<C *>(c->component);
+        if(0){
+            //Compile time check, make sure we request only Components
+            ((C*)0)->getName();
+        }
+        auto component = std::dynamic_pointer_cast<C>(v);
+        if (auto c = std::dynamic_pointer_cast<ConfiguredComponent>(v)) component = std::dynamic_pointer_cast<C>(c->component);
         return component;
     }
 
@@ -89,8 +93,8 @@ class EventModelHandler
      * \param pool the pool that already contains all previous components, the new ones get added
      */
     static void createFollowPool(const TransitionTrigger &trigger, Pool *pool);
-    static Component *setConfig(graph_analysis::Vertex::Ptr v, Component *c);
-    static void createFollowPoolRecursive(graph_analysis::DirectedGraphInterface::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current_vertex, Component *parent);
+    static Component setConfig(graph_analysis::Vertex::Ptr v, Component c);
+    static void createFollowPoolRecursive(graph_analysis::DirectedGraphInterface::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current_vertex, Component parent);
 
    private:
     bool isOnPath(graph_analysis::Vertex::Ptr current, graph_analysis::Vertex::Ptr target);

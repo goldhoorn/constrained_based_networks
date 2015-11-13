@@ -36,19 +36,15 @@ void Pool::updateLookups(){
 Pool::~Pool()
 {
 
-    for (auto c : components) {
-        //Ugly but we don't allow the shared_ptr the deletion
-        c->prepareDelete();
-   //     delete c;
-    }
 };
 
 void Pool::checkConsistency()
 {
-    for (auto c : getItems<Component *>()) {
+    for (auto c : getItems<ComponentObj>()) {
         if (c != operator[](c->getID())) {
             std::cout << "Failig id: " << c->getID() << " for component with name: " << c->getName() << std::endl;
-            if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
+            auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
+            if (spec.get()) {
                 std::cout << "It is a specialized one: " << spec->getID() << " and base id: " << spec->getComponent()->getID() << std::endl;
             }
             throw std::runtime_error("Pool is inconsistent to IDs");
@@ -61,7 +57,8 @@ void Pool::checkConsistency()
     try
     {
         for (auto c : components) {
-            if (auto cmp = dynamic_cast<Composition *>(c)) {
+            auto cmp = std::dynamic_pointer_cast<CompositionObj>(c);
+            if (cmp.get()) {
                 cmp_name = cmp->getName();
                 for (auto child : cmp->getChildren()) {
                     child_name = child.second->getName();
@@ -85,13 +82,13 @@ void Pool::checkConsistency()
 Pool::Pool(bool empty)
 {
     if (!empty) {
-        auto t = new Task(this, "NIL-Task");
-        auto c = new Composition("root-knot", this);
+        auto t = TaskObj::make(this, "NIL-Task");
+        auto c = CompositionObj::make(this, "root-knot");
         c->setActive(true);
 
-        //Prevent memory leak:
-        t->getPtr();
-        c->getPtr();
+        // Prevent memory leak:
+        //        t->getPtr();
+        //        c->getPtr();
     }
 }
 
@@ -106,7 +103,7 @@ bool Pool::hasComponent(std::string name)
     return false;
 }
 
-Component *Pool::getComponent(std::string name)
+Component Pool::getComponent(std::string name)
 {
     for (auto v : components) {
         // std::cout << "Have component wirh name: " << v->getName() << std::endl;
@@ -127,18 +124,18 @@ void Pool::mergeDoubles()
     }
     */
 
-    std::vector<Component *> new_components;
+    std::vector<Component> new_components;
     for (size_t i = 0; i < components.size(); i++) {
         auto &c = components[i];
-//        std::cout << "Checking: " << c->getName() << std::endl;
-        auto spec = dynamic_cast<SpecializedComponentBase *>(c);
-        if (spec) {
+        //        std::cout << "Checking: " << c->getName() << std::endl;
+        auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
+        if (spec.get()) {
             bool valid = true;
-            Component *base = 0;
+            Component base = 0;
             for (auto &existing : new_components) {
                 bool name_equals = false;
-
-                if (auto s2 = dynamic_cast<SpecializedComponentBase *>(existing)) {
+                auto s2 = std::dynamic_pointer_cast<SpecializedComponentObjBase>(existing);
+                if (s2.get()) {
                     name_equals = spec->getName(true) == s2->getName(true);
                     // std::cout << spec->getComponent()->getName() << " and " << s2->getComponent()->getName() << std::endl;
                 } else {
@@ -146,19 +143,18 @@ void Pool::mergeDoubles()
                     name_equals = spec->getName(true) == existing->getName();
                 }
 
-
-                //If the name equals we have on both sides a specialized component, so we have to check the configuration
+                // If the name equals we have on both sides a specialized component, so we have to check the configuration
                 if (name_equals) {
-                    auto cmp = dynamic_cast<SpecializedComponentBase *>(existing);
+                    auto cmp = std::dynamic_pointer_cast<SpecializedComponentObjBase>(existing);
                     if (!cmp) {
                         // We found the base-class of this specialized one
-                        //Okay this existing is the base component for spec
-                        //std::cout << "Got base component" << std::endl;
+                        // Okay this existing is the base component for spec
+                        // std::cout << "Got base component" << std::endl;
                         base = existing;
                     } else {
-                        //This mean it's a different specialized component with the same base-class
+                        // This mean it's a different specialized component with the same base-class
                         if (cmp->configuration == spec->configuration && cmp->isActive() == spec->isActive() && cmp->replaced_children == spec->replaced_children) {
-  //                          std::cout << "Got a equal component between " << cmp->getName() << " and " << spec->getName() << std::endl;
+                            //                          std::cout << "Got a equal component between " << cmp->getName() << " and " << spec->getName() << std::endl;
                             // Skip this it already is part of the database, we can stop here
                             /*
                             if (c->isActive()) {  // Don't do this here, this would cause other specilaized one to start
@@ -189,7 +185,7 @@ void Pool::mergeDoubles()
                 }
             }
         } else {
- //           std::cout << "Adding non specialied: " << c->getName() << std::endl;
+            //           std::cout << "Adding non specialied: " << c->getName() << std::endl;
             new_components.push_back(c);
         }
     }
@@ -203,7 +199,8 @@ void Pool::mergeDoubles()
     for (size_t i = 0; i < new_components.size(); i++) {
         auto &c = new_components[i];
         // printf("Component: %s, %u, %lu\n",c->getName().c_str(),c->id, i);
-        if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
+        auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
+        if (spec.get()) {
             spec->id = i;
         } else {
             c->id = i;
@@ -213,7 +210,8 @@ void Pool::mergeDoubles()
     // Cleanup orginal pointer of inherited objects
     for (size_t i = 0; i < new_components.size(); i++) {
         auto &c = new_components[i];
-        if (auto spec = dynamic_cast<SpecializedComponentBase *>(c)) {
+        auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
+        if (spec.get()) {
             c->id = spec->getOrginal()->getID();
         }
     }
@@ -226,7 +224,8 @@ void Pool::mergeDoubles()
 
     // Cleanup orginal pointer of state-machines
     for (size_t i = 0; i < components.size(); i++) {
-        if (auto sm = dynamic_cast<StateMachine *>(components[i])) {
+        auto sm = std::dynamic_pointer_cast<StateMachineObj>(components[i]);
+        if (sm.get()) {
             sm->updateInternals(this);
         }
     }
@@ -236,7 +235,8 @@ void Pool::mergeDoubles()
 
     // Cleanup orginal pointer of state-machines
     for (size_t i = 0; i < components.size(); i++) {
-        if (auto sm = dynamic_cast<Composition *>(components[i])) {
+        auto sm = std::dynamic_pointer_cast<CompositionObj>(components[i]);
+        if (sm) {
             sm->updateInternals(this);
         }
     }
@@ -253,19 +253,20 @@ void Pool::setDirty()
     component_ids.clear();
 }
 
-Pool * Pool::clone(){
-    Pool* res = new Pool();
+Pool *Pool::clone()
+{
+    Pool *res = new Pool();
     throw std::runtime_error("IMPLEMENT ME");
     return res;
 }
 
-size_t Pool::addComponent(Component *c)
+size_t Pool::addComponent(Component c)
 {
     if (hasComponent(c->getName())) {
         throw std::runtime_error("Cannot add a component with name '" + c->getName() + "' a second time");
     }
 
-    auto b = dynamic_cast<SpecializedComponentBase *>(c);
+    auto b = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
     size_t id = components.size();
     if (b) {
         b->id = id;
@@ -277,7 +278,7 @@ size_t Pool::addComponent(Component *c)
     return id;
 }
 
-unsigned int Pool::getId(const Component *obj) const
+unsigned int Pool::getId(const Component obj) const
 {
     return obj->getID();
     /*
@@ -309,9 +310,8 @@ unsigned int Pool::getNonAbstractCount()
     return count;
 }
 
-Component *Pool::operator[](unsigned int id)
+Component Pool::operator[](unsigned int id)
 {
     return components[id];
 }
-
 };
