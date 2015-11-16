@@ -2,7 +2,7 @@
 #We want to create a really stric lib
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra -Wfatal-errors -Werror")
 
-add_definitions(-DLIMIT_SOLUTIONS=2)
+#add_definitions(-DLIMIT_SOLUTIONS=1)
 
 set(SOURCES
    Pool.cpp

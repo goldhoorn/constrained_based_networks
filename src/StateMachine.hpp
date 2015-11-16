@@ -10,17 +10,15 @@ class Pool;
 
 struct Transition
 {
-    Transition(Component _source, Component _target, Component _event_source, std::string _event)
+    Transition(unsigned int  _source, unsigned int _target, std::string _event)
         : target(_target)
         , source(_source)
-        , event_source(_event_source)
         , event(_event)
     {
     }
 
-    Component target;
-    Component source;
-    Component event_source;
+    unsigned int target;
+    unsigned int source;
     std::string event;
 };
 
@@ -31,6 +29,7 @@ class StateMachineObj : public CompositionObj
     public:
     virtual ~StateMachineObj();
     static std::shared_ptr<StateMachineObj> make(Pool *pool, std::string name);
+    /*
     void addTransition(std::string s, std::string t, std::string event_s, std::string event_name);
     void addTransition(Component source, Component target, Component event_source, std::string ev);
     void addTransition(std::shared_ptr<SpecializedComponentObjBase> source, std::shared_ptr<SpecializedComponentObjBase> target, std::shared_ptr<SpecializedComponentObjBase> event_source, std::string ev);
@@ -42,6 +41,12 @@ class StateMachineObj : public CompositionObj
     void setStart(std::string name);
     void setStart(Component c);
     void setStart(std::shared_ptr<SpecializedComponentObjBase> c);
+    */
+
+    void setStart(unsigned int id){assert(id == 0);}; //Only 0 supported, we assume currently 0 as start (yes we re lazy)
+    void addTransition(unsigned int source, unsigned int target, std::string causing_event);
+    void addState(Component c, unsigned int id);
+
     bool abstract() const
     {
         return false;
@@ -58,7 +63,7 @@ class StateMachineObj : public CompositionObj
      * This is used when the pool get altered by e.G. mergeDoubles
      */
     void updateInternals(Pool *pool);
-    unsigned int getCurrentTransition();
+    unsigned int getCurrentState();
     virtual void replaceChild(Component child, std::string name);
     virtual void replaceChild(Component child, Component old);
     std::shared_ptr<SpecializedComponentObjBase> getSpecialized(std::shared_ptr<ComponentObj> obj, std::string name="");
@@ -80,16 +85,17 @@ class StateMachineObj : public CompositionObj
      }
      */
 
-    std::vector<Component> getStates();
-    int getNewState(Component child, std::string event);
+
+    const std::vector<Component>& getStates();
+//    int getNewState(Component child, std::string event);
 
     // Inherited from Composition
     virtual std::vector<std::pair<std::string, Component >> getChildren();
 
-
-    std::vector<Transition> getTransitions();
+    const std::vector<Transition>& getTransitions();
 
    protected:
+    std::vector<Component> states;
     std::vector<Transition> transitions;
     Component searchCorresponding(Component c, Pool *pool);
 };

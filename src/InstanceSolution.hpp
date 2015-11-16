@@ -219,7 +219,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
         }
         auto sm = std::dynamic_pointer_cast<StateMachineObj>(underlaying_component);
         if (sm.get()) {
-            int_config.push_back(Config<int>{(int)sm->getCurrentTransition(), (int)sm->getCurrentTransition(), "current_state"});
+            int_config.push_back(Config<int>{(int)sm->getCurrentState(), (int)sm->getCurrentState(), "current_state"});
         }
         /*
                 // std::cout << "Debug for " << underlaying_component->getName() << std::endl;

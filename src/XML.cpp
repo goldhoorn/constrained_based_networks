@@ -119,7 +119,8 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
     }
 
     std::vector<Component> children;
-    for (const auto& event_node : child->get_children("child")) {
+    const auto& states_node = child->get_first_child("states");
+    for (const auto& event_node : states_node->get_children("child")) {
         const xmlpp::Element* sub_element = dynamic_cast<const xmlpp::Element*>(event_node);
         assert(sub_element);
         std::string child_name = sub_element->get_attribute("name")->get_value();
@@ -138,7 +139,9 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
                 spec->addConfig(config_name, config_value);
             }
             children.push_back(std::dynamic_pointer_cast<ComponentObj>(spec));
+            sm->addState(std::dynamic_pointer_cast<ComponentObj>(spec), child_id);
         } else {
+            sm->addState(child_component, child_id);
             children.push_back(child_component);
         }
         assert((children.size() - 1) == child_id);
@@ -148,11 +151,11 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
         assert(sub_element);
         int source = atoi(sub_element->get_attribute("source")->get_value().c_str());
         int target = atoi(sub_element->get_attribute("target")->get_value().c_str());
-        int trigger = atoi(sub_element->get_attribute("trigger")->get_value().c_str());
+//        int trigger = atoi(sub_element->get_attribute("trigger")->get_value().c_str());
         std::string event = sub_element->get_attribute("event")->get_value();
-        sm->addTransition(children[source], children[target], children[trigger], event);
+        sm->addTransition(source, target, event);
     }
-    sm->setStart(children[start_state]);
+    sm->setStart(start_state);
 }
 
 void XML::importComposition(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root)
@@ -398,6 +401,7 @@ xmlpp::Element* XML::getUnresolvedForFollowNetwork(xmlpp::Element* root, xmlpp::
 
 xmlpp::Element* XML::getUnresolvedForInstanceSolution(xmlpp::Element* root, xmlpp::Element* e, std::list<std::vector<unsigned int>> ignored_solutions)
 {
+
 
     for (auto child : e->get_children("transition")) {
         auto elem = dynamic_cast<xmlpp::Element*>(child);
@@ -916,57 +920,27 @@ bool XML::save(Pool* pool, std::string& filename, bool md5)
 
             // this should be valid because the transition 0 is by default the starting state, and the 1 (not 0) child is the target state to enter
             // 0 and 2 are the SM itselfe
-            assert(sm->getTransitions()[0].event == "start");
+            //assert(sm->getTransitions()[0].event == "start");
             smNode->set_attribute("start_state", "0");
 
             smNode->set_attribute("active", sm->isActive() ? "true" : "false");
             std::vector<Component*> children;
             unsigned int child_id = 0;
-            bool first = true;
-            for (auto smStates : sm->getTransitions()) {
-                // We don't need to export the start-state transition this is create by setStart
-                if (first) {
-                    first = false;
-                    {
-                        auto childNode = smNode->add_child("child");
+//            bool first = true;
+            auto stateNode = smNode->add_child("states");
+            for (auto smStates : sm->getStates()) {
+                        auto childNode = stateNode->add_child("child");
                         childNode->set_attribute("id", std::to_string(child_id++));
-                        childNode->set_attribute("name", smStates.target->getName());
+                        childNode->set_attribute("name", smStates->getName());
                         // TODO we could here figure out the base class and specialize it on or own (or we simply using the specialized as done here
                         // This somehow changes the model but should not change the behaviour in the end
                         childNode->set_attribute("specialized", "false");  // Spcialized would mean that a specilaization is explicitly done
-                    }
-                    continue;
-                }
-
-                {
-                    auto childNode = smNode->add_child("child");
-                    childNode->set_attribute("id", std::to_string(child_id++));
-                    childNode->set_attribute("name", smStates.source->getName());
-                    // TODO we could here figure out the base class and specialize it on or own (or we simply using the specialized as done here
-                    // This somehow changes the model but should not change the behaviour in the end
-                    childNode->set_attribute("specialized", "false");  // Spcialized would mean that a specilaization is explicitly done
-                }
-                {
-                    auto childNode = smNode->add_child("child");
-                    childNode->set_attribute("id", std::to_string(child_id++));
-                    childNode->set_attribute("name", smStates.target->getName());
-                    // TODO we could here figure out the base class and specialize it on or own (or we simply using the specialized as done here
-                    // This somehow changes the model but should not change the behaviour in the end
-                    childNode->set_attribute("specialized", "false");  // Spcialized would mean that a specilaization is explicitly done
-                }
-                {
-                    auto childNode = smNode->add_child("child");
-                    childNode->set_attribute("id", std::to_string(child_id++));
-                    childNode->set_attribute("name", smStates.event_source->getName());
-                    // TODO we could here figure out the base class and specialize it on or own (or we simply using the specialized as done here
-                    // This somehow changes the model but should not change the behaviour in the end
-                    childNode->set_attribute("specialized", "false");  // Spcialized would mean that a specilaization is explicitly done
-                }
-                auto childNode = smNode->add_child("transition");
-                childNode->set_attribute("source", std::to_string(child_id - 3));
-                childNode->set_attribute("target", std::to_string(child_id - 2));
-                childNode->set_attribute("trigger", std::to_string(child_id - 1));
-                childNode->set_attribute("event", smStates.event);
+            }
+            for(auto smTransitions : sm->getTransitions()){
+                auto tNode = smNode->add_child("transition");
+                tNode->set_attribute("source", std::to_string(smTransitions.source));
+                tNode->set_attribute("target", std::to_string(smTransitions.target));
+                tNode->set_attribute("event", smTransitions.event);
             }
         } else if ((composition = std::dynamic_pointer_cast<CompositionObj>(component)) && composition.get()) {
             auto cNode = rootNode->add_child("composition");
