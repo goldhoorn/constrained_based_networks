@@ -70,7 +70,7 @@ class SpecializedComponentObj : public SpecializedComponentObjBase, public T
 {
    private:
     SpecializedComponentObj(std::shared_ptr<T> t, Pool* pool, std::string name)
-        : T(pool)
+        : T(*t.get())
         , pool(pool)
     {
         // classScope = false;
@@ -85,7 +85,7 @@ class SpecializedComponentObj : public SpecializedComponentObjBase, public T
         auto c = new SpecializedComponentObj<T>(t,pool,name);
         if (name.empty()) {
             std::stringstream s;
-            s << c->T::getName() << "_" << c->getID();
+            s << t->T::getName() << "_" << pool->size();
             c->specialized_name = s.str();
         } else {
             if (pool->hasComponent(name)){
@@ -95,8 +95,8 @@ class SpecializedComponentObj : public SpecializedComponentObjBase, public T
         }
 
         auto ptr = std::shared_ptr<SpecializedComponentObj<T> >(c);
-
-        pool->addComponent((Component)(c));
+        auto c_ptr =  std::static_pointer_cast<ComponentObj>(ptr);
+        pool->addComponent(c_ptr);
         return std::static_pointer_cast<SpecializedComponentObjBase>(ptr);
     }
 

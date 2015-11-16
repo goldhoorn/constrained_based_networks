@@ -32,7 +32,7 @@ Forwards CompositionObj::getArgumentForwards(Component child, std::string name)
 {
     if (children.find(name) == children.end()) {
         if (this->getName() != "root-knot") {
-            if (!dynamic_cast<StateMachine *>(this)) {
+            if (!dynamic_cast<StateMachineObj *>(this)) {
                 std::cerr << "This is really bad !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! could not find child " << name << std::endl;
                 assert(false);
             } else {
@@ -214,7 +214,7 @@ int CompositionObj::getType() const
 
 Composition CompositionObj::make(Pool *pool, std::string name)
 {
-    auto res = CompositionObj::make(pool, name);
+    auto res = Composition((new CompositionObj(name,pool)));
     pool->addComponent(res);
     return res;
 }

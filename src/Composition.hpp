@@ -83,7 +83,7 @@ class CompositionObj : public constrained_based_networks::ComponentObj, public c
 
     virtual std::string getClassName() const
     {
-        return "constrained_based_networks::CompositionObj";
+        return "constrained_based_networks::Composition";
     }
 
     // SpecializedComponentBase getSpecialized(std::shared_ptr<ComponentObj> obj, std::string name="");

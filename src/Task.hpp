@@ -67,7 +67,7 @@ public:
      */
 //    std::string toString() const;
 
-    virtual std::string getClassName() const { return "constrained_based_networks::TaskObj"; }
+    virtual std::string getClassName() const { return "constrained_based_networks::Task"; }
 
 #if 0
     /**

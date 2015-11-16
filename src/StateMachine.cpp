@@ -29,6 +29,7 @@ void StateMachineObj::setStart(std::string name)
 
 void StateMachineObj::setStart(Component c)
 {
+    //std::cout << "Set start called on " << getName() << " start state: " << c->getName() << std::endl;
     transitions[0] = Transition(0, c, 0, "start");
 }
 
@@ -76,7 +77,8 @@ unsigned int StateMachineObj::getCurrentTransition()
             // res.push_back({"main", s});
         } else {
             if (!getTransitions()[0].target) {
-                throw std::runtime_error("State machine has a transition but no target");
+                //std::cout << "Orginal is: " << spec->getOrginal() << " their transition " << ((StateMachineObj*)spec->getOrginal().get())->getTransitions()[0].event << std::endl;
+                throw std::runtime_error("State machine " + getName() + " has a transition but no target for event " + getTransitions()[0].event);
                 //                std::cerr << "Warn it seems statemachine " << getName() << "HAs no states, cannot return children" << std::endl;
             } else {
                 return 0;
@@ -106,6 +108,8 @@ std::vector<std::pair<std::string, Component>> StateMachineObj::getChildren()
 
 Component StateMachineObj::searchCorresponding(Component c, Pool *pool)
 {
+    assert(c);
+
     auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(c);
     if (spec.get()) {
         // search for object in DB
@@ -139,15 +143,15 @@ void StateMachineObj::updateInternals(Pool *pool)
 
     //    std::cout << "Update Internals for SM: " << this->getName() << std::endl;
     for (auto &t : transitions) {
-        t.source = searchCorresponding(t.source, pool);
+        if(t.source) t.source = searchCorresponding(t.source, pool); //Can be nil for e.G. the starting state
         t.target = searchCorresponding(t.target, pool);
-        t.event_source = searchCorresponding(t.event_source, pool);
+        if(t.event_source) t.event_source = searchCorresponding(t.event_source, pool);
     }
 #if 1  // Testing
     for (auto t : transitions) {
-        pool->getComponent(t.source->getName());
+        if(t.source) pool->getComponent(t.source->getName());
         pool->getComponent(t.target->getName());
-        pool->getComponent(t.event_source->getName());
+        if(t.event_source) pool->getComponent(t.event_source->getName());
     }
 #endif
 }
@@ -227,7 +231,7 @@ Forwards StateMachineObj::getEventForwards(Component child, std::string name)
     auto current_transition_id = getCurrentTransition();
     //    auto current_state = getTransitions()[current_transition_id].target;
     auto current_state = child;
-    std::cerr << "STATE MACHINE IS IN STATE: " << current_transition_id << " THE STATE IS " << current_state->getName() << " Child is " << child->getName() << std::endl;
+    //std::cerr << "STATE MACHINE IS IN STATE: " << current_transition_id << " THE STATE IS " << current_state->getName() << " Child is " << child->getName() << std::endl;
 
     for (size_t i = 0; i < getTransitions().size(); i++) {
         // auto t = getTransitions()[i];
@@ -239,10 +243,10 @@ Forwards StateMachineObj::getEventForwards(Component child, std::string name)
         if (t.event_source == current_state) {
             std::stringstream s;
             s << "transition-" << i;
-            std::cerr << "success" << t.event_source->getName() << " -> " << s.str() << std::endl;
+            //std::cerr << "success" << t.event_source->getName() << " -> " << s.str() << std::endl;
             forwards[t.event] = s.str();  // This overloads the normal propagation
         } else {
-            std::cerr << "Failed " << t.event_source->getName() << "vs. " << current_state->getName() << std::endl;
+            //std::cerr << "Failed " << t.event_source->getName() << "vs. " << current_state->getName() << std::endl;
         }
     }
     return forwards;

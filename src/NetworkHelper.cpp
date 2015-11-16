@@ -9,10 +9,14 @@
 
 using namespace constrained_based_networks;
 
+static graph_analysis::Vertex::Ptr cc;
+
+
 void NetworkHelper::initializeExporter()
 {
     graph_analysis::VertexTypeManager *vManager = graph_analysis::VertexTypeManager::getInstance();
-    graph_analysis::Vertex::Ptr cc = graph_analysis::Vertex::Ptr(new ConfiguredComponent());
+    auto confComp = new ConfiguredComponent();
+    cc = graph_analysis::Vertex::Ptr(confComp);
     vManager->registerType(cc);
     vManager->registerAttribute(cc->getClassName(), "config", (graph_analysis::VertexTypeManager::serialize_func_t) & ConfiguredComponent::serializeConfig,
                                 (graph_analysis::VertexTypeManager::deserialize_func_t) & ConfiguredComponent::deSerializeConfig,
