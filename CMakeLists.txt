@@ -2,6 +2,7 @@
 # executed from 'project/build' with 'cmake ../'.
 cmake_minimum_required(VERSION 2.6)
 find_package(Rock)
+add_definitions(-O0)
 rock_activate_cxx11()
 rock_init(constrained_based_networks 0.1)
 rock_find_cmake(Boost COMPONENTS serialization system REQUIRED)

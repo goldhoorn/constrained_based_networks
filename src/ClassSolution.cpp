@@ -1,6 +1,7 @@
 #include "ClassSolution.hpp"
-
+#ifdef GIST
 #include <gecode/gist.hh>
+#endif
 #include <gecode/minimodel.hh>
 
 #include <vector>
@@ -14,7 +15,6 @@
 #include <stdlib.h>
 #include <fstream>
 
-#include <gecode/gist.hh>
 using namespace Gecode;
 
 #define REMOVE_REC
@@ -1071,6 +1071,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> ClassSolution::babSearch(Pool* pool)
 
 ClassSolution* ClassSolution::gistBaBSeach(Pool* pool)
 {
+#ifdef GIST
     ClassSolution* m = new ClassSolution(pool);
     // ClassSolution* m = ClassSolution::babSearch(Pool::getInstance());
     Gist::Print<ClassSolution> printer("Print solution");
@@ -1083,6 +1084,9 @@ ClassSolution* ClassSolution::gistBaBSeach(Pool* pool)
     o.inspect.compare(&c);
     Gist::bab(m, o);
     return m;
+#else
+	throw std::runtime_error("GIST is deactivated");
+#endif
 }
 
 }  // end namespace constrained_based_networks

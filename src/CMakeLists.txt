@@ -42,7 +42,7 @@ set(HEADERS
    #   Import.hpp
 )
 
-find_library(gecode1 NAMES gecodegist      PATHS ${CMAKE_INSTALL_TARGET}/lib REQUIRED )
+#find_library(gecode1 NAMES gecodegist      PATHS ${CMAKE_INSTALL_TARGET}/lib REQUIRED )
 find_library(gecode2 NAMES gecodedriver    PATHS ${CMAKE_INSTALL_TARGET}/lib REQUIRED )
 find_library(gecode3 NAMES gecodeminimodel PATHS ${CMAKE_INSTALL_TARGET}/lib REQUIRED )
 find_library(gecode4 NAMES gecodesearch    PATHS ${CMAKE_INSTALL_TARGET}/lib REQUIRED )
@@ -61,8 +61,8 @@ set(Gecode_LIBRARIES
 rock_library(${PROJECT_NAME} 
     SOURCES ${SOURCES}
     HEADERS ${HEADERS}
-    DEPS_PKGCONFIG base-lib owlapi graph_analysis libxml++-2.6 
-    LIBS ${Gecode_LIBRARIES} ${Boost_LIBRARIES} ssl pthread
+    DEPS_PKGCONFIG base-lib graph_analysis libxml++-2.6 
+    LIBS ${Gecode_LIBRARIES} ${Boost_LIBRARIES} ssl pthread crypto
 )
 
 

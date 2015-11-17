@@ -1,6 +1,7 @@
 #include "InstanceSolution.hpp"
-
+#ifdef GIST
 #include <gecode/gist.hh>
+#endif
 #include <gecode/minimodel.hh>
 
 #include <memory>
@@ -15,7 +16,6 @@
 #include <stdlib.h>
 #include <fstream>
 #include <graph_analysis/GraphIO.hpp>
-#include <gecode/gist.hh>
 
 using namespace Gecode;
 

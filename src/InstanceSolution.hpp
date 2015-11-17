@@ -1,6 +1,7 @@
 #ifndef DECODE_INSTANCE_SOLUTION_H
 #define DECODE_INSTANCE_SOLUTION_H
 
+#include <set>
 #include <gecode/set.hh>
 #include <gecode/int.hh>
 #include <gecode/float.hh>
