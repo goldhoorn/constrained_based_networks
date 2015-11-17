@@ -28,7 +28,7 @@ class CompositionObj : public constrained_based_networks::ComponentObj, public c
      */
     int type;
 
-    std::map<std::string, Component> children;
+    std::map<std::string, std::weak_ptr<ComponentObj>> children;
 
    private:
     std::map<std::string, Forwards> argument_forwards;
@@ -67,7 +67,7 @@ class CompositionObj : public constrained_based_networks::ComponentObj, public c
      * Warning this function is sligly wrong becasue it does not separate between a child and a component,
      * rework this but this might have a larger influence
      */
-    virtual Forwards getArgumentForwards(Component child, std::string name);
+    virtual const Forwards& getArgumentForwards(Component child, std::string name);
 
     virtual const std::map<std::string, Forwards> &getArgumentForwards() const;
     virtual const std::map<std::string, Forwards> &getEventForwards() const;

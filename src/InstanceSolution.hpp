@@ -308,27 +308,17 @@ class ConfiguredComponent : public graph_analysis::Vertex
     std::string underlaying_name;
 };
 
-class ComponentInstanceHelper : public graph_analysis::Vertex
+class ComponentInstanceHelperObj : public graph_analysis::Vertex
 {
    public:
-    ComponentInstanceHelper(graph_analysis::Vertex::Ptr underlaying) : component(underlaying)
+    ComponentInstanceHelperObj(graph_analysis::Vertex::Ptr underlaying) : component(underlaying)
     {
     }
 
-    graph_analysis::Vertex::Ptr getPtr()
-    {
-        if (self.get() == nullptr) {
-            self = graph_analysis::Vertex::Ptr(this);
-        }
-        return self;
-    }
     static graph_analysis::Vertex::Ptr make(graph_analysis::Vertex::Ptr o)
     {
-        // std::cout << o->getClassName() << std::endl;
-        auto c = new ComponentInstanceHelper(o);
-        auto p = c->getPtr();
-        assert(p.get());
-        return p;
+        auto c = std::shared_ptr<graph_analysis::Vertex>(new ComponentInstanceHelperObj(o));
+        return c;
     }
     std::string toString() const
     {
@@ -336,8 +326,9 @@ class ComponentInstanceHelper : public graph_analysis::Vertex
     }
 
     graph_analysis::Vertex::Ptr component;
-    graph_analysis::Vertex::Ptr self;
 };
+
+typedef std::shared_ptr<ComponentInstanceHelperObj> ComponentInstanceHelper;
 
 /**
  * A solution inherits GECODE's space. the initial situation as well as any real

@@ -28,7 +28,7 @@ void InstanceSolution::gatherAllStringConfigs()
     strings.insert("");
     for (const auto &v : graph->getAllVertices()) {
         //        std::cout << "Hallo " << v->toString() << std::endl;
-        auto current_graph_vertex = std::static_pointer_cast<ComponentInstanceHelper>(v);
+        auto current_graph_vertex = std::static_pointer_cast<ComponentInstanceHelperObj>(v);
         auto component = std::dynamic_pointer_cast<ComponentObj>(current_graph_vertex->component);
         if (!component) throw std::runtime_error("Cannot get component from graph");
         auto spec_component = std::dynamic_pointer_cast<SpecializedComponentObjBase>(component);
@@ -73,7 +73,7 @@ void InstanceSolution::gatherAllStringConfigs()
 void InstanceSolution::buildInstanceGraph(graph_analysis::Vertex::Ptr parent_orig, graph_analysis::DirectedGraphInterface &orig, graph_analysis::Vertex::Ptr parent)
 {
     for (auto v : orig.outEdges(parent_orig)) {
-        auto target = ComponentInstanceHelper::make(v->getTargetVertex());
+        auto target = ComponentInstanceHelperObj::make(v->getTargetVertex());
         graph_analysis::Edge::Ptr e(new graph_analysis::Edge(v->getLabel()));
         e->setSourceVertex(parent);
         e->setTargetVertex(target);
@@ -123,7 +123,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     auto orig = dynamic_cast<graph_analysis::DirectedGraphInterface *>(_graph.get());
     assert(orig);
     assert(root.get());
-    buildInstanceGraph(root, *orig, ComponentInstanceHelper::make(root));
+    buildInstanceGraph(root, *orig, ComponentInstanceHelperObj::make(root));
 #if 0
     for (auto v : _graph->vertices()) {
         if (auto s = dynamic_cast<SpecializedComponentBase *>(v.get())) {
@@ -138,7 +138,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
 //    std::cout << "New graph has: " << graph->getAllVertices().size() << std::endl;
 #endif
     for (auto v : graph->vertices()) {
-        auto current_graph_component = std::static_pointer_cast<ComponentInstanceHelper>(v);
+        auto current_graph_component = std::static_pointer_cast<ComponentInstanceHelperObj>(v);
         auto c = InstanceSolution::get<ComponentObj>(current_graph_component->component);
         auto s = InstanceSolution::get<SpecializedComponentObjBase>(current_graph_component->component);
         if (s.get()) {
@@ -167,7 +167,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     // (currently) where a configuiration is actually filled
     // with values. Later a extension based on configurations is needed
     for (auto current_graph_vertex : graph->getAllVertices()) {
-        auto current_graph_component = std::dynamic_pointer_cast<ComponentObj>(std::static_pointer_cast<ComponentInstanceHelper>(current_graph_vertex)->component);
+        auto current_graph_component = std::dynamic_pointer_cast<ComponentObj>(std::static_pointer_cast<ComponentInstanceHelperObj>(current_graph_vertex)->component);
         if (!current_graph_component) throw std::runtime_error("Cannot get component from graph");
 
         // We need only to separate between this types, al other types should not occur anymore in the graph
@@ -184,7 +184,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
             // This meanc we are walking throught all edges of this compoennt which must be a compotiiosn (otherwise it would have no children)
             for (auto edge : graph->outEdges(current_graph_vertex)) {
                 assert(current_graph_composition);
-                auto child_vertex = std::static_pointer_cast<ComponentInstanceHelper>(edge->getTargetVertex());
+                auto child_vertex = std::static_pointer_cast<ComponentInstanceHelperObj>(edge->getTargetVertex());
                 auto child_component = std::dynamic_pointer_cast<ComponentObj>(child_vertex->component);
                 assert(child_component);
 
@@ -326,7 +326,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
 
                 // The name of the edge is the role of the assoziated child
                 std::string child_role = edge->toString();
-                for (auto forward : current_graph_composition->getArgumentForwards(child_component, child_role)) {
+                for (const auto& forward : current_graph_composition->getArgumentForwards(child_component, child_role)) {
 
                     if (child_component->getProperty(forward.second) != current_graph_composition->getProperty(forward.first)) {
                         throw std::runtime_error("The properties of child and parend differ in type");
@@ -414,10 +414,10 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
     interleaved = Gecode::BoolVarArray(*this, verticies_in_tree * verticies_in_tree, 0, 1);
     for (auto _n1 : graph->vertices()) {
         auto i = graph->getVertexId(_n1);
-        auto n1 = std::static_pointer_cast<ComponentInstanceHelper>(_n1);
+        auto n1 = std::static_pointer_cast<ComponentInstanceHelperObj>(_n1);
         assert(n1.get());
         for (auto _n2 : graph->vertices()) {
-            auto n2 = std::static_pointer_cast<ComponentInstanceHelper>(_n2);
+            auto n2 = std::static_pointer_cast<ComponentInstanceHelperObj>(_n2);
             assert(n2.get());
             auto j = graph->getVertexId(_n2);
 
@@ -595,7 +595,7 @@ void InstanceSolution::printToDot(std::ostream &os) const
 void InstanceSolution::printToStream(std::ostream &os) const
 {
     for (auto _node : graph->vertices()) {
-        auto node = std::static_pointer_cast<ComponentInstanceHelper>(_node);
+        auto node = std::static_pointer_cast<ComponentInstanceHelperObj>(_node);
         auto component = std::dynamic_pointer_cast<ComponentObj>(node->component);
         std::cout << "- " << component->toString() << std::endl;
         auto current_graph_task = std::dynamic_pointer_cast<TaskObj>(component);
@@ -620,7 +620,7 @@ void InstanceSolution::printToStream(std::ostream &os) const
             const auto idx = graph->getVertexId(_n2) + (graph->getVertexId(_node) * verticies_in_tree);
             assert(interleaved[idx].assigned());
             if (interleaved[idx].val()) {
-                // auto interleaved_component = boost::reinterpret_pointer_cast<ComponentInstanceHelper>(_n2);
+                // auto interleaved_component = boost::reinterpret_pointer_cast<ComponentInstanceHelperObj>(_n2);
                 os << "--- is interleved with:" << _n2->toString() << " " << interleaved[idx].val() << std::endl;
             }
         }
@@ -642,7 +642,7 @@ graph_analysis::Vertex::Ptr InstanceSolution::getConfiguredComponent(graph_analy
 
     // Never created yet such Configured Component, let's create one
     if (configured_component_helper.find(id) == configured_component_helper.end()) {
-        auto helper = std::static_pointer_cast<ComponentInstanceHelper>(vertex).get()->component;
+        auto helper = std::static_pointer_cast<ComponentInstanceHelperObj>(vertex).get()->component;
         assert(helper.get());
         auto component = std::dynamic_pointer_cast<ComponentObj>(helper);
         assert(component);

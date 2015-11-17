@@ -28,7 +28,7 @@ Component CompositionObj::clone(Pool *p) const
     */
 };
 
-Forwards CompositionObj::getArgumentForwards(Component child, std::string name)
+const Forwards& CompositionObj::getArgumentForwards(Component child, std::string name)
 {
     if (children.find(name) == children.end()) {
         if (this->getName() != "root-knot") {
@@ -39,11 +39,13 @@ Forwards CompositionObj::getArgumentForwards(Component child, std::string name)
                 std::cerr << "WARN implement argumetn forwards for state-machines" << std::endl;
             }
         }
-        return Forwards();
+        //Woraround to return a empty object
+        static Forwards f;
+        return f;
     }
-    if (children[name] != child) {
-        if (!child->isFullfilling(children[name]->getName())) {
-            throw std::invalid_argument("Cannot get argument forwards, the child " + children[name]->getName() + " does not equal the given child " + child->getName() + " for role " + name);
+    if (children[name].lock() != child) {
+        if (!child->isFullfilling(children[name].lock()->getName())) {
+            throw std::invalid_argument("Cannot get argument forwards, the child " + children[name].lock()->getName() + " does not equal the given child " + child->getName() + " for role " + name);
         }
     }
 
@@ -82,9 +84,9 @@ Forwards CompositionObj::getEventForwards(Component child, std::string name)
         }
         return Forwards();
     }
-    if (children[name] != child) {
-        if (!child->isFullfilling(children[name]->getName())) {
-            throw std::invalid_argument("Cannot get argument forwards, the child " + children[name]->getName() + " does not equal the given child " + child->getName() + " for role " + name);
+    if (children[name].lock() != child) {
+        if (!child->isFullfilling(children[name].lock()->getName())) {
+            throw std::invalid_argument("Cannot get argument forwards, the child " + children[name].lock()->getName() + " does not equal the given child " + child->getName() + " for role " + name);
         }
     }
 
@@ -158,7 +160,7 @@ Component CompositionObj::searchCorresponding(Component c, Pool *pool)
 void CompositionObj::updateInternals(Pool *pool)
 {
     for (auto &t : children) {
-        t.second = searchCorresponding(t.second, pool);
+        t.second = searchCorresponding(t.second.lock(), pool);
     }
 }
 
@@ -218,7 +220,6 @@ Composition CompositionObj::make(Pool *pool, std::string name)
     pool->addComponent(res);
     return res;
 }
-
 #if 0
 const std::vector<std::string>& CompositionObj::getConfiguration() const
 {
@@ -300,7 +301,7 @@ std::vector<std::string> CompositionObj::unsolveableChildren()
                 continue;
             }
 
-            if (provider->isFullfilling(child.second->getName())) {
+            if (provider->isFullfilling(child.second.lock()->getName())) {
                 //       std::cout << std::string("FULLFILLING: " + getName() +
                 // "." + child.first + " = " + child.second->getName() + "==" +
                 // provider->getName()) << std::endl;
@@ -314,7 +315,7 @@ std::vector<std::string> CompositionObj::unsolveableChildren()
             // std::cout << std::string("NOT FULLFILLING:" + getName() + "." +
             // child.first + " = " + child.second->getName()) << std::endl;
 
-            res.push_back(getName() + "." + child.first + " = " + child.second->getName());
+            res.push_back(getName() + "." + child.first + " = " + child.second.lock()->getName());
         }
     }
     return res;
@@ -332,7 +333,7 @@ std::vector<std::pair<std::string, Component>> CompositionObj::getChildren()
 {
     std::vector<std::pair<std::string, Component>> erg;
     for (auto i : children) {
-        erg.push_back(std::pair<std::string, Component>(i.first, i.second));
+        erg.push_back(std::pair<std::string, Component>(i.first, i.second.lock()));
     }
     return erg;
 };
