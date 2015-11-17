@@ -599,7 +599,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
 
             auto transition_node = solution_node->add_child("transition");
             transition_node->set_attribute("id", std::to_string(cnt2));
-            transition_node->set_attribute("causing_component", trigger.causing_component->getName());
+            transition_node->set_attribute("causing_component", trigger.causing_component.lock()->getName());
             transition_node->set_attribute("causing_event", trigger.causing_event);
             if (trigger.resulting_requirement.network.size() == 0) {
                 //                std::cout << "Ignoring follow network for : " << trigger.causing_component->getName() << " -> " << trigger.causing_event << std::endl;
@@ -631,7 +631,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
                 std::string event_follow_network_filename = basePath + "/data/";
                 XML::save(pool, event_follow_network_filename, true);
 
-                std::cout << "We have a follow network for: " << trigger.causing_component->getName() << " -> " << trigger.causing_event << " And file " << event_follow_network_filename << std::endl;
+                std::cout << "We have a follow network for: " << trigger.causing_component.lock()->getName() << " -> " << trigger.causing_event << " And file " << event_follow_network_filename << std::endl;
 
                 // We have to put only relative PATHs from the original file on in our solution file, we have to twesk the filename here
                 event_follow_network_filename = "data/" + boost::filesystem::path(event_follow_network_filename).filename().string();
@@ -661,6 +661,7 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
             }
         }
     }
+
     for (auto p : calculationHelper) {
         delete p.pool;
     }
@@ -740,7 +741,7 @@ void XML::createDatabase(std::string original_file)
     // We save the original pool to the data/ folder to habe a unique link to the source-model. This makes loop-identification clearer
     Pool* pool = XML::load(original_file);
     TransitionTrigger trigger;
-    trigger.causing_component = 0;
+//    trigger.causing_component = 0;
     trigger.causing_event = "start";
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
     for (auto c : pool->getItems<ComponentObj>()) {

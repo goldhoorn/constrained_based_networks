@@ -15,7 +15,7 @@ struct Network
 
 struct TransitionTrigger
 {
-    Component causing_component;
+    std::weak_ptr<ComponentObj> causing_component;
     std::string causing_event;
     Network resulting_requirement;
 
@@ -23,7 +23,7 @@ struct TransitionTrigger
     {
         //assert(false);
         // TODO we should check more than the component name, this might not be enougth
-        if (causing_event != t.causing_event || causing_component->getName() != causing_component->getName()) {
+        if (causing_event != t.causing_event || causing_component.lock()->getName() != causing_component.lock()->getName()) {
             return false;
         }
         if (resulting_requirement.network.size() != t.resulting_requirement.network.size()) {

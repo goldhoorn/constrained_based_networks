@@ -216,6 +216,10 @@ void Pool::mergeDoubles()
         }
     }
 
+    //We have to keep them accessable until we updated all state-machines, otherweise
+    //the shaed_pointer will cleanup itself
+    auto old_components = components;
+
     // This needs to be done BEFORE updatInternals of the StateMachines
     // is called. The updateInternals uses (this) pool to search
     // for corresponding components
@@ -241,9 +245,13 @@ void Pool::mergeDoubles()
         }
     }
 
+    //this is the last-time where the components needs to be valid, they can be cleaned after this
+    (void)old_components;
+
     // Sainitry check, should not needed after update the SMs
     setDirty();
     checkConsistency();
+
 }
 
 void Pool::setDirty()

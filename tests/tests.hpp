@@ -8,7 +8,7 @@
 #include <constrained_based_networks/InstanceSolution.hpp>
 #include <constrained_based_networks/SpecializedComponent.hpp>
 #include <graph_analysis/GraphIO.hpp>
-#include "dump.hpp"
+//#include "dump.hpp"
 #include <sys/stat.h>
 #include <execinfo.h>
 #include <cxxabi.h>
@@ -26,22 +26,27 @@ std::string test_cmp_recursion_w_unused_CS(constrained_based_networks::Pool* poo
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
 
-    // auto a2 = new Composition("A2");
-    auto a = new Composition("A", pool);
-    auto b = new Composition("B", pool);
-    // auto b2 = new Composition("B2");
+    // auto a2 = CompositionObj::make("A2");
+    auto a = CompositionObj::make( pool,"A");
+    auto b = CompositionObj::make( pool,"B");
+    // auto b2 = CompositionObj::make("B2");
     a->addChild(b, "b_child");
-    auto t = new Task("T", pool);
+    auto t = TaskObj::make( pool,"T");
     b->addChild(t, "t_child");
     return "A";
+}
+
+
+std::string create_model(constrained_based_networks::Pool *pool){
+    throw std::runtime_error("Unsupportd");
 }
 
 std::string test_ds(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
 
-    auto a = new Composition("A", pool);
-    auto b = new Task("B", pool);
+    auto a = CompositionObj::make( pool,"A");
+    auto b = TaskObj::make( pool,"B");
     // auto ds = new DataService("DS");
     b->addFullfillment("DS");
     a->addChild(b, "b_child_is_ds");
@@ -52,10 +57,10 @@ std::string test_ambigious_ds(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
 
-    auto a = new Composition("A", pool);
-    auto b = new Task("B", pool);
-    auto b2 = new Task("B2", pool);
-    auto ds = new DataService("DS", pool);
+    auto a = CompositionObj::make( pool,"A");
+    auto b = TaskObj::make( pool,"B");
+    auto b2 = TaskObj::make( pool,"B2");
+    auto ds = DataServiceObj::make( pool,"DS");
 
     b->addFullfillment("DS");
     b2->addFullfillment("DS");
@@ -68,11 +73,11 @@ std::string test_cmp_recursion_w_more_used(constrained_based_networks::Pool* poo
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
 
-    auto a2 = new Composition("A2", pool);
-    auto a = new Composition("A", pool);
-    auto b = new Composition("B", pool);
-    auto b2 = new Composition("B2", pool);
-    auto ds = new DataService("DS", pool);
+    auto a2 = CompositionObj::make( pool,"A2");
+    auto a = CompositionObj::make( pool,"A");
+    auto b = CompositionObj::make( pool,"B");
+    auto b2 = CompositionObj::make( pool,"B2");
+    auto ds = DataServiceObj::make( pool,"DS");
     // auto ds2 = new DataService("DS2");
 
     b->addFullfillment("DS");
@@ -82,7 +87,7 @@ std::string test_cmp_recursion_w_more_used(constrained_based_networks::Pool* poo
 
     a->addChild(ds, "b_child_is_ds");
     a2->addChild(ds, "b_child");
-    auto t = new Task("T", pool);
+    auto t = TaskObj::make( pool,"T");
     b->addChild(t, "t_child");
     return "A";
 }
@@ -91,11 +96,11 @@ std::string test_cmp_recursion_w_used_DS(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
 
-    // auto a2 = new Composition("A2");
-    auto a = new Composition("A", pool);
-    auto b = new Composition("B", pool);
-    // auto b2 = new Composition("B2");
-    auto ds = new DataService("DS", pool);
+    // auto a2 = CompositionObj::make("A2");
+    auto a = CompositionObj::make( pool,"A");
+    auto b = CompositionObj::make( pool,"B");
+    // auto b2 = CompositionObj::make("B2");
+    auto ds = DataServiceObj::make( pool,"DS");
     // auto ds2 = new DataService("DS2");
 
     b->addFullfillment("DS");
@@ -105,7 +110,7 @@ std::string test_cmp_recursion_w_used_DS(constrained_based_networks::Pool* pool)
 
     a->addChild(ds, "b_child_is_ds");
     // a2->addChild(ds,"b_child");
-    auto t = new Task("T", pool);
+    auto t = TaskObj::make( pool,"T");
     b->addChild(t, "t_child");
     return "A";
 }
@@ -113,10 +118,10 @@ std::string test_cmp_recursion_w_used_DS(constrained_based_networks::Pool* pool)
 std::string test_cmp_recursion_w_unused_DS(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    auto a = new Composition("A", pool);
-    auto b = new Composition("B", pool);
+    auto a = CompositionObj::make( pool,"A");
+    auto b = CompositionObj::make( pool,"B");
     a->addChild(b, "b_child");
-    auto t = new Task("T", pool);
+    auto t = TaskObj::make( pool,"T");
     b->addChild(t, "t_child");
     // auto ds = new DataService("DS");
     return "A";
@@ -125,11 +130,11 @@ std::string test_cmp_recursion_w_unused_DS(constrained_based_networks::Pool* poo
 std::string test_cmp_recursion_w_unused_DS2(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    auto a = new Composition("A", pool);
-    auto b = new Composition("B", pool);
+    auto a = CompositionObj::make( pool,"A");
+    auto b = CompositionObj::make( pool,"B");
     // auto ds = new DataService("DS");
     a->addChild(b, "b_child");
-    auto t = new Task("T", pool);
+    auto t = TaskObj::make( pool,"T");
     b->addChild(t, "t_child");
     return "A";
 }
@@ -137,10 +142,10 @@ std::string test_cmp_recursion_w_unused_DS2(constrained_based_networks::Pool* po
 std::string test_cmp_recursion(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    auto a = new Composition("A", pool);
-    auto b = new Composition("B", pool);
+    auto a = CompositionObj::make( pool,"A");
+    auto b = CompositionObj::make( pool,"B");
     a->addChild(b, "b_child");
-    auto t = new Task("T", pool);
+    auto t = TaskObj::make( pool,"T");
     b->addChild(t, "t_child");
     return "A";
 }
@@ -148,9 +153,9 @@ std::string test_cmp_recursion(constrained_based_networks::Pool* pool)
 std::string test_cmp_recursion_child2_time(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    auto a = new Composition("A", pool);
-    auto b = new Composition("B", pool);
-    auto t = new Task("T", pool);
+    auto a = CompositionObj::make( pool,"A");
+    auto b = CompositionObj::make( pool,"B");
+    auto t = TaskObj::make( pool,"T");
     a->addChild(t, "t_child");
     a->addChild(b, "b_child");
     b->addChild(t, "t_child");
@@ -160,17 +165,17 @@ std::string test_cmp_recursion_child2_time(constrained_based_networks::Pool* poo
 std::string test_cmp_recursion_child2_time_abstract(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    auto ds2 = new DataService("DS2-task", pool);
-    auto a = new Composition("A", pool);
-    auto b = new Composition("B", pool);
-    auto t = new Task("T", pool);
+    auto ds2 = DataServiceObj::make( pool,"DS2-task");
+    auto a = CompositionObj::make( pool,"A");
+    auto b = CompositionObj::make( pool,"B");
+    auto t = TaskObj::make( pool,"T");
     a->addChild(ds2, "t_abstract_child");
     a->addChild(b, "b_child");
     b->addChild(ds2, "t_abstract_child");
-    // auto a2 = new Composition("A2");
-    // auto a3 = new Composition("A3");
-    auto b3 = new Composition("B2", pool);
-    auto b2 = new Composition("B2", pool);
+    // auto a2 = CompositionObj::make("A2");
+    // auto a3 = CompositionObj::make("A3");
+    auto b3 = CompositionObj::make( pool,"B2");
+    auto b2 = CompositionObj::make( pool,"B2");
     // auto ds = new DataService("DS");
 
     b3->addChild(t, "task_child");
@@ -188,12 +193,12 @@ std::string test_cmp_recursion_child2_time_abstract(constrained_based_networks::
 std::string test_possible_loop_unused(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    auto a = new Composition("A", pool);
-    auto a2 = new Composition("A2", pool);
-    auto b = new Composition("B", pool);
-    auto c = new Composition("C", pool);
-    auto t = new Task("T-not", pool);
-    auto t2 = new Task("T-yes", pool);
+    auto a = CompositionObj::make( pool,"A");
+    auto a2 = CompositionObj::make( pool,"A2");
+    auto b = CompositionObj::make( pool,"B");
+    auto c = CompositionObj::make( pool,"C");
+    auto t = TaskObj::make( pool,"T-not");
+    auto t2 = TaskObj::make( pool,"T-yes");
 
     a->addChild(a2, "a2_child");
     a2->addChild(t2, "t_child");
@@ -208,12 +213,12 @@ std::string test_possible_loop_unused(constrained_based_networks::Pool* pool)
 std::string test_possible_loop_unused2(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    auto a = new Composition("A", pool);
-    auto a2 = new Composition("A2", pool);
-    auto b = new Composition("B", pool);
-    auto c = new Composition("C", pool);
-    auto d = new Composition("D", pool);
-    auto t = new Task("T", pool);
+    auto a = CompositionObj::make( pool,"A");
+    auto a2 = CompositionObj::make( pool,"A2");
+    auto b = CompositionObj::make( pool,"B");
+    auto c = CompositionObj::make( pool,"C");
+    auto d = CompositionObj::make( pool,"D");
+    auto t = TaskObj::make( pool,"T");
 
     a->addChild(a2, "a2_child");
 
@@ -227,21 +232,23 @@ std::string test_possible_loop_unused2(constrained_based_networks::Pool* pool)
 
 std::string test_state_machinemultiple_results(constrained_based_networks::Pool* pool)
 {
-    auto t1 = new Task("task1", pool);
+    auto t1 = TaskObj::make( pool,"task1");
     t1->addEvent("event1");
     t1->addEvent("event2");
 
-    auto t2 = new Task("task2", pool);
+    auto t2 = TaskObj::make( pool,"task2");
     t2->addEvent("event1");
     t2->addEvent("event2");
 
-    auto sm = new StateMachine("SM1", pool);
+    auto sm = StateMachineObj::make( pool,"SM1");
 
-    sm->addTransition(t1, t2, t1, "event1");
-    sm->addTransition(t2, t1, t2, "event1");
+    sm->addState(t1,0);
+    sm->addState(t2,1);
+    sm->addTransition(0, 1, "event1");
+    sm->addTransition(1, 0, "event1");
     sm->addEventForwards("t1_child", "event2", "failed");
     sm->addEventForwards("t2_child", "event2", "failed");
-    sm->setStart(t1);
+    //sm->setStart(t1);
     return "SM1";
 }
 
@@ -249,115 +256,123 @@ std::string test_state_machinemultiple_results(constrained_based_networks::Pool*
 std::string test_state_machinefailed(constrained_based_networks::Pool* pool)
 {
 
-    auto start = new StateMachine("start_sm", pool);
+    auto start = StateMachineObj::make( pool,"start_sm");
 
-    auto t1 = new Task("task1", pool);
+    auto t1 = TaskObj::make( pool,"task1");
     t1->addEvent("event1");
     t1->addEvent("event2");
 
-    auto t2 = new Task("task2", pool);
+    auto t2 = TaskObj::make( pool,"task2");
     t2->addEvent("event1");
     t2->addEvent("event2");
 
-    auto c = new Composition("CmpInBetween",pool);
-    auto s = c->getSpecialized();
+    auto c = CompositionObj::make(pool,"CmpInBetween");
+    auto s = c->getSpecialized(c);
     s->addConfig("composition_config", "5");
-    c = dynamic_cast<Composition*>(s);
+    c = std::dynamic_pointer_cast<CompositionObj>(s);
 
-    auto t3 = new Task("revover-task", pool);
+    auto t3 = TaskObj::make( pool,"revover-task");
     c->addChild(t3,"t3_child");
 
 
-    auto sm = new StateMachine("SM1", pool);
+    auto sm = StateMachineObj::make( pool,"SM1");
 
-    start->setStart(sm);
-    
-    sm->addTransition(t1, t2, t1, "event1");
-    sm->addTransition(t1, c, t1, "event2");
-    sm->addTransition(t2, t1, t2, "event1");
-    sm->addTransition(c, t1, c, "failed");
-    sm->addTransition(c, t2, c, "success");
+    //start->setStart(sm);
+    start->addState(sm,0);
+
+    sm->addState(t1,0);
+    sm->addState(t2,1);
+    sm->addState(c,2);
+
+    sm->addTransition(0, 1, "event1");
+    sm->addTransition(0, 2, "event2");
+    sm->addTransition(1, 0, "event1");
+    sm->addTransition(2, 0, "failed");
+    sm->addTransition(2, 1, "success");
 //    sm->addEventForwards("t1_child", "event2", "failed");
 //    sm->addEventForwards("t2_child", "event2", "failed");
-    
-    sm->setStart(t1);
+
+    //sm->addState(t1,0);
+    //sm->setStart(t1);
     //return "start_sm";
     return "SM1";
 }
 
 std::string test_state_machine(constrained_based_networks::Pool* pool)
 {
-    auto a1 = new Composition("pipe_detector", pool);
-    auto t1 = new Task("pipe-cam-task", pool);
+    auto a1 = CompositionObj::make( pool,"pipe_detector");
+    auto t1 = TaskObj::make( pool,"pipe-cam-task");
     a1->addChild(t1, "cam-detekt");
     t1->addEvent("pipe-end");
     a1->addEvent("fertig");
     a1->addEventForwards("cam-detekt", "pipe-end", "fertig");
 
-    auto a2 = new Composition("wall-servoing", pool);
-    auto t2 = new Task("wall-task", pool);
+    auto a2 = CompositionObj::make( pool,"wall-servoing");
+    auto t2 = TaskObj::make( pool,"wall-task");
     a2->addChild(t2, "wall-detector-child");
 
-    auto sm = new StateMachine("SM1", pool);
 
-    sm->addTransition(a1, a2, a1, "fertig");
-    sm->setStart(a1);
+    auto sm = StateMachineObj::make( pool,"SM1");
+    sm->addState(a1,0);
+    sm->addState(a2,0);
+    sm->addTransition(0, 1, "fertig");
 
     return "SM1";
 }
 
 std::string test_state_machine2(constrained_based_networks::Pool* pool)
 {
-    auto p = new Composition("parent_cmp", pool);
+    auto p = CompositionObj::make( pool,"parent_cmp");
 
-    auto a1 = new Composition("pipe_detector", pool);
-    auto t1 = new Task("pipe-cam-task", pool);
+    auto a1 = CompositionObj::make( pool,"pipe_detector");
+    auto t1 = TaskObj::make( pool,"pipe-cam-task");
     a1->addChild(t1, "cam-detekt");
     t1->addEvent("pipe-end");
     a1->addEvent("fertig");
     a1->addEventForwards("cam-detekt", "pipe-end", "fertig");
 
-    auto a2 = new Composition("wall-servoing", pool);
-    auto t2 = new Task("wall-task", pool);
+    auto a2 = CompositionObj::make( pool,"wall-servoing");
+    auto t2 = TaskObj::make( pool,"wall-task");
     a2->addChild(t2, "wall-detector-child");
 
-    auto sm = new StateMachine("SM1", pool);
+    auto sm = StateMachineObj::make( pool,"SM1");
+    sm->addState(a1,0);
+    sm->addState(a2,1);
 
-    sm->addTransition(a1, a2, a1, "fertig");
-    sm->setStart(a1);
-
-    p->addChild(sm, "only");
+    sm->addTransition(0, 1, "fertig");
 
     return "parent_cmp";
 }
 
 std::string test_state_machine3(constrained_based_networks::Pool* pool)
 {
-    auto psm = new StateMachine("parent_sm", pool);
+    auto psm = StateMachineObj::make( pool,"parent_sm");
 
-    auto p = new Composition("parent_cmp", pool);
+    auto p = CompositionObj::make( pool,"parent_cmp");
 
-    auto a1 = new Composition("pipe_detector", pool);
-    auto t1 = new Task("pipe-cam-task", pool);
+    auto a1 = CompositionObj::make( pool,"pipe_detector");
+    auto t1 = TaskObj::make( pool,"pipe-cam-task");
     a1->addChild(t1, "cam-detekt");
     t1->addEvent("pipe-end");
     a1->addEvent("fertig");
     a1->addEventForwards("cam-detekt", "pipe-end", "fertig");
 
-    auto a2 = new Composition("wall-servoing", pool);
-    auto t2 = new Task("wall-task", pool);
+    auto a2 = CompositionObj::make( pool,"wall-servoing");
+    auto t2 = TaskObj::make( pool,"wall-task");
 
-    auto f = new Task("final-task", pool);
+    auto f = TaskObj::make( pool,"final-task");
 
     a2->addChild(t2, "wall-detector-child");
 
-    psm->setStart(p);
-    psm->addTransition(p, f, p, "success");
+    psm->addState(p,0);
+    psm->addState(f,1);
+    psm->addTransition(0, 1,"success");
 
-    auto sm = new StateMachine("SM1", pool);
+    auto sm = StateMachineObj::make( pool,"SM1");
 
-    sm->addTransition(a1, a2, a1, "fertig");
-    sm->setStart(a1);
+    sm->addState(a1,0);
+    sm->addState(a2,1);
+    sm->addTransition(0,1, "fertig");
 
     p->addChild(sm, "only");
     p->addEventForwards("only", "success", "success");
@@ -368,9 +383,9 @@ std::string test_state_machine3(constrained_based_networks::Pool* pool)
 std::string test_ambigious_configs(constrained_based_networks::Pool* pool)
 {
     std::cout << "Testing " << __FUNCTION__ << std::endl;
-    auto a1 = new Composition("A1", pool);
-    auto a2 = new Composition("A2", pool);
-    auto t1 = new Task("T1", pool);
+    auto a1 = CompositionObj::make( pool,"A1");
+    auto a2 = CompositionObj::make( pool,"A2");
+    auto t1 = TaskObj::make( pool,"T1");
     t1->addProperty("int_config", constrained_based_networks::ConfigurationModel::INT);
 
     a1->addChild(a2, "a2_child");
@@ -383,14 +398,14 @@ std::string test_ambigious_configs(constrained_based_networks::Pool* pool)
 
 std::string test_config(constrained_based_networks::Pool* pool)
 {
-    auto cmp = new Composition("ConfigurableComposition",pool);
+    auto cmp = CompositionObj::make(pool,"ConfigurableComposition");
     cmp->addProperty("composition_config", constrained_based_networks::ConfigurationModel::INT);
-    auto t1 = new Task("T1", pool);
+    auto t1 = TaskObj::make( pool,"T1");
     t1->addProperty("task_config", constrained_based_networks::ConfigurationModel::INT);
     cmp->addChild(t1,"task");
     cmp->addArgumentForwards("task","composition_config", "task_config");
 
-    auto cmp2 = cmp->getSpecialized();
+    auto cmp2 = cmp->getSpecialized(cmp);
     cmp2->addConfig("composition_config", "5");
 
 
@@ -405,7 +420,7 @@ std::string load_specialied_simple_move(constrained_based_networks::Pool* pool)
 {
     create_model(pool);
     pool->mergeDoubles();
-    for (auto component : pool->getItems<Component*>()) {
+    for (auto component : pool->getItems<ComponentObj>()) {
         if (component->getName().find("AuvControl::SimpleMove_") != std::string::npos) {
             std::cout << "Got " << component->getName() << std::endl;
             return component->getName();
@@ -419,7 +434,7 @@ std::string test_lawn_mower_child(constrained_based_networks::Pool* pool)
     std::cout << "Testing for lawn-mower child" << std::endl;
     create_model(pool);
     pool->mergeDoubles();
-    auto c = dynamic_cast<Composition*>(pool->getComponent("Main::LawnMoverOverPipe"));
+    auto c = std::dynamic_pointer_cast<CompositionObj>(pool->getComponent("Main::LawnMoverOverPipe"));
     return c->getChildren()[0].second->getName();
 }
 

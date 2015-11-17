@@ -160,12 +160,12 @@ void StateMachineObj::updateInternals(Pool *pool)
 
     //    std::cout << "Update Internals for SM: " << this->getName() << std::endl;
     for (auto &t : states) {
-        if (t) t = searchCorresponding(t, pool);  // Can be nil for e.G. the starting state
+        assert(t.lock());
+        t = searchCorresponding(t.lock(), pool);  // Can be nil for e.G. the starting state
     }
 #if 1  // Testing
     for (auto t : states) {
-        if (t) pool->getComponent(t->getName());
-        pool->getComponent(t->getName());
+        pool->getComponent(t.lock()->getName());
     }
 #endif
 }
@@ -311,9 +311,13 @@ Forwards StateMachineObj::getEventForwards(Component child, std::string name)
 }
 #endif
 
-const std::vector<Component> &StateMachineObj::getStates()
+const std::vector<Component> StateMachineObj::getStates()
 {
-    return states;
+    std::vector<Component> res;
+    for(auto s:states){
+       res.push_back(s.lock());
+    }
+    return res;
     /*
     std::vector<Component> erg;
     for (auto tr : getTransitions()) {
@@ -422,5 +426,6 @@ void StateMachineObj::addTransition(unsigned int source, unsigned int target, st
 
 void StateMachineObj::addState(Component c, unsigned int id){
     assert(states.size() == id);
+    assert(c);
     states.push_back(c);
 }

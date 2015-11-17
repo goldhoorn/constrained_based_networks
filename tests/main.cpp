@@ -18,6 +18,7 @@ std::string export_name;
 
 std::vector<graph_analysis::BaseGraph::Ptr> resolve(char *base_network_file, bool res, bool debug = false){
     std::vector<graph_analysis::BaseGraph::Ptr> erg;
+#if 0
     
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
     graph_analysis::io::GraphIO::read(base_network_file, graph, graph_analysis::representation::GEXF);
@@ -38,11 +39,12 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(char *base_network_file, boo
         e->setTargetVertex(v2->getPtr());
         graph->addEdge(e);
     }
-
+#endif
     return erg;
+
 }
 
-std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool debug = false)
+std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component c, bool res, bool debug = false)
 {
     pool->checkConsistency();
 
@@ -55,6 +57,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
         std::cout << "Successfully exported old test" << std::endl;
         exit(0);
     }
+#if 0
 
     try
     {
@@ -106,6 +109,10 @@ std::vector<graph_analysis::BaseGraph::Ptr> resolve(Component *c, bool res, bool
         }
         return std::vector<graph_analysis::BaseGraph::Ptr>();
     }
+#endif
+        std::vector<graph_analysis::BaseGraph::Ptr> erg;
+        return erg;
+
 }
 
 
@@ -118,16 +125,17 @@ void runTest(std::string name){
 
     mkdir(folder.str().c_str(), 0755);
     unsigned int cnt = 0;
-    Component *c=0;
+    Component c=0;
     if(!name.empty()){
         c = pool->getComponent(name);
     }
+    /*
     std::cout << "The pool size is: " << pool->size() << std::endl;
-    std::cout << "Compositions: " << pool->getCount<Composition*>() << std::endl;
+    std::cout << "Compositions: " << pool->getCount<CompositionObj>() << std::endl;
     std::cout << "Task: " << pool->getCount<Task*>() << std::endl;
-    std::cout << "StateMachine: " << pool->getCount<StateMachine*>() << std::endl;
-    std::cout << "DataService: " << pool->getCount<DataService*>() << std::endl;
-
+    std::cout << "StateMachine: " << pool->getCount<StateMachineObj>() << std::endl;
+    std::cout << "DataService: " << pool->getCount<DataServiceObj>() << std::endl;
+    */
     for (auto graph : resolve(c, resolve_nonresolveable, debug)) {
         std::cout << "Finished calculuation of ClassSolution number" << cnt << std::endl;
         std::stringstream s;

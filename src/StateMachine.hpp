@@ -86,7 +86,7 @@ class StateMachineObj : public CompositionObj
      */
 
 
-    const std::vector<Component>& getStates();
+    const std::vector<Component> getStates();
 //    int getNewState(Component child, std::string event);
 
     // Inherited from Composition
@@ -95,7 +95,7 @@ class StateMachineObj : public CompositionObj
     const std::vector<Transition>& getTransitions();
 
    protected:
-    std::vector<Component> states;
+    std::vector<std::weak_ptr<ComponentObj>> states;
     std::vector<Transition> transitions;
     Component searchCorresponding(Component c, Pool *pool);
 };

@@ -151,7 +151,7 @@ class SpecializedComponentObj : public SpecializedComponentObjBase, public T
     // should not used somewhere else, a cast should be sufficent
     virtual constrained_based_networks::Component getOrginal()
     {
-        return org;
+        return org.lock();
     };
 
     virtual unsigned int getID() const
@@ -167,7 +167,7 @@ class SpecializedComponentObj : public SpecializedComponentObjBase, public T
     };
 
    private:
-    std::shared_ptr<T> org;
+    std::weak_ptr<T> org;
     bool active;
     Pool* pool;
     std::string specialized_name;
