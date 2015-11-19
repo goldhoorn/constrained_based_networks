@@ -345,6 +345,7 @@ class InstanceSolution : public Gecode::Space
 
     // Some helper-static constructors which also rxecures the search
     static std::vector<graph_analysis::BaseGraph::Ptr> babSearch(graph_analysis::BaseGraph::Ptr graph);
+    static void babSearch(graph_analysis::BaseGraph::Ptr input_graph, std::function<void (graph_analysis::BaseGraph::Ptr)> f);
 
     // helper methods for gist
     virtual Gecode::Space* copy(bool share);

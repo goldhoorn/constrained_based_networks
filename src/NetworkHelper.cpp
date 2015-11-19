@@ -79,24 +79,17 @@ void NetworkHelper::createInstanceSolution(std::string core_model, std::vector<u
     }
 
     std::cout << "Start to create instance-solutions" << std::endl;
-    auto is = InstanceSolution::babSearch(graph);
-    std::cout << "All " << is.size() << " instance solutions are calculated" << std::endl;
-
-    std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> results;
-    for (auto solution : is) {
+    unsigned int solution_id=0;
+    InstanceSolution::babSearch(graph,[&](graph_analysis::BaseGraph::Ptr solution)
+    {
         graph_analysis::DirectedGraphInterface::Ptr g = std::dynamic_pointer_cast<graph_analysis::DirectedGraphInterface>(solution);
         auto trigger_events = EventModelHandler(pool, g);
         auto events = trigger_events.getTrigger();
-        /*
-        std::cout << "Event size is: " <<events.size() << std::endl;
-        for(auto e : events){
-            std::cout << "\t- " << e.resulting_requirement.network.size() << std::endl;
-        }
-        */
-        results.push_back({solution, events});
-    }
-    std::cout << "Calculated all follow solutions " << results.size() << std::endl;
-    XML::addInstanceSolutions(core_model, results, ids);
+        XML::addInstanceSolutions(core_model, {solution,events}, ids, solution_id++);
+    });
+    XML::addInstanceSolutionCount(core_model, ids, solution_id);
+
+    std::cout << "Calculated all follow solutions " << solution_id << std::endl;
     std::cout << "Finish" << std::endl;
     delete pool;
 }

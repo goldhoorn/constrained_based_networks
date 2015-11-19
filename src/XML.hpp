@@ -25,8 +25,8 @@ class XML
     static Pool* load(std::string filename);
     static bool save(Pool* pool, std::string& filename, bool md5 = false);
     static bool saveClassSolutions(std::vector<graph_analysis::BaseGraph::Ptr> class_solutions, std::string original_file, std::list<std::string> additionalRequirements, std::vector<unsigned int> id);
-    static bool addInstanceSolutions(const std::string filename, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> instance_solutions,
-                                     std::vector<unsigned int> ids);
+    static bool addInstanceSolutions(const std::string filename, std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>> solution, std::vector<unsigned int> ids, unsigned int solution_id);
+    static bool addInstanceSolutionCount(const std::string filename, std::vector<unsigned int> ids, unsigned int solution_count);
     static Component ensureComponentAvailible(Pool* pool, std::string component_name, xmlpp::Node* const root);
     static void addSpecialization(Component comp, xmlpp::Element* const root);
     static std::string toMD5(const std::string input);

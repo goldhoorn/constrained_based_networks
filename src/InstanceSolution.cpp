@@ -672,9 +672,56 @@ void InstanceSolution::build_tree(graph_analysis::BaseGraph::Ptr erg, graph_anal
     }
 }
 
+
+void InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr input_graph, std::function<void (graph_analysis::BaseGraph::Ptr)> f){
+    // Initial situation
+    InstanceSolution *so = new InstanceSolution(input_graph);
+    BAB<InstanceSolution> e(so);
+    // search
+    InstanceSolution *best = NULL;
+    size_t solution_count=0;
+    while (InstanceSolution *s = e.next()) {
+        if (best != NULL) {
+            delete best;
+            best = 0;
+        }
+        // Got a solution print statistics
+        if (solution_count % 1000 == 0) {
+            auto c = e.statistics();
+            std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
+        }
+        graph_analysis::BaseGraph::Ptr out_graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
+        s->build_tree(out_graph, graph_analysis::Vertex::Ptr());
+        f(out_graph);
+        best = s;
+#if LIMIT_SOLUTIONS
+        if ((solution_count >= LIMIT_SOLUTIONS)) {  // TODO hack
+            auto c = e.statistics();
+            std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
+            s->printToStream(std::cout);
+            std::cerr << "Warn cancel search because we have too much solutions" << std::endl;
+            break;
+        }
+#endif
+        ++solution_count;
+    }
+
+    if (best == NULL) {
+        delete so;
+        throw std::runtime_error("InstanceSolution babSearch: No solutions");
+    }
+    delete so;
+    delete best;
+}
+
 std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr input_graph)
 {
     std::vector<graph_analysis::BaseGraph::Ptr> erg;
+    babSearch(input_graph,[&](graph_analysis::BaseGraph::Ptr one_graph){
+            erg.push_back(one_graph);
+    });
+    return erg;
+#if 0
     // Initial situation
     InstanceSolution *so = new InstanceSolution(input_graph);
     BAB<InstanceSolution> e(so);
@@ -686,7 +733,10 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
             best = 0;
         }
         // Got a solution print statistics
-        // if ((erg.size() % 1000) == 0) {
+        if ((erg.size() % 1000) == 0) {
+            auto c = e.statistics();
+            std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
+        }
         graph_analysis::BaseGraph::Ptr out_graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
         s->build_tree(out_graph, graph_analysis::Vertex::Ptr());
         erg.push_back(out_graph);
@@ -709,6 +759,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> InstanceSolution::babSearch(graph_an
     delete so;
     delete best;
     return erg;
+#endif
 }
 
 }  // end namespace constrained_based_networks

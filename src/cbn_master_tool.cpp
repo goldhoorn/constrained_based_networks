@@ -3,8 +3,6 @@
 #include "NetworkHelper.hpp"
 #include <stdexcept>
 
-#define NUM_THREADS 4
-
 using namespace constrained_based_networks;
 
 void printHelp()
@@ -49,6 +47,7 @@ void* runInstanceThread(void* id_)
 // main test function
 int main(int argc, char* argv[])
 {
+//    currently_processed_ids.push_back({0 ,0 ,10 ,0 ,0 ,8 ,0 ,0 ,10 ,0 ,0 ,10 ,0 ,0 ,10 ,0 ,0 ,10 ,3});
     NetworkHelper::initializeExporter();
     char c;
     base_network_file = 0;
@@ -79,7 +78,7 @@ int main(int argc, char* argv[])
         if (NetworkHelper::getNextUncalculatedIDs(base_network_file, ids, currently_processed_ids)) {
             std::cout << "Unresolved ids: " << std::endl;
             for (auto id : ids) {
-                std::cout << " " << id;
+                std::cout << " -i " << id;
             }
             std::cout << std::endl;
         } else {

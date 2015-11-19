@@ -151,7 +151,7 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
         assert(sub_element);
         int source = atoi(sub_element->get_attribute("source")->get_value().c_str());
         int target = atoi(sub_element->get_attribute("target")->get_value().c_str());
-//        int trigger = atoi(sub_element->get_attribute("trigger")->get_value().c_str());
+        //        int trigger = atoi(sub_element->get_attribute("trigger")->get_value().c_str());
         std::string event = sub_element->get_attribute("event")->get_value();
         sm->addTransition(source, target, event);
     }
@@ -402,7 +402,6 @@ xmlpp::Element* XML::getUnresolvedForFollowNetwork(xmlpp::Element* root, xmlpp::
 xmlpp::Element* XML::getUnresolvedForInstanceSolution(xmlpp::Element* root, xmlpp::Element* e, std::list<std::vector<unsigned int>> ignored_solutions)
 {
 
-
     for (auto child : e->get_children("transition")) {
         auto elem = dynamic_cast<xmlpp::Element*>(child);
         // If this element has a possible follow-network and no children so far, we have to calculate for this a solution
@@ -550,7 +549,35 @@ std::string XML::loadSolution(std::string filename, std::vector<unsigned int> id
     return boost::filesystem::path(filename).remove_filename().string() + "/" + v->get_value();
 }
 
-bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>>> instance_solutions, std::vector<unsigned int> ids)
+bool XML::addInstanceSolutionCount(const std::string filename, std::vector<unsigned int> ids, unsigned int solution_count){
+    mutex.lock();
+    if ((ids.size() % 3) != 1) {
+        throw std::invalid_argument("The given indexed must have a length%3 == 1, but got " + std::to_string(ids.size()));
+    }
+
+    const std::string basePath = boost::filesystem::path(filename).remove_filename().string();
+
+    xmlpp::Document doc;
+    xmlpp::DomParser parser;
+    std::cout << "Loading: " << genDBFilename(filename) << std::endl;
+    parser.parse_file(genDBFilename(filename));
+    assert(parser);
+    auto rootNode = dynamic_cast<xmlpp::Element*>(parser.get_document()->get_root_node());
+    if (rootNode->get_name() == "root") {
+        rootNode = dynamic_cast<xmlpp::Element*>(rootNode->get_first_child("initial_model"));
+    }
+    assert(rootNode);
+
+    auto toplevelNode = findNodeForID(rootNode, ids);
+    toplevelNode->add_child("count")->set_attribute("num",std::to_string(solution_count));;
+
+    doc.create_root_node_by_import(rootNode, true);
+    doc.write_to_file_formatted(genDBFilename(filename));
+    sync();
+    mutex.unlock();
+}
+
+bool XML::addInstanceSolutions(const std::string filename, std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>> solution, std::vector<unsigned int> ids, unsigned int solution_id)
 {
     mutex.lock();
     if ((ids.size() % 3) != 1) {
@@ -575,90 +602,87 @@ bool XML::addInstanceSolutions(const std::string filename, std::vector<std::pair
     std::vector<TransitionHelper> calculationHelper;
     std::map<std::string, std::vector<unsigned int>> linkHelper;
 
-    for (size_t i = 0; i < instance_solutions.size(); ++i) {
-        const auto& solution = instance_solutions[i];
+    // Create the filename for the network file:
+    std::string instanceSolutionNetworkFilename = "data/instance-solution-" + boost::filesystem::path(filename).filename().string() + "-";
+    for (auto id : ids) {
+        instanceSolutionNetworkFilename += std::to_string(id) + "-";
+    }
+    instanceSolutionNetworkFilename += std::to_string(solution_id) + ".gexf";
+    std::cout << "Creating instance solution network file: " << instanceSolutionNetworkFilename << std::endl;
+    graph_analysis::io::GraphIO::write(basePath + "/" + instanceSolutionNetworkFilename, solution.first, graph_analysis::representation::GEXF);
 
-        // Create the filename for the network file:
-        std::string instanceSolutionNetworkFilename = "data/instance-solution-" + boost::filesystem::path(filename).filename().string() + "-";
-        for (auto id : ids) {
-            instanceSolutionNetworkFilename += std::to_string(id) + "-";
-        }
-        instanceSolutionNetworkFilename += std::to_string(i) + ".gexf";
-        std::cout << "Creating instance solution network file: " << instanceSolutionNetworkFilename << std::endl;
-        graph_analysis::io::GraphIO::write(basePath + "/" + instanceSolutionNetworkFilename, solution.first, graph_analysis::representation::GEXF);
+    auto solution_node = toplevelNode->add_child("instance_solution");
+    solution_node->set_attribute("filename", instanceSolutionNetworkFilename);
+    solution_node->set_attribute("id", std::to_string(solution_id));
 
-        auto solution_node = toplevelNode->add_child("instance_solution");
-        solution_node->set_attribute("filename", instanceSolutionNetworkFilename);
-        solution_node->set_attribute("id", std::to_string(i));
+    // Begin calculation of follow up networks
+    int cnt2 = -1;
+    for (const auto& trigger : solution.second) {
+        cnt2++;
+        //            std::cout << "processing: " << i << "/" << instance_solutions.size() << " " << cnt2 << "/" << solution.second.size() << std::endl;
 
-        // Begin calculation of follow up networks
-        int cnt2 = -1;
-        for (const auto& trigger : solution.second) {
-            cnt2++;
-            //            std::cout << "processing: " << i << "/" << instance_solutions.size() << " " << cnt2 << "/" << solution.second.size() << std::endl;
-
-            auto transition_node = solution_node->add_child("transition");
-            transition_node->set_attribute("id", std::to_string(cnt2));
-            transition_node->set_attribute("causing_component", trigger.causing_component.lock()->getName());
-            transition_node->set_attribute("causing_event", trigger.causing_event);
-            if (trigger.resulting_requirement.network.size() == 0) {
-                //                std::cout << "Ignoring follow network for : " << trigger.causing_component->getName() << " -> " << trigger.causing_event << std::endl;
-                transition_node->set_attribute("resulting_pool", "");
-                continue;
-            } else {
-                bool found = false;
-                for (auto e : calculationHelper) {
-                    if (e.th == trigger) {
-                        std::cout << "!!!!!!!!!-------------------------------  Found a previous generated solution for our problem" << std::endl;
-                        transition_node->set_attribute("resulting_pool", e.filename);
-                        if (auto node = getReferenceNodeForNetwork(rootNode, e.filename, transition_node)) {
-                            found = true;
-                            auto link = transition_node->add_child("link");
-                            for (auto link_id_elem : getPath(rootNode, node)) {
-                                link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
-                            }
+        auto transition_node = solution_node->add_child("transition");
+        transition_node->set_attribute("id", std::to_string(cnt2));
+        transition_node->set_attribute("causing_component", trigger.causing_component.lock()->getName());
+        transition_node->set_attribute("causing_event", trigger.causing_event);
+        if (trigger.resulting_requirement.network.size() == 0) {
+            //                std::cout << "Ignoring follow network for : " << trigger.causing_component->getName() << " -> " << trigger.causing_event << std::endl;
+            transition_node->set_attribute("resulting_pool", "");
+            continue;
+        } else {
+            bool found = false;
+            for (auto e : calculationHelper) {
+                if (e.th == trigger) {
+                    std::cout << "!!!!!!!!!-------------------------------  Found a previous generated solution for our problem" << std::endl;
+                    transition_node->set_attribute("resulting_pool", e.filename);
+                    if (auto node = getReferenceNodeForNetwork(rootNode, e.filename, transition_node)) {
+                        found = true;
+                        auto link = transition_node->add_child("link");
+                        for (auto link_id_elem : getPath(rootNode, node)) {
+                            link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
                         }
                     }
                 }
-                if (found) {
-                    continue;
-                }
-                auto ids_for_loading = ids;
-                ids_for_loading.pop_back();
-                // Pool* pool = XML::load(XML::loadInstanceSolution(filename, ids_for_loading));
-                Pool* pool = XML::load(filename);
-                EventModelHandler::createFollowPool(trigger, pool);
-                std::string event_follow_network_filename = basePath + "/data/";
-                XML::save(pool, event_follow_network_filename, true);
-
-                std::cout << "We have a follow network for: " << trigger.causing_component.lock()->getName() << " -> " << trigger.causing_event << " And file " << event_follow_network_filename << std::endl;
-
-                // We have to put only relative PATHs from the original file on in our solution file, we have to twesk the filename here
-                event_follow_network_filename = "data/" + boost::filesystem::path(event_follow_network_filename).filename().string();
-                if (auto node = getReferenceNodeForNetwork(rootNode, event_follow_network_filename, transition_node)) {
-                    auto link = transition_node->add_child("link");
-                    auto link_id = getPath(rootNode, node);
-                    std::cout << "We have a folow network for " << event_follow_network_filename << " link is: " << std::endl;
-                    for (auto link_id_elem : link_id) {
-                        std::cout << "\t- " << link_id_elem << std::endl;
-                        link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
-                    }
-                } /*
-                 else if(linkHelper.find(event_follow_network_filename) != linkHelper.end()){
-                     //Check if we had calculated this once
-                     auto link = transition_node->add_child("link");
-                     auto link_id = linkHelper[event_follow_network_filename];
-                     for (auto link_id_elem : link_id) {
-                         link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
-                     }
-                 }
-
-                 linkHelper[event_follow_network_filename] = getPath(rootNode, transition_node);
-                 */
-                calculationHelper.push_back({trigger, pool, event_follow_network_filename});
-                transition_node->set_attribute("resulting_pool", event_follow_network_filename);
-                // delete pool;
             }
+            if (found) {
+                continue;
+            }
+            auto ids_for_loading = ids;
+            ids_for_loading.pop_back();
+            // Pool* pool = XML::load(XML::loadInstanceSolution(filename, ids_for_loading));
+            Pool* pool = XML::load(filename);
+            EventModelHandler::createFollowPool(trigger, pool);
+            std::string event_follow_network_filename = basePath + "/data/";
+            XML::save(pool, event_follow_network_filename, true);
+
+            std::cout << "We have a follow network for: " << trigger.causing_component.lock()->getName() << " -> " << trigger.causing_event << " And file " << event_follow_network_filename
+                      << std::endl;
+
+            // We have to put only relative PATHs from the original file on in our solution file, we have to twesk the filename here
+            event_follow_network_filename = "data/" + boost::filesystem::path(event_follow_network_filename).filename().string();
+            if (auto node = getReferenceNodeForNetwork(rootNode, event_follow_network_filename, transition_node)) {
+                auto link = transition_node->add_child("link");
+                auto link_id = getPath(rootNode, node);
+                std::cout << "We have a folow network for " << event_follow_network_filename << " link is: " << std::endl;
+                for (auto link_id_elem : link_id) {
+                    std::cout << "\t- " << link_id_elem << std::endl;
+                    link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
+                }
+            } /*
+             else if(linkHelper.find(event_follow_network_filename) != linkHelper.end()){
+                 //Check if we had calculated this once
+                 auto link = transition_node->add_child("link");
+                 auto link_id = linkHelper[event_follow_network_filename];
+                 for (auto link_id_elem : link_id) {
+                     link->add_child("path")->set_attribute("id", std::to_string(link_id_elem));
+                 }
+             }
+
+             linkHelper[event_follow_network_filename] = getPath(rootNode, transition_node);
+             */
+            calculationHelper.push_back({trigger, pool, event_follow_network_filename});
+            transition_node->set_attribute("resulting_pool", event_follow_network_filename);
+            // delete pool;
         }
     }
 
@@ -741,7 +765,7 @@ void XML::createDatabase(std::string original_file)
     // We save the original pool to the data/ folder to habe a unique link to the source-model. This makes loop-identification clearer
     Pool* pool = XML::load(original_file);
     TransitionTrigger trigger;
-//    trigger.causing_component = 0;
+    //    trigger.causing_component = 0;
     trigger.causing_event = "start";
     graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
     for (auto c : pool->getItems<ComponentObj>()) {
@@ -921,23 +945,23 @@ bool XML::save(Pool* pool, std::string& filename, bool md5)
 
             // this should be valid because the transition 0 is by default the starting state, and the 1 (not 0) child is the target state to enter
             // 0 and 2 are the SM itselfe
-            //assert(sm->getTransitions()[0].event == "start");
+            // assert(sm->getTransitions()[0].event == "start");
             smNode->set_attribute("start_state", "0");
 
             smNode->set_attribute("active", sm->isActive() ? "true" : "false");
             std::vector<Component*> children;
             unsigned int child_id = 0;
-//            bool first = true;
+            //            bool first = true;
             auto stateNode = smNode->add_child("states");
             for (auto smStates : sm->getStates()) {
-                        auto childNode = stateNode->add_child("child");
-                        childNode->set_attribute("id", std::to_string(child_id++));
-                        childNode->set_attribute("name", smStates->getName());
-                        // TODO we could here figure out the base class and specialize it on or own (or we simply using the specialized as done here
-                        // This somehow changes the model but should not change the behaviour in the end
-                        childNode->set_attribute("specialized", "false");  // Spcialized would mean that a specilaization is explicitly done
+                auto childNode = stateNode->add_child("child");
+                childNode->set_attribute("id", std::to_string(child_id++));
+                childNode->set_attribute("name", smStates->getName());
+                // TODO we could here figure out the base class and specialize it on or own (or we simply using the specialized as done here
+                // This somehow changes the model but should not change the behaviour in the end
+                childNode->set_attribute("specialized", "false");  // Spcialized would mean that a specilaization is explicitly done
             }
-            for(auto smTransitions : sm->getTransitions()){
+            for (auto smTransitions : sm->getTransitions()) {
                 auto tNode = smNode->add_child("transition");
                 tNode->set_attribute("source", std::to_string(smTransitions.source));
                 tNode->set_attribute("target", std::to_string(smTransitions.target));
