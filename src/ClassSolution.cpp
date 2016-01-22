@@ -558,12 +558,12 @@ bool ClassSolution::findNextBrancher(unsigned int id)
         if (!depends[id].assigned()) {
             DEBUG_CLASS_SOLUTION << "The dependencies not resolved" << std::endl;
             finish = false;
-            branch(*this, depends[id], SET_VAL_MIN_INC());
+            branch(*this, depends[id], SET_VAL_MIN_INC()); // #b3
         }
         if (!depends_recursive[id].assigned()) {
             DEBUG_CLASS_SOLUTION << "Recursive dependencies not resolved" << std::endl;
             finish = false;
-            branch(*this, depends_recursive[id], SET_VAL_MIN_INC());
+            branch(*this, depends_recursive[id], SET_VAL_MIN_INC()); //#b4
         }
 
         //createConstraintsForComposition(cmp);
@@ -574,11 +574,11 @@ bool ClassSolution::findNextBrancher(unsigned int id)
             DEBUG_CLASS_SOLUTION << "Checking Child" << child->getName() << std::endl;
             if (!ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id].assigned()) {
                 DEBUG_CLASS_SOLUTION << "-- Not assigned yet" << std::endl;
-                branch(*this, ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id], INT_VAL_MIN());
+                branch(*this, ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id], INT_VAL_MIN()); // #b5
 
                 if (!active[child->getID()].assigned()) {
                     DEBUG_CLASS_SOLUTION << "-- What?" << std::endl;
-                    branch(*this, active[child->getID()], INT_VAL_MIN());
+                    branch(*this, active[child->getID()], INT_VAL_MIN()); // #b6
                 }
 
                 finish = false;
@@ -587,7 +587,7 @@ bool ClassSolution::findNextBrancher(unsigned int id)
                 // printf("-- Got here id: %lu (%lu,%lu)\n",ir_assignments[pool->getTypeSpecificId<Composition*>(cmp)][c_id].val(),pool->getTypeSpecificId<Composition*>(cmp),c_id);
                 DEBUG_CLASS_SOLUTION << "Child is assigned to " << pool->operator[](ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id].val())->getName() << std::endl;
                 DEBUG_CLASS_SOLUTION << "Checking now children " << std::endl;
-                if (!findNextBrancher(ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id].val())) {
+                if (!findNextBrancher(ir_assignments[pool->getTypeSpecificId<CompositionObj>(cmp)][c_id].val())) { // #b7
                     DEBUG_CLASS_SOLUTION << "Returned from lower layer to << resolving of " << pool->operator[](id)->getName() << std::endl;
                     DEBUG_CLASS_SOLUTION << "And Child constraints are not yet resolved" << std::endl;
                     finish = false;
