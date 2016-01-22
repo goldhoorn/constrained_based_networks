@@ -47,12 +47,13 @@ void ClassSolution::markInactiveAsInactive()
 
 // Remove all recursive depends if a component is inactive
 #ifdef REMOVE_REC
-        rel(*this, !active[c->getID()] >> (depends_recursive[c->getID()] == IntSet::empty));
-        rel(*this, !active[c->getID()] >> (depends[c->getID()] == IntSet::empty));
+        rel(*this, !active[c->getID()] >> (depends_recursive[c->getID()] == IntSet::empty)); // #28
+        rel(*this, !active[c->getID()] >> (depends[c->getID()] == IntSet::empty)); // #29
 #endif
         if (c->getID() != ID_ROOT_KNOT) {
-            rel(*this, expr(*this, active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty));
-            rel(*this, expr(*this, active[cmp_id] == 1) << (depends[cmp_id] != IntSet::empty));
+            rel(*this, expr(*this, active[cmp_id] == 0) == (depends[cmp_id] == IntSet::empty)); //30.neu
+//            rel(*this, expr(*this, active[cmp_id] == 0) << (depends[cmp_id] == IntSet::empty)); //30
+//            rel(*this, expr(*this, active[cmp_id] == 1) << (depends[cmp_id] != IntSet::empty)); //31
         }
     }
 }
@@ -150,6 +151,39 @@ void ClassSolution::createConstraintsForComposition(Composition composition)
     // std::cout << "Counter vs max: " << cmp_counter << "/" << compositions.size() << std::endl;
     markCompositionAsChildless(composition);
 
+#ifdef REMOVE_REC
+        // Optmization to reduce the search-space is redundant to the loop closing #10
+        if (composition->getID() != ID_ROOT_KNOT) {
+            rel(*this, active[composition->getID()] >> (depends_recursive[composition->getID()] >= IntSet(ID_ROOT_KNOT, ID_ROOT_KNOT))); // % #16
+        }
+#endif
+
+    for (auto provider : pool->getItems<ComponentObj>()) {
+            // Remove all children That are NOT used as dependancy
+            // Unfourtnalty it is not possible to have a mini-model for membership constraints
+            // this make this ugly and the workaround needed
+            BoolVar is_member(*this, 0, 1); // #17
+            member(*this, composition_child_constraints, expr(*this, provider->getID()), is_member); // #18
+            //if(provider->getID() != ID_NIL && provider->getID() != ID_ROOT_KNOT){
+            if(provider->getID() != ID_NIL){
+                dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), expr(*this,!is_member)); // #19 
+                //dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), imp(expr(*this, !is_member))); // #19 
+            }
+#ifdef REMOVE_REC
+            // A component cannot (anyhow) depend on itself (testcase #10)
+            dom(*this, depends_recursive[provider->getID()], SRT_DISJ, provider->getID());  // <= composition_child_constraints[child_id])); // #20
+            //TODO was macht diese condition hier?!
+
+            // Bulding recusrive dependencies
+            rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends_recursive[composition->getID()] | depends[provider->getID()]),
+                imp(is_member));  // <= composition_child_constraints[child_id])); // #21
+#endif
+            if (provider->abstract()) {
+                rel(*this, is_member, IRT_EQ, 0); // #24
+                dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID()); //#23
+            }
+    }
+
     for (size_t child_id = 0; child_id != composition->getChildren().size(); child_id++) {
         auto child = composition->getChildren()[child_id];
         assert(child.second != 0);
@@ -162,44 +196,21 @@ void ClassSolution::createConstraintsForComposition(Composition composition)
 
         // Mark all children as invalid if composition is inactive
         rel(*this, !active[composition->getID()] >> (composition_child_constraints[child_id] == 0)); // #15
-#ifdef REMOVE_REC
-        // Optmization to reduce the search-space is redundant to the loop closing #10
-        if (composition->getID() != ID_ROOT_KNOT) {
-            rel(*this, active[composition->getID()] >> (depends_recursive[composition->getID()] >= IntSet(ID_ROOT_KNOT, ID_ROOT_KNOT))); // %16
-        }
-#endif
 
         for (auto provider : pool->getItems<ComponentObj>()) {
-            // Remove all children That are NOT used as dependancy
-            // Unfourtnalty it is not possible to have a mini-model for membership constraints
-            // this make this ugly and the workaround needed
-            BoolVar is_member(*this, 0, 1); // #17
-            member(*this, composition_child_constraints, expr(*this, provider->getID()), is_member); // #18
-            dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID(), imp(expr(*this, !is_member))); // #19
-#ifdef REMOVE_REC
-            // A component cannot (anyhow) depend on itself (testcase #10)
-            dom(*this, depends_recursive[provider->getID()], SRT_DISJ, provider->getID());  // <= composition_child_constraints[child_id])); // #20
-            //TODO was macht diese condition hier?!
-
-            // Bulding recusrive dependencies
-            rel(*this, depends_recursive[provider->getID()], SRT_EQ, expr(*this, depends_recursive[composition->getID()] | depends[provider->getID()]),
-                imp(is_member));  // <= composition_child_constraints[child_id])); // #21
-#endif
             // Prevent selection of data-services for children
             if (provider->abstract()) {
                 rel(*this, composition_child_constraints[child_id], IRT_NQ, pool->getId(provider)); //#22
-                dom(*this, depends[pool->getId(provider)], SRT_DISJ, composition->getID()); //#23
-                rel(*this, is_member, IRT_EQ, 0); // #24
                 continue;
             }
 
             // Check if this provider is fullfilling the requested DataService
-            if (provider->isFullfilling(child.second->getName())) { 
+            if (provider->isFullfilling(child.second->getName())) { // #24.5 
                 // std::cout << "+++++++ allowing for " << child.first << " -- " << (*pool)[pool->getId(provider)]->getName() << std::endl;
 
                 // If something is used then it depends
-                BoolVar is_used = expr(*this, composition_child_constraints[child_id] == provider->getID()); // #24
-                rel(*this, depends[provider->getID()], SRT_SUP, expr(*this, composition->getID()), imp(is_used));  // <= composition_child_constraints[child_id])); 
+                BoolVar is_used = expr(*this, composition_child_constraints[child_id] == provider->getID()); // #25
+                rel(*this, depends[provider->getID()], SRT_SUP, expr(*this, composition->getID()), imp(is_used));  // <= composition_child_constraints[child_id])); // #26 
 
                 // The following should be equivalent but isn't
                 //                  rel(*this, (expr(*this,composition_child_constraints[child_id] == pool->getId(provider)) >>  (IntSet(cmp_counter,cmp_counter) <= depends[provider->getID()]) ));//
@@ -297,7 +308,7 @@ ClassSolution::ClassSolution(Pool* _pool)
 
     std::cout << "Hallo" << __LINE__ << std::endl;
 
-#if 1
+#if 0
     // No composition can directly be assigned as parent to another one becasue this would create a loop in the dependancy graph
     // TODO re-think if this is always valid
     for (size_t p = 0; p < ir_assignments.size(); p++) {
@@ -309,8 +320,8 @@ ClassSolution::ClassSolution(Pool* _pool)
             // Walk throught childs of first
             for (int idxp = 0; idxp < ir_assignments[p].size(); idxp++) {
                 for (int idxc = 0; idxc < ir_assignments[c].size(); idxc++) {
-                    rel(*this, (parent->getID() == ir_assignments[c][idxc]) >> (ir_assignments[p][idxp] != child->getID()));
-                    rel(*this, (child->getID() == ir_assignments[p][idxp]) >> (ir_assignments[c][idxc] != parent->getID()));
+                    rel(*this, (parent->getID() == ir_assignments[c][idxc]) >> (ir_assignments[p][idxp] != child->getID())); //28
+                    rel(*this, (child->getID() == ir_assignments[p][idxp]) >> (ir_assignments[c][idxc] != parent->getID())); //29
                 }
             }
         }
