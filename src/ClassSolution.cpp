@@ -566,7 +566,7 @@ bool ClassSolution::findNextBrancher(unsigned int id)
             branch(*this, depends_recursive[id], SET_VAL_MIN_INC());
         }
 
-        createConstraintsForComposition(cmp);
+        //createConstraintsForComposition(cmp);
 
         for (size_t c_id = 0; c_id < cmp->getChildren().size(); c_id++) {
             //        for(auto child_p : cmp->getChildren()){
