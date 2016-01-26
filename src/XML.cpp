@@ -92,8 +92,9 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
             for (const auto& conf : child->get_children("config")) {
                 const xmlpp::Element* conf_element = dynamic_cast<const xmlpp::Element*>(conf);
                 auto config_name = conf_element->get_attribute("name")->get_value();
-                auto config_value = conf_element->get_attribute("value")->get_value();
-                spec_cmp->addConfig(config_name, config_value);
+                auto config_value = conf_element->get_attribute("value-min")->get_value();
+                auto config_value_max = conf_element->get_attribute("value-max")->get_value();
+                spec_cmp->addConfig(config_name, config_value, config_value_max);
             }
 
             //           auto state_machine = dynamic_cast<StateMachine*>(spec_cmp);
@@ -135,8 +136,9 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
                 const xmlpp::Element* c_element = dynamic_cast<const xmlpp::Element*>(c_node);
                 assert(c_element);
                 std::string config_name = c_element->get_attribute("name")->get_value();
-                std::string config_value = c_element->get_attribute("value")->get_value();
-                spec->addConfig(config_name, config_value);
+                std::string config_value_min = c_element->get_attribute("value-min")->get_value();
+                std::string config_value_max = c_element->get_attribute("value-max")->get_value();
+                spec->addConfig(config_name, config_value_min, config_value_max);
             }
             children.push_back(std::dynamic_pointer_cast<ComponentObj>(spec));
             sm->addState(std::dynamic_pointer_cast<ComponentObj>(spec), child_id);
@@ -182,8 +184,15 @@ void XML::importComposition(Pool* pool, xmlpp::Node* const child, xmlpp::Node* c
             for (const auto& conf : child->get_children("config")) {
                 const xmlpp::Element* conf_element = dynamic_cast<const xmlpp::Element*>(conf);
                 auto config_name = conf_element->get_attribute("name")->get_value();
-                auto config_value = conf_element->get_attribute("value")->get_value();
-                spec_cmp->addConfig(config_name, config_value);
+                if(conf_element->get_attribute("value-min")){
+                    auto config_value = conf_element->get_attribute("value-min")->get_value();
+                    auto config_value_max = conf_element->get_attribute("value-max")->get_value();
+                    spec_cmp->addConfig(config_name, config_value, config_value_max);
+                }else{
+                    std::cerr << "Warning importting old file with only single values instead ranges" << std::endl;
+                    auto config_value = conf_element->get_attribute("value")->get_value();
+                    spec_cmp->addConfig(config_name, config_value);
+                }
             }
             // We do not need to continue, all children are generated based on the parent by getSpecialized
             return;
@@ -290,8 +299,9 @@ Pool* XML::load(std::string filename)
                     for (const auto& conf : child->get_children("config")) {
                         const xmlpp::Element* conf_element = dynamic_cast<const xmlpp::Element*>(conf);
                         auto config_name = conf_element->get_attribute("name")->get_value();
-                        auto config_value = conf_element->get_attribute("value")->get_value();
-                        spec_cmp->addConfig(config_name, config_value);
+                        auto config_value = conf_element->get_attribute("value-min")->get_value();
+                        auto config_value_max = conf_element->get_attribute("value-max")->get_value();
+                        spec_cmp->addConfig(config_name, config_value, config_value_max);
                     }
                     // We do not need to continue, all children are generated based on the parent by getSpecialized
                     continue;
@@ -575,6 +585,7 @@ bool XML::addInstanceSolutionCount(const std::string filename, std::vector<unsig
     doc.write_to_file_formatted(genDBFilename(filename));
     sync();
     mutex.unlock();
+    return true;
 }
 
 bool XML::addInstanceSolutions(const std::string filename, std::pair<graph_analysis::BaseGraph::Ptr, std::list<TransitionTrigger>> solution, std::vector<unsigned int> ids, unsigned int solution_id)
@@ -897,7 +908,8 @@ void XML::addSpecialization(Component comp, xmlpp::Element* const root)
         for (auto c : spec->configuration) {
             auto cNode = root->add_child("config");
             cNode->set_attribute("name", c.first);
-            cNode->set_attribute("value", c.second);
+            cNode->set_attribute("value-min", c.second.first);
+            cNode->set_attribute("value-max", c.second.second);
         }
 
         // Replace all chidren here on this node

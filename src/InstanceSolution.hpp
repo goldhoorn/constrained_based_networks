@@ -220,7 +220,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
                 switch(underlaying_component->getProperty(c.first)){
                     case ConfigurationModel::INT:
                         {
-                            int_config.push_back(Config<int>{atoi(c.second.c_str()),atoi(c.second.c_str()), c.first});
+                            int_config.push_back(Config<int>{atoi(c.second.first.c_str()),atoi(c.second.second.c_str()), c.first});
                             break;
                         }
                     default:

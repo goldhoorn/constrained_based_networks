@@ -361,7 +361,7 @@ void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphI
 
                     std::cout << "Warn we should have a state-machine here" << sm->getName() << std::endl;
                     for (auto conf : spec->configuration) {
-                        std::cout << "\t- " << conf.first << ": " << conf.second << std::endl;
+                        std::cout << "\t- " << conf.first << ": " << conf.second.first << " to " << conf.second.second << std::endl;
                     }
                 } else {
                     throw std::runtime_error("All state-machines needs to be specialized here");

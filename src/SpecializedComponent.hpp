@@ -14,14 +14,14 @@ namespace constrained_based_networks
 {
 class Pool;
 
-struct Configuration : public std::map<std::string, std::string>
+struct Configuration : public std::map<std::string, std::pair<std::string, std::string> >
 {
     //    std::vector<std::string> name;
     //    std::vector<std::string> value;
 
-    void add(std::string _name, std::string _value)
+    void add(std::string _name, std::string _min, std::string _max)
     {
-        operator[](_name) = _value;
+        operator[](_name) = std::make_pair(_min,_max);
     }
 };
 
@@ -37,9 +37,14 @@ class SpecializedComponentObjBase : private boost::noncopyable
 
     Configuration configuration;
 
+    void addConfig(std::string name, std::string min, std::string max)
+    {
+        configuration.add(name, min,max);
+    };
+
     void addConfig(std::string name, std::string value)
     {
-        configuration.add(name, value);
+        configuration.add(name, value,value);
     };
 
     virtual constrained_based_networks::Component getComponent() = 0;

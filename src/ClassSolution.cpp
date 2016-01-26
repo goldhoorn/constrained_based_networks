@@ -821,7 +821,7 @@ void ClassSolution::printToDot(std::ostream& os) const
                     if (s) {
                         std::string str = composition->getName() + "(!)";
                         for (auto c : s->configuration) {
-                            str = str + "\n" + c.first + "=" + c.second;
+                            str = str + "\n" + c.first + "=" + c.second.first + " to " + c.second.second;
                         }
                         file << "\t\"" << str << "\" -> \"" << (*pool)[ir_assignments[cmp_id][child_id].val()]->getName() << "\"[label=\"" << child.first << "\"];" << std::endl;
                     } else {

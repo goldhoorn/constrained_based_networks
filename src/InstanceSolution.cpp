@@ -57,7 +57,8 @@ void InstanceSolution::gatherAllStringConfigs()
                     // If this specalized component has a requirement for a string property
                     // Otherwise it does not
                     if (it != spec_component->configuration.end()) {
-                        strings.insert(it->second);
+                        assert(it->second.first == it->second.second);
+                        strings.insert(it->second.first);
                     }
                 }
             }
@@ -384,23 +385,27 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                 if (c != current_graph_specialized->configuration.end()) {
                     switch (prop.t) {
                         case(constrained_based_networks::ConfigurationModel::INT) : {
-                            std::cout << "Setting config for " << current_graph_specialized->getName() << "attr: " << c->first << ": " << atoi(c->second.c_str()) << std::endl;
-                            rel(*this, int_config[graph->getVertexId(current_graph_vertex)][c->first], IRT_EQ, atoi(c->second.c_str()));
+                            //std::cout << "Setting config for " << current_graph_specialized->getName() << "attr: " << c->first << ": " << atoi(c->second.c_str()) << std::endl;
+                            rel(*this, int_config[graph->getVertexId(current_graph_vertex)][c->first], IRT_GQ, atoi(c->second.first.c_str()));
+                            rel(*this, int_config[graph->getVertexId(current_graph_vertex)][c->first], IRT_LQ, atoi(c->second.second.c_str()));
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::STRING) : {
-                            std::cout << "Setting config for " << current_graph_specialized->getName() << std::endl;
-                            rel(*this, int_config[graph->getVertexId(current_graph_vertex)][c->first], IRT_EQ, string_helper->operator[](c->second));
+                            //std::cout << "Setting config for " << current_graph_specialized->getName() << std::endl;
+                            assert(c->second.first == c->second.second);
+                            rel(*this, int_config[graph->getVertexId(current_graph_vertex)][c->first], IRT_EQ, string_helper->operator[](c->second.first));
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::DOUBLE) : {
-                            std::cout << "Setting config for " << current_graph_specialized->getName() << std::endl;
-                            rel(*this, float_config[graph->getVertexId(current_graph_vertex)][c->first], FRT_EQ, atof(c->second.c_str()));
+                            //std::cout << "Setting config for " << current_graph_specialized->getName() << std::endl;
+                            rel(*this, float_config[graph->getVertexId(current_graph_vertex)][c->first], FRT_GQ, atof(c->second.first.c_str()));
+                            rel(*this, float_config[graph->getVertexId(current_graph_vertex)][c->first], FRT_LQ, atof(c->second.second.c_str()));
                             break;
                         }
                         case(constrained_based_networks::ConfigurationModel::BOOL) : {
-                            std::cout << "Setting config for " << current_graph_specialized->getName() << std::endl;
-                            rel(*this, bool_config[graph->getVertexId(current_graph_vertex)][c->first], IRT_EQ, atoi(c->second.c_str()));
+                            //std::cout << "Setting config for " << current_graph_specialized->getName() << std::endl;
+                            assert(c->second.first == c->second.second);
+                            rel(*this, bool_config[graph->getVertexId(current_graph_vertex)][c->first], IRT_EQ, atoi(c->second.first.c_str()));
                             break;
                         }
                     }

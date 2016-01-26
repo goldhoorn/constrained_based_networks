@@ -414,6 +414,35 @@ std::string test_config(constrained_based_networks::Pool* pool)
     return cmp2->getName();
 }
 
+
+std::string sonar_sample(constrained_based_networks::Pool* pool)
+{
+    auto local = CompositionObj::make(pool,"Localization");
+    auto wall = CompositionObj::make(pool,"Wall");
+    local->addProperty("sonar-angle", constrained_based_networks::ConfigurationModel::INT);
+    wall->addProperty("sonar-angle", constrained_based_networks::ConfigurationModel::INT);
+
+    auto sonar = TaskObj::make( pool,"Sonar");
+    sonar->addProperty("scan-angle", constrained_based_networks::ConfigurationModel::INT);
+
+    wall->addChild(sonar,"sonar");
+    local->addChild(sonar,"sonar");
+
+    local->addArgumentForwards("sonar","sonar-angle", "scan-angle");
+    wall->addArgumentForwards("sonar","sonar-angle", "scan-angle");
+
+    auto local_s = local->getSpecialized(local);
+    auto wall_s = wall->getSpecialized(wall);
+
+
+    local_s->addConfig("sonar-angle", "0", "360");
+    wall_s->addConfig("sonar-angle", "70", "120");
+
+    return local_s->getName();
+}
+
+
+
 std::string load_specialied_simple_move(constrained_based_networks::Pool* pool)
 {
     create_model(pool);
@@ -465,6 +494,7 @@ Tests tests[] = {{test_cmp_recursion, ""},
                  {load_specialied_simple_move, ""},
                  {test_lawn_mower_child, ""},
                  {create_model, "Main::Win"},
+                 {sonar_sample, ""},
                  {0, ""}};
 
 std::string demangle(std::string input)

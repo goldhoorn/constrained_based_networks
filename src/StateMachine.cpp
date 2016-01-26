@@ -75,7 +75,9 @@ unsigned int StateMachineObj::getCurrentState()
     if (auto spec = dynamic_cast<SpecializedComponentObjBase *>(this)) {
         //        std::cout << "Have a specialized StateMachineObj " << getName() << std::endl;
         if (spec->configuration.find("current_state") != spec->configuration.end()) {
-            auto current_state = (size_t)atoi(spec->configuration["current_state"].c_str());
+            assert(spec->configuration["current_state"].first == spec->configuration["current_state"].second);
+
+            auto current_state = (size_t)atoi(spec->configuration["current_state"].first.c_str());
             auto states = getStates();
             //            std::cout << "Current State should be: " << current_state << " and we have " << states.size() << std::endl;
             assert(0 <= current_state);
