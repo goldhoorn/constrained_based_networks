@@ -422,11 +422,11 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
             auto j = graph->getVertexId(_n2);
 
             // The relation interleaved is symetric, if we are the same than another, the another is the same than we
-            rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_EQ, interleaved[j + (verticies_in_tree * i)]);
+            rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_EQ, interleaved[j + (verticies_in_tree * i)]); // #i100
 
             if (n1->component != n2->component) {
                 // std::cout << "Cannot be interleaved " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
-                rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_NQ, 1);
+                rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_NQ, 1); // #i101
                 /* We don't need this becase the root is always diffeent to anything else
                 if(i == 0 || j==0){
                     rel(*this,interleaved[i+(max*j)], IRT_NQ, 1);
@@ -436,14 +436,14 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                 // We cannot interleave us which us self
                 if (i == j) {
                     // std::cout << "Cannot be interleaved because its th same " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
-                    rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_NQ, 1);
+                    rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_NQ, 1); // #i102
                 } else {
                     // Ok the components are equal in her name, make sure that they are
                     // interleaved only if the configuration is consistent
                     auto component = std::dynamic_pointer_cast<ComponentObj>(n2->component);
                     assert(component.get());
 
-                    for (auto prop : component->getProperties()) {
+                    for (auto prop : component->getProperties()) { // #i103
                         switch (prop.t) {
                             case ConfigurationModel::DOUBLE:
                                 rel(*this, interleaved[i + (verticies_in_tree * j)] >> (float_config[i][prop.name] == float_config[j][prop.name]));
@@ -463,7 +463,8 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                     }
                     auto children1 = graph->getOutEdgeIterator(n2);  //->//composition->getChildren();
                     auto children2 = graph->getOutEdgeIterator(n1);  ////dynamic_cast<Composition*>(n1->component.get())->getChildren();
-                    while (children1->next() && children2->next()) {
+                    // #i104
+                    while (children1->next() && children2->next()) { 
                         auto child_id1 = graph->getVertexId(children1->current()->getTargetVertex());
                         auto child_id2 = graph->getVertexId(children2->current()->getTargetVertex());
                         rel(*this, interleaved[i + (verticies_in_tree * j)] >> interleaved[child_id1 + (verticies_in_tree * child_id2)]);

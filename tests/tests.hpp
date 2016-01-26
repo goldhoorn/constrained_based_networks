@@ -58,14 +58,14 @@ std::string test_ambigious_ds(constrained_based_networks::Pool* pool)
     std::cout << "Testing " << __FUNCTION__ << std::endl;
 
     auto a = CompositionObj::make( pool,"A");
-    auto b = TaskObj::make( pool,"B");
-    auto b2 = TaskObj::make( pool,"B2");
+    auto t = TaskObj::make( pool,"T");
+    auto t2 = TaskObj::make( pool,"T2");
     auto ds = DataServiceObj::make( pool,"DS");
 
-    b->addFullfillment("DS");
-    b2->addFullfillment("DS");
+    t->addFullfillment("DS");
+    t2->addFullfillment("DS");
 
-    a->addChild(ds, "b_child_is_ds");
+    a->addChild(ds, "t_child");
     return "A";
 }
 
@@ -197,8 +197,8 @@ std::string test_possible_loop_unused(constrained_based_networks::Pool* pool)
     auto a2 = CompositionObj::make( pool,"A2");
     auto b = CompositionObj::make( pool,"B");
     auto c = CompositionObj::make( pool,"C");
-    auto t = TaskObj::make( pool,"T-not");
-    auto t2 = TaskObj::make( pool,"T-yes");
+    auto t = TaskObj::make( pool,"T1");
+    auto t2 = TaskObj::make( pool,"T2");
 
     a->addChild(a2, "a2_child");
     a2->addChild(t2, "t_child");
@@ -399,16 +399,14 @@ std::string test_ambigious_configs(constrained_based_networks::Pool* pool)
 std::string test_config(constrained_based_networks::Pool* pool)
 {
     auto cmp = CompositionObj::make(pool,"ConfigurableComposition");
-    cmp->addProperty("composition_config", constrained_based_networks::ConfigurationModel::INT);
+    cmp->addProperty("composition-config", constrained_based_networks::ConfigurationModel::INT);
     auto t1 = TaskObj::make( pool,"T1");
-    t1->addProperty("task_config", constrained_based_networks::ConfigurationModel::INT);
+    t1->addProperty("task-config", constrained_based_networks::ConfigurationModel::INT);
     cmp->addChild(t1,"task");
-    cmp->addArgumentForwards("task","composition_config", "task_config");
+    cmp->addArgumentForwards("task","composition-config", "task-config");
 
     auto cmp2 = cmp->getSpecialized(cmp);
-    cmp2->addConfig("composition_config", "5");
-
-
+    cmp2->addConfig("composition-config", "5");
 
     //t1->addProperty("int_config", constrained_based_networks::ConfigurationModel::INT);
     //auto t2 = t1->getSpecialized();

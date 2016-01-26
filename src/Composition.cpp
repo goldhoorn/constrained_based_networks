@@ -339,6 +339,17 @@ std::vector<std::pair<std::string, Component>> CompositionObj::getChildren()
 };
 
 SpecializedComponentBase CompositionObj::getSpecialized(std::shared_ptr<ComponentObj> _obj, std::string name){
+    assert(this == _obj.get());
+    if (auto spec = dynamic_cast<SpecializedComponentObjBase *>(this)) {
+        auto obj = std::dynamic_pointer_cast<CompositionObj>(spec->getOrginal());
+        assert(obj);
+        auto s = SpecializedComponentObj<CompositionObj>::make(obj, pool, name);
+        s->configuration = spec->configuration;
+        s->replaced_children = spec->replaced_children;
+        s->setActive(spec->isActive());
+        return s;
+    }
+
     Composition obj = std::dynamic_pointer_cast<CompositionObj>(_obj);
     assert(obj.get());
     return SpecializedComponentObj<CompositionObj>::make(obj, pool,name);

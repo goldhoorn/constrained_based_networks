@@ -215,8 +215,18 @@ class ConfiguredComponent : public graph_analysis::Vertex
         component = underlaying_component;
         auto spec = std::dynamic_pointer_cast<SpecializedComponentObjBase>(underlaying_component);
         if (spec.get()) {
-            (void)spec;
-            throw std::runtime_error("Cannot create configuredComponent from a specialized component yet - Not implemented");
+            component = spec->getOrginal();
+            for(auto c : spec->configuration){
+                switch(underlaying_component->getProperty(c.first)){
+                    case ConfigurationModel::INT:
+                        {
+                            int_config.push_back(Config<int>{atoi(c.second.c_str()),atoi(c.second.c_str()), c.first});
+                            break;
+                        }
+                    default:
+                        throw std::runtime_error("Cannot create configuredComponent from a specialized component yet - Not implemented");
+                }
+            }
         }
         auto sm = std::dynamic_pointer_cast<StateMachineObj>(underlaying_component);
         if (sm.get()) {
