@@ -1,0 +1,7 @@
+#/bin/bash
+#set -ex
+rm `dirname $1`/solutions-`basename $1`
+cbn_master_tool -f $1
+mi $1
+cd `dirname $1`/
+find -name "*.gexf" -exec mi  {} \;

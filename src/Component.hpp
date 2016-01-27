@@ -91,6 +91,14 @@ class ComponentObj : public graph_analysis::Vertex
 
     void addEvent(const std::string &name);
 
+    void setUseCount(int u){
+        max_use = u;
+    }
+
+    int useCount() const{
+        return max_use;
+    }
+
     std::shared_ptr<ComponentObj> getComponent(std::string s);
 
     void addProperty(const std::string &_name, std::string t)
@@ -184,6 +192,7 @@ class ComponentObj : public graph_analysis::Vertex
 
     std::map<std::string, std::map<std::string, std::string>> saved_conf;
 
+    int max_use;
     Pool *pool;
     bool active;
     std::string name;

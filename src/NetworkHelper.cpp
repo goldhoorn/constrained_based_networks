@@ -18,6 +18,7 @@ void NetworkHelper::initializeExporter()
     auto confComp = new ConfiguredComponent();
     cc = graph_analysis::Vertex::Ptr(confComp);
     vManager->registerType(cc);
+    vManager->registerAttribute(cc->getClassName(),"max_use",(graph_analysis::VertexTypeManager::serialize_func_t)&ConfiguredComponent::serializeUc, (graph_analysis::VertexTypeManager::deserialize_func_t)&ConfiguredComponent::deserializeUc, (graph_analysis::VertexTypeManager::print_func_t)&ConfiguredComponent::printUc);
     vManager->registerAttribute(cc->getClassName(), "config", (graph_analysis::VertexTypeManager::serialize_func_t) & ConfiguredComponent::serializeConfig,
                                 (graph_analysis::VertexTypeManager::deserialize_func_t) & ConfiguredComponent::deSerializeConfig,
                                 (graph_analysis::VertexTypeManager::print_func_t) & ConfiguredComponent::printConfig);

@@ -39,6 +39,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
         bool_config = c->bool_config;
         string_config = c->string_config;
         underlaying_name = c->underlaying_name;
+        max_use = c->max_use;
     }
 
     virtual Vertex* getClone() const
@@ -54,6 +55,20 @@ class ConfiguredComponent : public graph_analysis::Vertex
     void deserializeName(std::string n)
     {
         underlaying_name = n;
+    }
+    
+    std::string printUc()
+    {
+        return max_use;
+    }
+
+    std::string serializeUc()
+    {
+        return max_use;
+    }
+    void deserializeUc(std::string n)
+    {
+        max_use = n;
     }
 
     std::string serializeConfig()
@@ -316,6 +331,7 @@ class ConfiguredComponent : public graph_analysis::Vertex
     std::vector<std::pair<std::string, std::string>> string_config;
     std::vector<Config<bool>> bool_config;
     std::string underlaying_name;
+    std::string max_use;
 };
 
 class ComponentInstanceHelperObj : public graph_analysis::Vertex
@@ -396,7 +412,21 @@ class InstanceSolution : public Gecode::Space
 
    protected:
     graph_analysis::Vertex::Ptr getConfiguredComponent(graph_analysis::Vertex::Ptr vertex);
-    void build_tree(graph_analysis::BaseGraph::Ptr erg, graph_analysis::Vertex::Ptr parent);
+
+    bool build_tree(graph_analysis::BaseGraph::Ptr erg, graph_analysis::Vertex::Ptr parent){
+        std::map<std::string, std::set<int>> m;
+        bool res = build_tree(erg,parent,m);
+        for(auto e: m){
+            std::cout << e.first << "{";
+            for(auto ee : e.second){
+                std::cout << ee;
+                std::cout << " ";
+            }
+            std::cout << "}" << std::endl;
+        }
+        return res;
+    }
+    bool build_tree(graph_analysis::BaseGraph::Ptr erg, graph_analysis::Vertex::Ptr parent,std::map<std::string, std::set<int>> &use_count);
     size_t verticies_in_tree;
     graph_analysis::DirectedGraphInterface::Ptr graph;
 
@@ -410,6 +440,8 @@ class InstanceSolution : public Gecode::Space
     std::vector<std::map<std::string, Gecode::BoolVar>> bool_config;
     std::vector<std::map<std::string, Gecode::IntVar>> int_config;
     std::vector<std::map<std::string, Gecode::IntVar>> string_config;
+    //std::map<std::string, Gecode::SetVar> use_constraints;
+    //std::map<std::string, Gecode::SetVar> use_constraints;
     Gecode::BoolVarArray interleaved;
 
     std::shared_ptr<std::map<std::string, int>> string_helper;

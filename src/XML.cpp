@@ -309,6 +309,9 @@ Pool* XML::load(std::string filename)
             }
             // This adds the DS automatically to the pool
             auto task = TaskObj::make(p, task_name);
+            if(nodeElement->get_attribute("max_use")){
+                task->setUseCount(atoi(nodeElement->get_attribute("max_use")->get_value().c_str()));
+            }
             if (auto active = nodeElement->get_attribute("active")) {
                 if (active->get_value() == "true") {
                     task->setActive(true);
@@ -1026,6 +1029,7 @@ bool XML::save(Pool* pool, std::string& filename, bool md5)
             auto cNode = rootNode->add_child("task");
             addSpecialization(component, cNode);
             cNode->set_attribute("active", task->isActive() ? "true" : "false");
+            cNode->set_attribute("max_use", std::to_string(task->useCount()));
             cNode->set_attribute("name", task->getName());
             for (auto e : task->getEvents()) {
                 cNode->add_child("event")->set_attribute("name", e);

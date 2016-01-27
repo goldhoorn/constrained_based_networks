@@ -1,0 +1,11 @@
+#/bin/bash
+#set -ex
+FILE=`mktemp`.dot
+if [ "e${1##*.}" = "exml" ]; then
+	cbn_solution_to_dot -i $*  > $FILE 
+else
+	cbn_gexf_to_dot -i $* -o $FILE
+fi
+dot $FILE -Tpdf -o `echo "${1%.*}" | sed -s "s/.\./_/g"`.pdf 
+#dot $FILE -Tpdf -o `echo ${1:0:-5} | sed -s "s/\./_/g"`.pdf 
+rm $FILE

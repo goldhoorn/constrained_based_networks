@@ -8,6 +8,7 @@ using namespace constrained_based_networks;
 ComponentObj::ComponentObj(Pool *_pool) : pool(_pool)
 {
     assert(pool);
+    max_use = 10000;//TODO fixme arbitrary large number, numerix limits max is to large for gecode, here should be the gecode cariable used// std::numeric_limits<int>::max();
     active = false;
 };
 

@@ -414,6 +414,22 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
         }
     }
 
+    //We have to figure out how much UNIQU components we have in out graph to constrain them (if needed) to a upper number.
+    //This might be relevant for device-drivers, such drivers can only once per device instanciated. This constrain is therefore more a example of how
+    //additionl constrains could be used to reduce the solutionsize
+    std::map<std::string,int> elements;
+    for (auto _n1 : graph->vertices()) {
+        auto n1 = std::static_pointer_cast<ComponentInstanceHelperObj>(_n1);
+        elements[n1->component->toString()]++;
+    }
+    std::cout << "We have the following elements: " << std::endl;
+    for(auto e : elements){
+        //use_constraints[e.first] = Gecode::SetVar(*this, IntSet::empty, IntSet(0,verticies_in_tree), 0, e.second);
+        //use_constraints[e.first] = Gecode::SetVar(*this, IntSet::empty, IntSet(0,verticies_in_tree), 0, verticies_in_tree);
+        std::cout << e.first << " " << e.second << std::endl;
+    }
+
+
     // Handle the interlaaving, means if a component should be the same than another one in the real instanciation
     // This is maybe the most important part of this class to idntify single and double-current_graph_tasks
     interleaved = Gecode::BoolVarArray(*this, verticies_in_tree * verticies_in_tree, 0, 1);
@@ -421,6 +437,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
         auto i = graph->getVertexId(_n1);
         auto n1 = std::static_pointer_cast<ComponentInstanceHelperObj>(_n1);
         assert(n1.get());
+        //dom(*this, use_constraints[n1->component->toString()], SRT_SUP, Gecode::IntSet(1,1)); // #TODO testing 
         for (auto _n2 : graph->vertices()) {
             auto n2 = std::static_pointer_cast<ComponentInstanceHelperObj>(_n2);
             assert(n2.get());
@@ -428,6 +445,20 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
 
             // The relation interleaved is symetric, if we are the same than another, the another is the same than we
             rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_EQ, interleaved[j + (verticies_in_tree * i)]); // #i100
+
+        //    member(*this, use_constraints[n1->component->toString()], expr(*this,i), expr(*this,!interleaved[i + (verticies_in_tree * j)]));
+            auto c_tmp = std::dynamic_pointer_cast<ComponentObj>(n1->component);
+            assert(c_tmp.get());
+//            cardinality(*this,use_constraints[n1->component->toString()],0,c_tmp->useCount());
+            std::cout << "Limiting use_count of " << n1->component->toString() << " to " << c_tmp->useCount() << std::endl;
+
+//            rel(*this, interleaved[i + (verticies_in_tree * j)] == (use_constraints[n2->component->toString()] >= Gecode::IntSet(j,j)));
+//            rel(*this, !interleaved[i + (verticies_in_tree * j)] >> (use_constraints[n1->component->toString()] <= Gecode::IntSet(i,i)));
+//            rel(*this, (!interleaved[i + (verticies_in_tree * j)]) == (use_constraints[n1->component->toString()] <= Gecode::IntSet(i,i)));
+
+//            dom(*this, use_constraints[n1->component->toString()], SRT_SUP, Gecode::IntSet(j,j), expr(*this,interleaved[i + (verticies_in_tree * j)] == 0)); // #TODO 
+
+
 
             if (n1->component != n2->component) {
                 // std::cout << "Cannot be interleaved " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
@@ -442,11 +473,14 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                 if (i == j) {
                     // std::cout << "Cannot be interleaved because its th same " << n1->component->toString() << " <-> " << n2->component->toString() << std::endl;
                     rel(*this, interleaved[i + (verticies_in_tree * j)], IRT_NQ, 1); // #i102
+//                    rel(*this, use_constraints[n1->component->toString()] <= Gecode::IntSet(j,j));
                 } else {
                     // Ok the components are equal in her name, make sure that they are
                     // interleaved only if the configuration is consistent
                     auto component = std::dynamic_pointer_cast<ComponentObj>(n2->component);
                     assert(component.get());
+
+//                    rel(*this, interleaved[i + (verticies_in_tree * j)] == (use_constraints[n1->component->toString()] >= Gecode::IntSet(j,j)));
 
                     for (auto prop : component->getProperties()) { // #i103
                         switch (prop.t) {
@@ -469,7 +503,7 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
                     auto children1 = graph->getOutEdgeIterator(n2);  //->//composition->getChildren();
                     auto children2 = graph->getOutEdgeIterator(n1);  ////dynamic_cast<Composition*>(n1->component.get())->getChildren();
                     // #i104
-                    while (children1->next() && children2->next()) { 
+                    while (children1->next() && children2->next()) {
                         auto child_id1 = graph->getVertexId(children1->current()->getTargetVertex());
                         auto child_id2 = graph->getVertexId(children2->current()->getTargetVertex());
                         rel(*this, interleaved[i + (verticies_in_tree * j)] >> interleaved[child_id1 + (verticies_in_tree * child_id2)]);
@@ -503,6 +537,12 @@ InstanceSolution::InstanceSolution(graph_analysis::BaseGraph::Ptr _graph)  // : 
         }
     }
     branch(*this, interleaved, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
+/*
+    for(auto e : elements){
+//        branch(*this, depends, SET_VAR_NONE(), SET_VAL_MIN_INC());
+        branch(*this,use_constraints[e.first],SET_VAL_MIN_INC());
+    }
+    */
 }
 
 InstanceSolution::InstanceSolution(bool share, InstanceSolution &s) : Space(share, s)
@@ -510,6 +550,13 @@ InstanceSolution::InstanceSolution(bool share, InstanceSolution &s) : Space(shar
     graph = s.graph;
     string_helper = s.string_helper;
     verticies_in_tree = s.verticies_in_tree;
+/*
+    for(auto &c : s.use_constraints){
+        use_constraints[c.first] = SetVar();
+        use_constraints[c.first].update(*this,share,c.second);;
+
+    }
+*/
 
     float_config.resize(s.float_config.size());
     for (size_t i = 0; i < s.float_config.size(); i++) {
@@ -603,7 +650,8 @@ void InstanceSolution::printToStream(std::ostream &os) const
     for (auto _node : graph->vertices()) {
         auto node = std::static_pointer_cast<ComponentInstanceHelperObj>(_node);
         auto component = std::dynamic_pointer_cast<ComponentObj>(node->component);
-        std::cout << "- " << component->toString() << std::endl;
+        os << "- " << component->toString() << std::endl;
+        //os << "-- active as: " <<  use_constraints.at(component->toString()) << std::endl;
         auto current_graph_task = std::dynamic_pointer_cast<TaskObj>(component);
         if (current_graph_task.get()) {
             (void)current_graph_task;
@@ -629,6 +677,7 @@ void InstanceSolution::printToStream(std::ostream &os) const
                 // auto interleaved_component = boost::reinterpret_pointer_cast<ComponentInstanceHelperObj>(_n2);
                 os << "--- is interleved with:" << _n2->toString() << " " << interleaved[idx].val() << std::endl;
             }
+
         }
     }
 }
@@ -663,7 +712,7 @@ graph_analysis::Vertex::Ptr InstanceSolution::getConfiguredComponent(graph_analy
     return configured_component_helper[id];
 }
 
-void InstanceSolution::build_tree(graph_analysis::BaseGraph::Ptr erg, graph_analysis::Vertex::Ptr parent)
+bool InstanceSolution::build_tree(graph_analysis::BaseGraph::Ptr erg, graph_analysis::Vertex::Ptr parent, std::map<std::string, std::set<int>> &use_count)
 {
     // If we are on level 0 (e.g need the root_knot
     if (parent.get() == 0) {
@@ -674,8 +723,19 @@ void InstanceSolution::build_tree(graph_analysis::BaseGraph::Ptr erg, graph_anal
         e->setSourceVertex(getConfiguredComponent(parent));
         e->setTargetVertex(getConfiguredComponent(child->getTargetVertex()));
         erg->addEdge(e);
-        build_tree(erg, child->getTargetVertex());
+
+        auto component = std::dynamic_pointer_cast<ComponentObj>(std::static_pointer_cast<ComponentInstanceHelperObj>(child->getTargetVertex())->component);
+        assert(component);
+        use_count[child->getTargetVertex()->toString()].insert(erg->getVertexId(e->getTargetVertex()));
+        if(component->useCount() < use_count[child->getTargetVertex()->toString()].size()){
+            std::cout << "Having to much instances for" << component->getName() << " " << use_count[child->getTargetVertex()->toString()].size() << "/" << component->useCount() << std::endl;
+            return false;
+        }
+        if(!build_tree(erg, child->getTargetVertex(), use_count)){
+            return false;
+        }
     }
+    return true;
 }
 
 
@@ -697,9 +757,14 @@ void InstanceSolution::babSearch(graph_analysis::BaseGraph::Ptr input_graph, std
             std::cout << "Fail: " << c.fail << " Restart: " << c.restart << " Nogood: " << c.nogood << " depth: " << c.depth << " node: " << c.node << std::endl;
         }
         graph_analysis::BaseGraph::Ptr out_graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
-        s->build_tree(out_graph, graph_analysis::Vertex::Ptr());
+        if(!s->build_tree(out_graph, graph_analysis::Vertex::Ptr())){
+            std::cout << "Warning skipping solution because it would contain too much instances of something" << std::endl;
+            delete s;
+            continue;
+        }
         f(out_graph);
         best = s;
+        s->printToStream(std::cout);
 #if LIMIT_SOLUTIONS
         if ((solution_count >= LIMIT_SOLUTIONS)) {  // TODO hack
             auto c = e.statistics();

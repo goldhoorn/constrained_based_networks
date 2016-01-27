@@ -434,7 +434,7 @@ std::string sonar_sample(constrained_based_networks::Pool* pool)
     auto local_s = local->getSpecialized(local);
     auto wall_s = wall->getSpecialized(wall);
 
-
+    sonar->setUseCount(1);
     local_s->addConfig("sonar-angle", "0", "360");
     wall_s->addConfig("sonar-angle", "70", "120");
 
