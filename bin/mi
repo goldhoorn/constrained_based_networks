@@ -6,6 +6,11 @@ if [ "e${1##*.}" = "exml" ]; then
 else
 	cbn_gexf_to_dot -i $* -o $FILE
 fi
-dot $FILE -Tpdf -o `echo "${1%.*}" | sed -s "s/\(.\)\./\1_/g"`.pdf 
+if [ "e$2" = "e-s" ]; then
+    echo "Make small file"
+    dot $FILE -Tpdf -o `echo "${1%.*}" | sed -s "s/\(.\)\./\1_/g"`_small.pdf 
+else
+    dot $FILE -Tpdf -o `echo "${1%.*}" | sed -s "s/\(.\)\./\1_/g"`.pdf 
+fi
 #dot $FILE -Tpdf -o `echo ${1:0:-5} | sed -s "s/\./_/g"`.pdf 
 rm $FILE
