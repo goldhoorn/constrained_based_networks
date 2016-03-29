@@ -120,7 +120,8 @@ class ConfiguredComponent : public graph_analysis::Vertex
             if (names.find(j.name) == names.end()) {
                 names.insert(j.name);
                 if (j.min != j.max) {
-                    if ((j.min == Gecode::Float::Limits::min || j.min == std::numeric_limits<double>::min()) && (j.max == Gecode::Float::Limits::max || j.max == std::numeric_limits<double>::max())) {
+                                                                                                                //TODO Hack for undef values, whoever knows the limits
+                    if ((j.min == Gecode::Float::Limits::min || j.min == -std::numeric_limits<double>::max() || j.min < -1e300) && (j.max == Gecode::Float::Limits::max || j.max == std::numeric_limits<double>::max() || j.max > 1e300)){
                         str << j.name << ": <undef>" << std::endl;
                     } else {
                         str << j.name << ": " << j.min << "..." << j.max << " " << std::endl;

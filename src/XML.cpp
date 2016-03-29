@@ -136,8 +136,15 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
                 const xmlpp::Element* c_element = dynamic_cast<const xmlpp::Element*>(c_node);
                 assert(c_element);
                 std::string config_name = c_element->get_attribute("name")->get_value();
-                std::string config_value_min = c_element->get_attribute("value-min")->get_value();
-                std::string config_value_max = c_element->get_attribute("value-max")->get_value();
+                std::string config_value_min;
+                std::string config_value_max;
+                if(c_element->get_attribute("value-min")){
+                    config_value_min = c_element->get_attribute("value-min")->get_value();
+                    config_value_max = c_element->get_attribute("value-max")->get_value();
+                }else{
+                    config_value_min = c_element->get_attribute("value")->get_value();
+                    config_value_max = c_element->get_attribute("value")->get_value();
+                }
                 spec->addConfig(config_name, config_value_min, config_value_max);
             }
             children.push_back(std::dynamic_pointer_cast<ComponentObj>(spec));

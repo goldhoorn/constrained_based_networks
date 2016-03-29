@@ -8,6 +8,7 @@ using namespace constrained_based_networks;
 void printHelp()
 {
     std::cout << "Please use -f <filename> -c <components_to_start>" << std::endl;
+    std::cout << "or -e <filename> to export for latex the component pool" << std::endl;
     exit(-1);
 }
 
@@ -53,13 +54,17 @@ int main(int argc, char* argv[])
     base_network_file = 0;
     bool list_unresolved = false;
 
-    while ((c = getopt(argc, argv, "lf:")) != -1) {
+    while ((c = getopt(argc, argv, "lf:e:")) != -1) {
         switch (c) {
             case 'l':
                 list_unresolved = true;
                 break;
             case 'f':
                 base_network_file = optarg;
+                break;
+            case 'e':
+                NetworkHelper::createModelExportForLatex(optarg);
+                exit(0);
                 break;
             default:
                 printHelp();

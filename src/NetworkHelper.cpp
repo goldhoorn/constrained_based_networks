@@ -6,6 +6,7 @@
 #include "Pool.hpp"
 #include "ClassSolution.hpp"
 #include "XML.hpp"
+#include "DataService.hpp"
 
 using namespace constrained_based_networks;
 
@@ -26,6 +27,134 @@ void NetworkHelper::initializeExporter()
                                 (graph_analysis::VertexTypeManager::deserialize_func_t) & ConfiguredComponent::deserializeName,
                                 (graph_analysis::VertexTypeManager::print_func_t) & ConfiguredComponent::serializeName);
 }
+
+
+std::string NetworkHelper::normalizeName(std::string in){
+    std::replace(in.begin(),in.end(),'_',' ');
+    std::replace(in.begin(),in.end(),':',' ');
+    return in;
+}
+
+bool NetworkHelper::isIgnoredState(std::string name){
+    std::string ignored[] = {
+        "failed","running","stopped","exception","runtime_error","pre_operational","init","start","stop","success","aborted","internal_error","updated_data","poll_transition","fatal_error","interrupt"
+    };
+    for(auto s : ignored){
+        if(name == s){
+            return true;
+        }
+    }
+    return false;
+
+}
+
+void NetworkHelper::createModelExportForLatex(std::string core_model)
+{
+/*    std::vector<StateMachineObj> C;
+    std::vector<CompositionObj> C;
+    std::vector<DataServiceObj> D;
+    std::map<CompositionObj, ComponentObj> phi;
+    std::map<CompositionObj,std::pair<std::string,std::string> > props;
+    std::map<ComponentObj, int> max_usages;
+*/
+
+    Pool *pool = XML::load(core_model);
+    std::cout << "T = \\{\\\\" << std::endl;
+    std::cout << "\\begin{longtable}{|p{5cm}|l|p{5cm}|}" << std::endl;
+    std::cout << "\\hline" << std::endl;
+    for(auto c : pool->getItems<TaskObj>()){
+        std::string events;
+        for(auto e : c->getEvents()){
+            if(!NetworkHelper::isIgnoredState(e)){
+                events = events +  e  + ", ";
+            }
+        }
+        std::cout << normalizeName(c->getName())<< " & " << c->useCount() << " & " << normalizeName(events) << "\\\\" << std::endl;
+    }
+    std::cout << "\\hline" << std::endl;
+    std::cout << "\\end{longtable}" << std::endl;
+
+
+    std::cout << "D = \\{\\\\" << std::endl;
+    std::cout << "\\begin{longtable}{|p{5cm}|}" << std::endl;
+    std::cout << "\\hline" << std::endl;
+    for(auto c : pool->getItems<DataServiceObj>()){
+        std::cout << normalizeName(c->getName())<< "\\\\" << std::endl;
+    }
+    std::cout << "\\hline" << std::endl;
+    std::cout << "\\end{longtable}" << std::endl;
+
+    std::cout << "C = \\{\\\\" << std::endl;
+    //std::cout << "\\begin{longtable}{|p{5cm}|l|l|l|}" << std::endl;
+    std::cout << "\\begin{itemize}" << std::endl;
+    //std::cout << "\\hline" << std::endl;
+    for(auto c : pool->getItems<CompositionObj>()){
+        std::cout << "\\item " << normalizeName(c->getName()) << "" << std::endl;
+        //std::string events;
+        std::vector<std::string> states;
+        for(auto e : c->getEvents()){
+            if(!NetworkHelper::isIgnoredState(e)){
+                states.push_back(e);
+                //events = events +  e  + ", ";
+            }
+        }
+        if(!states.empty()){
+            std::cout << "\\begin{itemize}" << std::endl;
+            for(auto e : states){
+                std::cout << "\\item event: " << normalizeName(e) << "" << std::endl;
+            }
+            std::cout << "\\end{itemize}" << std::endl;
+        }
+        //std::string children;
+        std::cout << "\\begin{itemize}" << std::endl;
+        for(auto child : c->getChildren()){
+            std::cout << "\\item[$\\phi$] " << normalizeName(child.first) << ": " << normalizeName(child.second->getName()) << std::endl;
+            //children = children + child.first + ": " + child.second->getName() + ", ";
+        }
+        std::cout << "\\end{itemize}" << std::endl;
+        if(c->useCount() != 1000){
+            std::cout << "\\begin{itemize}" << std::endl;
+            std::cout << "\\item[$\\Xi$] " << c->useCount() << std::endl;
+            std::cout << "\\end{itemize}" << std::endl;
+        }
+        //std::cout << name << " & " << events << "\\\\" << std::endl;
+        //std::cout << normalizeName(c->getName()) << " & " << c->useCount() << " & " << normalizeName(events)  << " & " <<  normalizeName(children) << "\\\\" << std::endl;
+    }
+    std::cout << "\\end{itemize}" << std::endl;
+    //std::cout << "\\hline" << std::endl;
+    //std::cout << "\\end{longtable}" << std::endl;
+
+
+
+/*
+    std::cout << "\\}" << std::endl;
+    std::cout << "C = \\{\\";
+    for(auto c : pool->getItems<CompositionObj>()){
+        std::cout << c->getName() << "\\" << std::endl;
+    }
+    std::cout << "\\}" << std::endl;
+*/
+
+
+    /*
+    for(auto c : pool->getItems<ComponentObj>()){
+        if(auto sm = std::dynamic_pointer_cast<StateMachineObj>(c)){
+            std::cout << sm->getName() << std::endl;
+        }else if(auto cmp = std::dynamic_pointer_cast<CompositionObj>(c)){
+            std::cout << "CMP: " << cmp->getName() << std::endl;
+            for(auto child : cmp->getChildren()){
+            }
+        }else if(auto ds = std::dynamic_pointer_cast<DataServiceObj>(c)){
+        }
+
+        if (c->isActive()) {
+        }
+
+    }
+    */
+
+}
+
 
 void NetworkHelper::createClassSolution(std::string core_model, std::list<std::string> additionalRequirements, std::vector<unsigned int> ids)
 {
