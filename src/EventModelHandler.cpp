@@ -139,13 +139,14 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
             graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
             generateRequrementsGraphRecusivly(graph, initial_pool, root, instancitaed_network->getVertex(affected_component_id), current_transition);
 
-
+/*
             char tmpfile[512];
             int tmp_file_fd=0;
             sprintf(tmpfile,"/tmp/network_XXXXXX.dot");
             tmp_file_fd = mkstemps(tmpfile,4);
             graph_analysis::io::GraphIO::write(tmpfile, graph, graph_analysis::representation::GRAPHVIZ);
             std::cerr << "tempfile is " << tmpfile << std::endl;
+            */
             //            std::cerr << "THIS IS GOOD" << std::endl;
             std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
             affected_vertices.push_back(instancitaed_network->getVertex(affected_component_id));
