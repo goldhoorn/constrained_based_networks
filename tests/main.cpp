@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
         }
     }
     if (test_id == -1 && !all && !testname) {
-        std::cerr << "please pass testname with -t <id>" << std::endl;
+        std::cerr << "please pass testname with -e filename -t <id>" << std::endl;
         exit(-1);
     }
 

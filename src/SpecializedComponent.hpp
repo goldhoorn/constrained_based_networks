@@ -28,6 +28,7 @@ struct Configuration : public std::map<std::string, std::pair<std::string, std::
 class SpecializedComponentObjBase : private boost::noncopyable
 {
    public:
+
     SpecializedComponentObjBase()
     {
     }
@@ -49,6 +50,7 @@ class SpecializedComponentObjBase : private boost::noncopyable
 
     virtual constrained_based_networks::Component getComponent() = 0;
     virtual Component getOrginal() = 0;
+//    virtual void replaceChild(Component child, std::string name)=0;
     virtual bool isActive() = 0;
     virtual void setActive(bool active = true) = 0;
     virtual unsigned int getID() const = 0;
@@ -104,6 +106,11 @@ class SpecializedComponentObj : public SpecializedComponentObjBase, public T
         pool->addComponent(c_ptr);
         return std::static_pointer_cast<SpecializedComponentObjBase>(ptr);
     }
+   /* 
+    virtual void replaceChild(Component child, std::string name){
+        throw std::invalid_argument("Invalid call to bae class for replace child on Specialized base");
+    }
+    */
 
     virtual Component clone(Pool* p) const
     {

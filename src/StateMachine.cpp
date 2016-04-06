@@ -8,7 +8,7 @@ using namespace constrained_based_networks;
 StateMachineObj::StateMachineObj(Pool *pool, std::string name) : CompositionObj(name, pool)
 {
     addProperty("current_state", ConfigurationModel::INT);
-//    transitions[0].push_back(Transition(0, 0, 0, "no_start_state"));
+    //    transitions[0].push_back(Transition(0, 0, 0, "no_start_state"));
 }
 
 StateMachineObj::~StateMachineObj()
@@ -34,8 +34,9 @@ void StateMachineObj::setStart(Component c)
 }
 */
 
-const std::vector<Transition>& StateMachineObj::getTransitions(){
-    //TODO handle replaced children
+const std::vector<Transition> &StateMachineObj::getTransitions()
+{
+    // TODO handle replaced children
     return transitions;
 }
 
@@ -107,15 +108,33 @@ unsigned int StateMachineObj::getCurrentState()
     throw std::runtime_error("Unknown error in getCurrentTransition()");
 }
 
-
 std::vector<std::pair<std::string, Component>> StateMachineObj::getChildren()
 {
     std::vector<std::pair<std::string, Component>> res;
-    if(getStates().size() == 0){
+    if (getStates().size() == 0) {
         throw std::runtime_error("ERROR: StateMachine " + getName() + " has no children");
     }
+
+//    std::cout << "#######################################################################################" << std::endl;
+//    std::cout << "StateMachine " << getName() << " is in state " << getCurrentState() << std::endl;
+    // TODO this is hacky because the replacement works only on names, so the state<->name correlation might incorect
+    if (auto spec = dynamic_cast<SpecializedComponentObjBase *>(this)) {
+        for (auto replacement : spec->replaced_children) {
+//            std::cout << getStates()[getCurrentState()]->getName() << " <-> " << replacement.first << std::endl;
+            if (getStates()[getCurrentState()]->getName() == replacement.first) {
+//                std::cout << "Returning as active child: " << replacement.second->getName() << std::endl;
+                res.push_back({"main", replacement.second});  // We can return Any one here all
+//                std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+                return res;
+            }
+        }
+    }
+    // No replacement or not specialized
+//    std::cout << "Returning as regular active child: " << getStates()[getCurrentState()]->getName() << std::endl;
     res.push_back({"main", getStates()[getCurrentState()]});  // We can return Any one here all
-    //res.push_back({"main", getTransitions()[getCurrentTransition()][0].target});  // We can return Any one here all
+//    std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+
+    // res.push_back({"main", getTransitions()[getCurrentTransition()][0].target});  // We can return Any one here all
 
     // std::cout << "Returning child " << res[0].second->getName() << " for " << getName() << " current transition is: " << getCurrentTransition() << std::endl;
     // std::cout << "Transition size is: " << transitions.size() << std::endl;
@@ -247,13 +266,13 @@ Forwards StateMachineObj::getEventForwards(Component child, std::string name)
 
     auto current_transition_id = getCurrentState();
     //    auto current_state = getTransitions()[current_transition_id].target;
-    //auto current_state = child;
+    // auto current_state = child;
 
-    //We can currently only figure out event forwrds of our current state
-    assert(getStates()[current_transition_id] == child);
+    // We can currently only figure out event forwrds of our current state
+    // assert(getStates()[current_transition_id] == child);
 
-    for(auto &s : getTransitions()){
-        if(s.source == current_transition_id){
+    for (auto &s : getTransitions()) {
+        if (s.source == current_transition_id) {
             std::stringstream str;
             str << "transition-" << s.target;
             forwards[s.event] = str.str();
@@ -316,8 +335,11 @@ Forwards StateMachineObj::getEventForwards(Component child, std::string name)
 const std::vector<Component> StateMachineObj::getStates()
 {
     std::vector<Component> res;
-    for(auto s:states){
-       res.push_back(s.lock());
+    for (auto s : states) {
+        // std::cout << "Name: " << s.lock()->getLabel() << std::endl;
+        // if(replaced_children[s.lock()->getLabel()] != replaced_children.end()){
+        //}
+        res.push_back(s.lock());
     }
     return res;
     /*
@@ -340,10 +362,22 @@ const std::vector<Component> StateMachineObj::getStates()
     */
 }
 
+#if 0
 void StateMachineObj::replaceChild(Component child, Component old)
 {
     (void)child;
     (void)old;
+
+
+    if (isIgnored()) return;
+    if (states.find(name) == children.end()) {
+        std::cout << "Availilble children: " << std::endl;
+        for (auto c : children) {
+            std::cout << "\t-" << c.first << std::endl;
+        }
+        throw std::runtime_error("Cannot replace child, the requested child does not exist so far: " + name);
+    }
+    children[name] = c;
 
     throw std::runtime_error("Unsupported");
     /*
@@ -365,12 +399,27 @@ void StateMachineObj::replaceChild(Component child, Component old)
     assert(done);
     */
 }
+#endif
 
 void StateMachineObj::replaceChild(Component child, std::string name)
 {
     (void)name;
     (void)child;
+
     throw std::runtime_error("Unsupported");
+    /*
+    bool found = false;
+    for(size_t i =0;i< states.size(); ++i){
+        if(states[i].lock()->getName()  == name){
+            states[i] = child;
+            found = true; break;
+        }
+    }
+    if(!found){
+        throw std::invalid_argument("Cannot replace child, it does not exist as target on this SM");
+    }
+    */
+
     /*
     if (auto spec = dynamic_cast<SpecializedComponentBase *>(this)) {
         bool found=false;
@@ -420,13 +469,13 @@ void StateMachineObj::setStart(SpecializedComponentBase c)
 }
 */
 
-
-
-void StateMachineObj::addTransition(unsigned int source, unsigned int target, std::string causing_event){
-    transitions.push_back({source,target,causing_event});
+void StateMachineObj::addTransition(unsigned int source, unsigned int target, std::string causing_event)
+{
+    transitions.push_back({source, target, causing_event});
 }
 
-void StateMachineObj::addState(Component c, unsigned int id){
+void StateMachineObj::addState(Component c, unsigned int id)
+{
     assert(states.size() == id);
     assert(c);
     states.push_back(c);

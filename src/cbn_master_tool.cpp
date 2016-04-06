@@ -2,6 +2,7 @@
 #include <iostream>
 #include "NetworkHelper.hpp"
 #include <stdexcept>
+#include <boost/filesystem.hpp>
 
 using namespace constrained_based_networks;
 
@@ -63,8 +64,11 @@ int main(int argc, char* argv[])
                 base_network_file = optarg;
                 break;
             case 'e':
-                NetworkHelper::createModelExportForLatex(optarg);
+                {
+                boost::filesystem::path p(optarg);
+                NetworkHelper::createModelExportForLatex(optarg, p.remove_filename().string() + "/" + p.filename().replace_extension(".tex").string());
                 exit(0);
+                }
                 break;
             default:
                 printHelp();

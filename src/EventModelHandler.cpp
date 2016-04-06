@@ -3,6 +3,8 @@
 #include "Composition.hpp"
 #include "SpecializedComponent.hpp"
 #include <stdio.h>
+#include <stdlib.h>
+#include <graph_analysis/GraphIO.hpp>
 
 using namespace graph_analysis;
 using namespace constrained_based_networks;
@@ -63,24 +65,24 @@ EventModelHandler::EventModelHandler(Pool *_initial_pool, graph_analysis::Direct
             }
         }
     } while (!done);
-#if 0
+#if 1
     // Print final result:
     for (auto h1 : event_propagation_table) {
         auto causing_component_id = h1.first;
-        auto causing_component = dynamic_cast<Component *>(instancitaed_network->getVertex(causing_component_id).get());
-        if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(causing_component_id).get())) causing_component = c->component;
-        std::cout << "- Component: " << causing_component->getName() << std::endl;
+        auto causing_component = std::dynamic_pointer_cast<ComponentObj>(instancitaed_network->getVertex(causing_component_id));
+        if (auto c = dynamic_cast<ConfiguredComponent*>(instancitaed_network->getVertex(causing_component_id).get())) causing_component = c->component;
+        std::cerr << "- Component: " << causing_component->getName() << std::endl;
         for (auto h2 : h1.second) {
             auto causing_event = h2.first;
-            std::cout << "\t -Event: " << causing_event << std::endl;
+            std::cerr << "\t -Event: " << causing_event << std::endl;
             for (auto cause : h2.second) {
-                auto resulting_component = dynamic_cast<Component *>(instancitaed_network->getVertex(cause.component_graph_id).get());
+                auto resulting_component = std::dynamic_pointer_cast<ComponentObj>(instancitaed_network->getVertex(cause.component_graph_id));
                 if (auto c = dynamic_cast<ConfiguredComponent *>(instancitaed_network->getVertex(cause.component_graph_id).get())) resulting_component = c->component;
-                std::cout << "\t\t -- " << resulting_component->getName() << " event " << cause.event << std::endl;
+                std::cerr << "\t\t -- " << resulting_component->getName() << " event " << cause.event << std::endl;
             }
         }
     }
-    std::cout << "Jeha i'm done" << std::endl;
+    std::cerr << "Jeha i'm done" << std::endl;
 #endif
 }
 
@@ -110,6 +112,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
 
         // Ok we found a state-machine which is affected no we have to search for the followup state of it
         if (affected_component) {
+
             /*
             Pool *p = new Pool();
             initial_pool->dupFunction(p);
@@ -122,6 +125,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
                 //                res.push_back(graph);
                 continue;
             }
+            std::cerr << "---causes: " << affected_component->toString() << "." << affected_event << std::endl;
 
             unsigned int current_transition;
             int parsed = sscanf(affected_event.c_str(), "transition-%u", &current_transition);
@@ -135,6 +139,13 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
             graph_analysis::BaseGraph::Ptr graph = graph_analysis::BaseGraph::getInstance(graph_analysis::BaseGraph::LEMON_DIRECTED_GRAPH);
             generateRequrementsGraphRecusivly(graph, initial_pool, root, instancitaed_network->getVertex(affected_component_id), current_transition);
 
+
+            char tmpfile[512];
+            int tmp_file_fd=0;
+            sprintf(tmpfile,"/tmp/network_XXXXXX.dot");
+            tmp_file_fd = mkstemps(tmpfile,4);
+            graph_analysis::io::GraphIO::write(tmpfile, graph, graph_analysis::representation::GRAPHVIZ);
+            std::cerr << "tempfile is " << tmpfile << std::endl;
             //            std::cerr << "THIS IS GOOD" << std::endl;
             std::cerr << causing_component << " -> " << causing_event << " to " << affected_component->getName() << " -> " << affected_event << std::endl;
             affected_vertices.push_back(instancitaed_network->getVertex(affected_component_id));
@@ -145,7 +156,7 @@ std::vector<graph_analysis::BaseGraph::Ptr> EventModelHandler::getFollowRequirem
     if (res.size() > 1) {
         double dist = std::numeric_limits<double>::max();
         size_t final_id = 0;
-        std::cout << "We have multiple affectd components, reduce them to the component which is the closest one to the original one " << affected_vertices.size() << std::endl;
+        std::cerr << "We have multiple affectd components, reduce them to the component which is the closest one to the original one " << affected_vertices.size() << std::endl;
         auto causing = instancitaed_network->getVertex(causing_component);
         for (size_t i = 0; i < affected_vertices.size(); ++i) {
             auto c = affected_vertices[i];
@@ -269,6 +280,7 @@ void EventModelHandler::generateDBRecursive(graph_analysis::Vertex::Ptr current_
         assert(composition.get());
 
         for (auto forwards : composition->getEventForwards(child, role)) {
+            std::cout << "Event translation from " << _child->getTargetVertex()->toString() << "." << forwards.first << " to " << current_node->toString() << "." << forwards.second << std::endl;
             event_propagation_table[instancitaed_network->getVertexId(_child->getTargetVertex())][forwards.first].insert({instancitaed_network->getVertexId(current_node), forwards.second});
         }
         generateDBRecursive(_child->getTargetVertex());
@@ -281,6 +293,9 @@ std::list<TransitionTrigger> EventModelHandler::getTrigger()
     for (auto component : event_propagation_table) {
         for (auto event : component.second) {
             auto causing_component = get<ComponentObj>(instancitaed_network->getVertex(component.first));
+            for(auto affected : event.second){
+                std::cerr << "Transistion debug: " << causing_component->toString() <<  "." << event.first << " causes " << affected.event << std::endl;
+            }
             /*
             bool valid = dynamic_cast<Task *>(causing_component);
             if (auto c = dynamic_cast<Composition *>(causing_component)) {
@@ -334,6 +349,7 @@ void EventModelHandler::replaceSMinGraph(graph_analysis::DirectedGraphInterface:
 
 void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphInterface::Ptr graph, Pool *pool, graph_analysis::Vertex::Ptr current_vertex, Component parent)
 {
+    std::cout << "Searching children for " << current_vertex->toString() << std::endl;
     for (auto child : graph->outEdges(current_vertex)) {
         std::cout << child->getLabel() << std::endl;
         std::cout << child->getTargetVertex()->getClassName() << std::endl;
@@ -342,7 +358,13 @@ void EventModelHandler::createFollowPoolRecursive(graph_analysis::DirectedGraphI
             c = pool->getComponent(child->getTargetVertex()->toString());
         } else if (pool->hasComponent(child->toString())) {  // Ugly hack special case see SpecializedComponent::setActive()
             c = pool->getComponent(child->toString());
-        } else {
+        } else if(auto sm = dynamic_cast<StateMachineObj*>(pool->getComponent(current_vertex->toString()).get())){
+            auto children = sm->getChildren();
+            if(children.size() != 1){
+                throw std::runtime_error("SM has more than one child, unssuported");
+            }
+            c = pool->getComponent(children[0].second->toString());
+        }else{
             throw std::runtime_error("Cannot find the requested child in out pool");
         }
         assert(c.get());

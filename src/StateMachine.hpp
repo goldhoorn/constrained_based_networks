@@ -65,7 +65,7 @@ class StateMachineObj : public CompositionObj
     void updateInternals(Pool *pool);
     unsigned int getCurrentState();
     virtual void replaceChild(Component child, std::string name);
-    virtual void replaceChild(Component child, Component old);
+//    virtual void replaceChild(Component child, Component old);
     std::shared_ptr<SpecializedComponentObjBase> getSpecialized(std::shared_ptr<ComponentObj> obj, std::string name="");
     virtual Component clone(Pool *p) const;
     /*

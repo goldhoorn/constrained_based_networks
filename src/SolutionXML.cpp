@@ -11,6 +11,7 @@ SolutionXML::SolutionXML(std::string filename) : filename(filename)
     parser->parse_file(XML::genDBFilename(filename));
     rootNode = parser->get_document()->get_root_node();
     cluster = false;
+    short_failures = true;
 }
 
 SolutionXML::~SolutionXML()
@@ -47,11 +48,11 @@ void SolutionXML::addLabelIfNotExist(std::stringstream &s, std::string node, std
 
 void SolutionXML::addConnectionIfNotExist(std::stringstream &s, std::string source, std::string target, std::string label)
 {
-    std::string conn = "\"" + source +  "\" -> \"" + target + "\"";
+    std::string conn = "\"" + source + "\" -> \"" + target + "\"";
     if (connExists.find(conn) == connExists.end()) {
-        if(label.empty()){
+        if (label.empty()) {
             s << conn << ";\n";
-        }else{
+        } else {
             s << conn << " [label=\"" << label << "\"] ;\n";
         }
         connExists.insert(conn);
@@ -62,9 +63,9 @@ void SolutionXML::addConnectionIfNotExist(std::stringstream &s, std::string sour
  * This function walks throught incance-solution, to the input is a class-solution node
  *  it paints the cluster around each instance and connects each instance with <this>
  */
-std::list<std::pair<std::string,std::string> > SolutionXML::parseOnlyStates(xmlpp::Element *c, std::stringstream &s)
+std::list<std::pair<std::string, std::string>> SolutionXML::parseOnlyStates(xmlpp::Element *c, std::stringstream &s)
 {
-    std::list<std::pair<std::string,std::string> > class_names;
+    std::list<std::pair<std::string, std::string>> class_names;
 
     for (auto class_child : c->get_children("class_solution")) {
         //        auto class_id = atoi(dynamic_cast<xmlpp::Element *>(class_child)->get_attribute("id")->get_value().c_str());
@@ -100,16 +101,25 @@ std::list<std::pair<std::string,std::string> > SolutionXML::parseOnlyStates(xmlp
                                      "\" ");
 
                     // Need to initialize first
-                    connections[conn] = connections[conn] + elem_t->get_attribute("causing_component")->get_value() + ":" + elem_t->get_attribute("causing_event")->get_value();
+                    if (short_failures) {
+                        std::string event = elem_t->get_attribute("causing_event")->get_value();
+                        if (event == "fatal_error" || event == "internal_error" || event == "aborted") {
+                            //event = "failed";
+                        }else{
+                            connections[conn] = connections[conn] + elem_t->get_attribute("causing_component")->get_value() + ":" + event;
+                        }
+                    } else {
+                        connections[conn] = connections[conn] + elem_t->get_attribute("causing_component")->get_value() + ":" + elem_t->get_attribute("causing_event")->get_value();
+                    }
                     /*
                                         s << "\"" << dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() << "\""
                                           << " -> \"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" [label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":"
                                           << elem_t->get_attribute("causing_event")->get_value() << "\"];" << std::endl;
                                           */
-                    class_names.push_back(std::make_pair(elem_t->get_attribute("resulting_pool")->get_value(),connections[conn]));
+                    class_names.push_back(std::make_pair(elem_t->get_attribute("resulting_pool")->get_value(), connections[conn]));
                     auto resultings = parseOnlyStates(elem_t, s);
                     for (auto name : resultings) {
-                        addConnectionIfNotExist(s,elem_t->get_attribute("resulting_pool")->get_value(),name.first,name.second);
+                        addConnectionIfNotExist(s, elem_t->get_attribute("resulting_pool")->get_value(), name.first, name.second);
                         // s << "[label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":" << elem_t->get_attribute("causing_event")->get_value() << "\"];" << std::endl;
                     }
                 }
@@ -159,8 +169,18 @@ std::list<std::string> SolutionXML::parse(xmlpp::Element *c, std::stringstream &
                     std::string conn("\"" + dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() + "\" -> \"" + elem_t->get_attribute("resulting_pool")->get_value() +
                                      "\" ");
 
+                    std::string event = elem_t->get_attribute("causing_event")->get_value();
+//                    std::cout << "Resulting pool is" << elem_t->get_attribute("resulting_pool")->get_value() << " for event " << event << std::endl; 
                     // Need to initialize first
-                    connections[conn] = connections[conn] + elem_t->get_attribute("causing_component")->get_value() + ":" + elem_t->get_attribute("causing_event")->get_value() + "\n";
+                    if (short_failures) {
+                        if (event == "fatal_error" || event == "internal_error" || event == "aborted") {
+                            event = "failed";
+                        }else{
+                            connections[conn] = connections[conn] + elem_t->get_attribute("causing_component")->get_value() + ":" + event + "\n";
+                        }
+                    } else {
+                        connections[conn] = connections[conn] + elem_t->get_attribute("causing_component")->get_value() + ":" + elem_t->get_attribute("causing_event")->get_value() + "\n";
+                    }
                     /*
                                         s << "\"" << dynamic_cast<xmlpp::Element *>(instance_child)->get_attribute("filename")->get_value() << "\""
                                           << " -> \"" << elem_t->get_attribute("resulting_pool")->get_value() << "\" [label=\"" << elem_t->get_attribute("causing_component")->get_value() << ":"
@@ -175,7 +195,6 @@ std::list<std::string> SolutionXML::parse(xmlpp::Element *c, std::stringstream &
             for (auto c : connections) {
                 s << c.first << " [label=\"" << c.second << "\"];" << std::endl;
             }
-
         }
     }
     return class_names;
@@ -241,9 +260,9 @@ std::string SolutionXML::getDotGraph(bool onlyStates)
     auto initial_pool = rootNode->get_attribute("resulting_pool")->get_value();
     if (onlyStates) {
         result << "Start;" << std::endl;
-        auto r = parseOnlyStates(rootNode,result);
-        for(auto c : r){
-            addConnectionIfNotExist(result,"Start",c.first,c.second);
+        auto r = parseOnlyStates(rootNode, result);
+        for (auto c : r) {
+            addConnectionIfNotExist(result, "Start", c.first, c.second);
         }
     } else {
         addLabelIfNotExist(result, rootNode->get_attribute("resulting_pool")->get_value(), getIdentifier(rootNode));

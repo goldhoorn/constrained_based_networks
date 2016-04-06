@@ -37,6 +37,6 @@ class SolutionXML
     std::string filename;
     xmlpp::Element *rootNode;
     xmlpp::DomParser *parser;
-    bool cluster;
+    bool cluster,short_failures;
 };
 };

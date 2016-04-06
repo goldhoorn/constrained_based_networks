@@ -465,6 +465,45 @@ std::string test_lawn_mower_child(constrained_based_networks::Pool* pool)
     return c->getChildren()[0].second->getName();
 }
 
+
+std::string test_state_machine_complex(constrained_based_networks::Pool* pool)
+{
+    auto demo = StateMachineObj::make( pool,"loop");
+    auto sm = StateMachineObj::make( pool,"mission_sm");
+    auto t0 = TaskObj::make( pool,"submerger");
+    auto t1 = TaskObj::make( pool,"goto_starter");
+    auto t2 = TaskObj::make( pool,"pipe_follower");
+    auto t3 = TaskObj::make( pool,"surfacer");
+
+    t2->addEvent("pipe-end");
+    t2->addEvent("pipe-lost");
+
+    sm->addState(t0,0);
+    sm->addState(t1,1);
+    sm->addState(t2,2);
+    sm->addState(t3,3);
+
+
+    sm->addTransition(0, 1,"success");
+    sm->addTransition(1, 2,"success");
+    sm->addTransition(2, 3,"success");
+    //psm->addTransition(3, 0,"success");
+    sm->addTransition(2, 3,"pipe-end");
+    sm->addTransition(2, 1,"pipe-lost");
+    //sm->addEventForwards("","success","success");
+
+
+    demo->addState(sm,0);
+    demo->addState(t3,1);
+
+    demo->addTransition(0,1,"failed");
+    demo->addTransition(0,0,"success");
+
+    return "loop";
+    //return "mission_sm";
+}
+
+
 Tests tests[] = {{test_cmp_recursion, ""},
                  {test_cmp_recursion_w_unused_CS, ""},
                  {test_cmp_recursion_w_unused_DS, ""},
@@ -495,6 +534,7 @@ Tests tests[] = {{test_cmp_recursion, ""},
                  {test_lawn_mower_child, ""},
                  {create_model, "Main::Win"},
                  {sonar_sample, ""},
+                 {test_state_machine_complex, ""},
                  {0, ""}};
 
 std::string demangle(std::string input)

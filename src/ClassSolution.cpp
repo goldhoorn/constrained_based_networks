@@ -426,19 +426,19 @@ bool ClassSolution::build_tree(graph_analysis::BaseGraph::Ptr g, unsigned int cm
             e->setSourceVertex((pool->getItems<CompositionObj>()[cmp_id]));
             e->setTargetVertex(c);
 
-            std::cout << "a1" << std::endl;
+//            std::cout << "a1" << std::endl;
             std::string a1 = e->getTargetVertex()->toString();
-            std::cout << "a2" << std::endl;
+//            std::cout << "a2" << std::endl;
             std::string a2 = c->toString();
-            std::cout << "a3" << std::endl;
+//            std::cout << "a3" << std::endl;
             std::string a3 = c->getName();
-            std::cout << "a4" << std::endl;
+//            std::cout << "a4" << std::endl;
             std::string a4 = c->getLabel();
-            std::cout << "a5" << std::endl;
+//            std::cout << "a5" << std::endl;
             std::string a5 = e->getTargetVertex()->getLabel();
 
-            std::cerr << "Label:" << std::endl;
-            std::cerr << a1 << " vs. " << a2 << " vs. " << a3 << " vs. " << a4 << " vs. " << a5 << std::endl;
+//            std::cerr << "Label:" << std::endl;
+//            std::cerr << a1 << " vs. " << a2 << " vs. " << a3 << " vs. " << a4 << " vs. " << a5 << std::endl;
 
             assert(a1 == a2);
             assert(a3 == a2);

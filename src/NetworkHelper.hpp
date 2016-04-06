@@ -14,7 +14,7 @@ namespace constrained_based_networks
             static std::string normalizeName(std::string);
             static void initializeExporter();
             static bool isIgnoredState(std::string name);
-            static void createModelExportForLatex(std::string core_model);
+            static void createModelExportForLatex(std::string core_model, std::string filename);
     };
 
 };

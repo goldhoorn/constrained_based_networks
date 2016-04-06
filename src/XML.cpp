@@ -106,6 +106,7 @@ void XML::importSM(Pool* pool, xmlpp::Node* const child, xmlpp::Node* const root
                 auto new_child = ensureComponentAvailible(pool, new_name, root);
                 //                auto old_child = ensureComponentAvailible(pool, orginal_name, root);
                 spec_cmp->replaced_children[orginal_name] = new_child;  // (new_child, old_child);
+                //spec_cmp->replaceChild(new_child,orginal_name);  // (new_child, old_child);
             }
         }
         // We do not need to continue, all children are generated based on the parent by getSpecialized
