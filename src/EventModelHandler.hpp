@@ -33,7 +33,7 @@ struct TransitionTrigger
             for (auto v : resulting_requirement.network[i]->edges()) {
                 bool found = false;
                 for (auto v2 : t.resulting_requirement.network[i]->edges()) {
-                    if (v->getSourceVertex()->toString() == v2->getSourceVertex()->toString() && v->getTargetVertex()->toString() == v2->getTargetVertex()->toString()) {
+                    if (v->getSourceVertex() == v2->getSourceVertex() && v->getTargetVertex() == v2->getTargetVertex()) {
                         found = true;
                         break;
                     }
