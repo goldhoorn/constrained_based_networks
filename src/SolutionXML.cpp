@@ -259,10 +259,12 @@ std::string SolutionXML::getDotGraph(bool onlyStates)
 
     auto initial_pool = rootNode->get_attribute("resulting_pool")->get_value();
     if (onlyStates) {
-        result << "Start;" << std::endl;
+        addLabelIfNotExist(result, rootNode->get_attribute("resulting_pool")->get_value(), "Start");
+        //result << "Start;" << std::endl;
         auto r = parseOnlyStates(rootNode, result);
         for (auto c : r) {
-            addConnectionIfNotExist(result, "Start", c.first, c.second);
+            //addConnectionIfNotExist(result, "Start", c.first, c.second);
+            addConnectionIfNotExist(result, rootNode->get_attribute("resulting_pool")->get_value(), c.first, c.second);
         }
     } else {
         addLabelIfNotExist(result, rootNode->get_attribute("resulting_pool")->get_value(), getIdentifier(rootNode));

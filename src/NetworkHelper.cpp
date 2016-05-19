@@ -70,8 +70,10 @@ void NetworkHelper::createModelExportForLatex(std::string core_model, std::strin
     auto l = pool->getItems<ComponentObj>();
     for (auto c : l) {
         if (c->isActive()) {
-            file << normalizeName(c->getName()) << " ";
-            // if (l.back() != c) file << " ,";
+            if (c->getName() != "root-knot") {
+                file << normalizeName(c->getName()) << " ";
+                // if (l.back() != c) file << " ,";
+            }
         }
     }
     file << "\\}" << std::endl;
@@ -113,6 +115,8 @@ void NetworkHelper::createModelExportForLatex(std::string core_model, std::strin
         auto l = pool->getItems<TaskObj>();
         file << "\\begin{itemize}[nosep,noitemsep,topsep=0pt,partopsep=0pt]" << std::endl;
         for (auto c : l) {
+            if (c->getName() == "NIL-Task") continue;
+
             bool has_different_state = false;
             file << "\\item[T:] " << normalizeName(c->getName()) << "" << std::endl;
             for (auto e : c->getEvents()) {
@@ -120,15 +124,42 @@ void NetworkHelper::createModelExportForLatex(std::string core_model, std::strin
                     has_different_state = true;
                 }
             }
+            bool has_fullfillments = false;
+            for (auto f : c->getFullfillments()) {
+                if (f != c->getName()) {
+                    has_fullfillments = true;
+                }
+            }
+            bool has_properties= false;
+            for (auto config : c->getProperties()) {
+                has_properties = true;
+            }
 
-            if (c->useCount() != 10000 || has_different_state) {
+            if (c->useCount() != 10000 || has_different_state || has_fullfillments || has_properties) {
                 file << "\\begin{itemize}[nosep,noitemsep,topsep=0pt,partopsep=0pt]" << std::endl;
+                for (auto config : c->getProperties()) {
+                    file << "\\item[$\\Sigma$] " << normalizeName(config.name) << std::endl;
+                    if (auto s = dynamic_cast<SpecializedComponentObjBase *>(c.get())) {
+                        if (s->configuration.find(config.name) != s->configuration.end()) {
+                            if (s->configuration[config.name.c_str()].first == s->configuration[config.name.c_str()].second) {
+                                file << ": " << s->configuration[config.name.c_str()].first << std::endl;
+                            } else {
+                                file << ": " << s->configuration[config.name.c_str()].first << " to " << s->configuration[config.name.c_str()].second << std::endl;
+                            }
+                        }
+                    }
+                }
                 for (auto e : c->getEvents()) {
                     if (!NetworkHelper::isIgnoredState(e)) {
                         file << "\\item[S] " << normalizeName(e) << std::endl;
                     }
                 }
-                if (c->useCount() != 1000) {
+                for (auto f : c->getFullfillments()) {
+                    if (f != c->getName()) {
+                        file << "\\item[$\\succ$] " << f << std::endl;
+                    }
+                }
+                if (c->useCount() != 10000) {
                     file << "\\item[$\\Xi$] " << c->useCount() << std::endl;
                 }
                 file << "\\end{itemize}" << std::endl;
@@ -174,6 +205,8 @@ void NetworkHelper::createModelExportForLatex(std::string core_model, std::strin
 
     // file << "\\hline" << std::endl;
     for (auto c : pool->getItems<CompositionObj>()) {
+        if (c->getName() == "root-knot") continue;
+
         if (dynamic_cast<StateMachineObj *>(c.get())) {
             file << "\\item[S:] " << normalizeName(c->getName()) << "" << std::endl;
         } else {
